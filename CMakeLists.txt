@@ -128,8 +128,20 @@ set(NUANCE_SOURCES
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:src/asmjit_emit.cpp>
 )
 
-add_executable(nuance ${NUANCE_SOURCES})
-set(NUANCE_TARGET nuance)
+option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
+
+if(BUILD_LIBRETRO)
+    # Libretro core - shared library
+    # Remove standalone-specific files for libretro build
+    list(FILTER NUANCE_SOURCES EXCLUDE REGEX "NuanceMain|GLWindow|InputManager|NuanceUI")
+    add_library(nuance_libretro SHARED ${NUANCE_SOURCES} src/libretro.cpp)
+    set_target_properties(nuance_libretro PROPERTIES PREFIX "" OUTPUT_NAME "nuance_libretro")
+    target_compile_definitions(nuance_libretro PRIVATE LIBRETRO)
+    set(NUANCE_TARGET nuance_libretro)
+else()
+    add_executable(nuance ${NUANCE_SOURCES})
+    set(NUANCE_TARGET nuance)
+endif()
 
 target_include_directories(${NUANCE_TARGET} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -163,7 +175,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
 )
 
 # Standalone build needs X11/GLX directly (NuanceUI uses Xlib, GLWindow uses GLX)
-if(NOT WIN32)
+if(NOT BUILD_LIBRETRO AND NOT WIN32)
     find_package(X11 REQUIRED)
     target_link_libraries(${NUANCE_TARGET} PRIVATE ${X11_LIBRARIES} -lGLX)
 endif()
