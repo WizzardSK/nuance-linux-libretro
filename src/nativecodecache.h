@@ -6,9 +6,6 @@
 #include "PageMap.h"
 #include "PatchManager.h"
 #include "X86EmitTypes.h"
-#ifdef USE_ASMJIT
-#include "asmjit_emit.h"
-#endif
 
 #define DEFAULT_CODE_BUFFER_BYTES (8UL*1024UL*1024UL)
 //#define DEFAULT_NUM_TLB_ENTRIES (16384UL)
@@ -89,12 +86,6 @@ public:
 
   void SetLabelPointer(const uint32 labelIndex)
   {
-#ifdef USE_ASMJIT
-    if (asmjitAs) {
-      AsmJit_BindLabel(labelIndex);
-      return;
-    }
-#endif
     patchMgr.SetLabelPointer(labelIndex,GetEmitPointer());
   }
 
@@ -292,10 +283,6 @@ public:
     X86Emit_MOVRM(regSrc, (uintptr_t)base, index, scale, disp);
   }
   void X86Emit_MOVIR(const intptr_t imm, const x86Reg regDest);
-#ifdef USE_ASMJIT
-  // Load a 64-bit pointer into the 64-bit extension of the given register
-  void X86Emit_MOVIR_Ptr(const uintptr_t addr, const x86Reg regDest);
-#endif
   void X86Emit_MOVSB();
   void X86Emit_MOVSW();
   void X86Emit_MOVSD();
@@ -583,25 +570,6 @@ public:
   PatchManager patchMgr;
   PageMap pageMap;
   EmitterVariables emitVars;
-
-#ifdef USE_ASMJIT
-  // asmjit state for 64-bit JIT code generation
-  asmjit::JitRuntime asmjitRuntime;
-  asmjit::CodeHolder* asmjitCode = nullptr;
-  asmjit::x86::Assembler* asmjitAs = nullptr;
-  asmjit::Label asmjitLabels[MAX_ASMJIT_LABELS];
-  bool asmjitLabelBound[MAX_ASMJIT_LABELS] = {};
-  bool asmjitBlockActive = false;
-
-  // Begin a new asmjit code block — call before emitting instructions
-  void AsmJit_BeginBlock();
-  // End current block, copy code to buffer — returns code size in bytes
-  uint32 AsmJit_EndBlock();
-  // Bind a label at the current position (replaces SetLabelPointer for asmjit)
-  void AsmJit_BindLabel(uint32 labelIndex);
-  // Get or create a label for the given index
-  asmjit::Label& AsmJit_GetLabel(uint32 labelIndex);
-#endif
 
 private:
   uint8 *pEmitLoc;

@@ -400,12 +400,7 @@ void IncrementVideoFieldCounter()
 void RenderVideo(const int winwidth, const int winheight)
 {
   if(!bCanDisplayVideo)
-  {
-    static int dbgCount = 0;
-    if(dbgCount++ % 600 == 0)
-      fprintf(stderr, "RenderVideo: bCanDisplayVideo=false (waiting for VidConfig/VidSetup)\n");
     return;
-  }
 
   if(!bTexturesInitialized)
   {
