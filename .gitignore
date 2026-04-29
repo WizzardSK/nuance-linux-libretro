@@ -10,3 +10,15 @@ Nuance.aps
 # Build results
 [Dd]ebug/
 [Rr]elease/
+build/
+build32/
+build64/
+build-libretro/
+build-libretro64/
+
+# Case-sensitivity symlinks (Linux only)
+GLWindow.h
+NuonEnvironment.h
+NativeCodeCache.h
+nuon-roms/
+*.extract/
