@@ -555,7 +555,7 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 **version 0.6.7:**
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
-- Can load games directly from ZIP/ISO files. Case-insensitive file matching for DVD data files.
+- Can load games directly from ZIP/ISO files on Linux. Case-insensitive file matching for DVD data files.
 
 **03/21/2025 version 0.6.6:**
 - Implement (bi)linear address mirroring properly and enable it.
@@ -580,7 +580,8 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 **01/10/2023 version 0.6.4:**
 - Fix command line file parsing, also drag and drop will now work properly.
 - Fix wrong handling of global overlay alpha values > 0.
-- Optimize OpenGL output shaders. Fix CRT-like shader for very high resolutions (e.g. 4K).
+- Optimize OpenGL output shaders.
+- Fix CRT-like shader for very high resolutions (e.g. 4K).
 - Retweak CRT-like shader to be a bit more realistic compared to common CRT TVs back in the days.
 
 **01/04/2023 version 0.6.3:**
