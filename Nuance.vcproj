@@ -211,7 +211,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\audio.cpp"
+				RelativePath=".\src\audio.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -224,24 +224,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\bdma_type12.cpp"
+				RelativePath=".\src\bdma_type12.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\bdma_type5.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="3"
-						EnableEnhancedInstructionSet="1"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\bdma_type8.cpp"
+				RelativePath=".\src\bdma_type5.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -254,7 +241,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\bdma_type9.cpp"
+				RelativePath=".\src\bdma_type8.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -267,7 +254,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\bios.cpp"
+				RelativePath=".\src\bdma_type9.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -280,7 +267,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\byteswap.cpp"
+				RelativePath=".\src\bios.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -293,7 +280,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\coff.cpp"
+				RelativePath=".\src\byteswap.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -306,7 +293,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\comm.cpp"
+				RelativePath=".\src\coff.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -319,7 +306,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\DecodeALU.cpp"
+				RelativePath=".\src\comm.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -332,7 +319,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\DecodeECU.cpp"
+				RelativePath=".\src\DecodeALU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -345,7 +332,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\DecodeMEM.cpp"
+				RelativePath=".\src\DecodeECU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -358,7 +345,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\DecodeMUL.cpp"
+				RelativePath=".\src\DecodeMEM.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -371,7 +358,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\DecodeRCU.cpp"
+				RelativePath=".\src\DecodeMUL.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -384,7 +371,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\dma.cpp"
+				RelativePath=".\src\DecodeRCU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -397,31 +384,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\EmitALU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\EmitECU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\EmitMEM.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\EmitMisc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\EmitMUL.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\EmitRCU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ExecuteALU.cpp"
+				RelativePath=".\src\dma.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -434,7 +397,31 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ExecuteECU.cpp"
+				RelativePath=".\src\EmitALU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\EmitECU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\EmitMEM.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\EmitMisc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\EmitMUL.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\EmitRCU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ExecuteALU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -447,7 +434,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ExecuteMEM.cpp"
+				RelativePath=".\src\ExecuteECU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -460,11 +447,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ExecuteMisc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ExecuteMUL.cpp"
+				RelativePath=".\src\ExecuteMEM.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -477,7 +460,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ExecuteRCU.cpp"
+				RelativePath=".\src\ExecuteMisc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ExecuteMUL.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -490,7 +477,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\file.cpp"
+				RelativePath=".\src\ExecuteRCU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -503,15 +490,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\FlashEEPROM.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\GLWindow.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\InstructionCache.cpp"
+				RelativePath=".\src\file.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -524,7 +503,15 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\joystick.cpp"
+				RelativePath=".\src\FlashEEPROM.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\GLWindow.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\InstructionCache.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -537,7 +524,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\media.cpp"
+				RelativePath=".\src\joystick.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -550,7 +537,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\memory.cpp"
+				RelativePath=".\src\media.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -563,7 +550,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\MemoryManager.cpp"
+				RelativePath=".\src\memory.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -576,7 +563,20 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\mpe.cpp"
+				RelativePath=".\src\MemoryManager.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="3"
+						EnableEnhancedInstructionSet="1"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\mpe.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -590,7 +590,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\mpe_alloc.cpp"
+				RelativePath=".\src\mpe_alloc.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -603,7 +603,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\MPEControlRegisters.cpp"
+				RelativePath=".\src\MPEControlRegisters.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -616,7 +616,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\nativecodecache.cpp"
+				RelativePath=".\src\nativecodecache.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -629,7 +629,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\NuanceMain.cpp"
+				RelativePath=".\src\NuanceMain.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -642,7 +642,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\NuonEnvironment.cpp"
+				RelativePath=".\src\NuonEnvironment.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -655,7 +655,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\NuonMemoryManager.cpp"
+				RelativePath=".\src\NuonMemoryManager.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -668,7 +668,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\nuonrom.cpp"
+				RelativePath=".\src\nuonrom.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -681,7 +681,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\OverlayManager.cpp"
+				RelativePath=".\src\OverlayManager.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -693,36 +693,23 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\PageMap.cpp"
+				RelativePath=".\src\PageMap.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\PatchManager.cpp"
+				RelativePath=".\src\PatchManager.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\PerformanceTimer.cpp"
+				RelativePath=".\src\PerformanceTimer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\PresentationEngine.cpp"
+				RelativePath=".\src\PresentationEngine.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintALU.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="3"
-						EnableEnhancedInstructionSet="1"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\PrintECU.cpp"
+				RelativePath=".\src\PrintALU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -735,7 +722,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\PrintMEM.cpp"
+				RelativePath=".\src\PrintECU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -748,11 +735,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\PrintMisc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PrintMUL.cpp"
+				RelativePath=".\src\PrintMEM.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -765,7 +748,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\PrintRCU.cpp"
+				RelativePath=".\src\PrintMisc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PrintMUL.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -778,47 +765,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_ALU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PropagateConstants_ECU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PropagateConstants_MEM.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PropagateConstants_MUL.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PropagateConstants_RCU.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PropagateConstantsHandlers.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ShaderProgram.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SuperBlock.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SuperBlockConstants.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Syscall.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\TestConditionCode.cpp"
+				RelativePath=".\src\PrintRCU.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -831,7 +778,47 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\timer.cpp"
+				RelativePath=".\src\PropagateConstants_ALU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PropagateConstants_ECU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PropagateConstants_MEM.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PropagateConstants_MUL.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PropagateConstants_RCU.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\PropagateConstantsHandlers.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ShaderProgram.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\SuperBlock.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\SuperBlockConstants.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Syscall.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\TestConditionCode.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -844,7 +831,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\Utility.cpp"
+				RelativePath=".\src\timer.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -857,7 +844,20 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\video.cpp"
+				RelativePath=".\src\Utility.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="3"
+						EnableEnhancedInstructionSet="1"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\video.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -876,207 +876,207 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\audio.h"
+				RelativePath=".\src\audio.h"
 				>
 			</File>
 			<File
-				RelativePath=".\basetypes.h"
+				RelativePath=".\src\basetypes.h"
 				>
 			</File>
 			<File
-				RelativePath=".\bdma_type12.h"
+				RelativePath=".\src\bdma_type12.h"
 				>
 			</File>
 			<File
-				RelativePath=".\bdma_type5.h"
+				RelativePath=".\src\bdma_type5.h"
 				>
 			</File>
 			<File
-				RelativePath=".\bdma_type9.h"
+				RelativePath=".\src\bdma_type9.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Bios.h"
+				RelativePath=".\src\Bios.h"
 				>
 			</File>
 			<File
-				RelativePath=".\byteswap.h"
+				RelativePath=".\src\byteswap.h"
 				>
 			</File>
 			<File
-				RelativePath=".\coff.h"
+				RelativePath=".\src\coff.h"
 				>
 			</File>
 			<File
-				RelativePath=".\comm.h"
+				RelativePath=".\src\comm.h"
 				>
 			</File>
 			<File
-				RelativePath=".\CriticalSection.h"
+				RelativePath=".\src\CriticalSection.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DecodeALU.h"
+				RelativePath=".\src\DecodeALU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DecodeECU.h"
+				RelativePath=".\src\DecodeECU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DecodeMEM.h"
+				RelativePath=".\src\DecodeMEM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DecodeMUL.h"
+				RelativePath=".\src\DecodeMUL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DecodeRCU.h"
+				RelativePath=".\src\DecodeRCU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dma.h"
+				RelativePath=".\src\dma.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitALU.h"
+				RelativePath=".\src\EmitALU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitECU.h"
+				RelativePath=".\src\EmitECU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitMEM.h"
+				RelativePath=".\src\EmitMEM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitMisc.h"
+				RelativePath=".\src\EmitMisc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitMUL.h"
+				RelativePath=".\src\EmitMUL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\EmitRCU.h"
+				RelativePath=".\src\EmitRCU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteALU.h"
+				RelativePath=".\src\ExecuteALU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteECU.h"
+				RelativePath=".\src\ExecuteECU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteMEM.h"
+				RelativePath=".\src\ExecuteMEM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteMisc.h"
+				RelativePath=".\src\ExecuteMisc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteMUL.h"
+				RelativePath=".\src\ExecuteMUL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExecuteRCU.h"
+				RelativePath=".\src\ExecuteRCU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\file.h"
+				RelativePath=".\src\file.h"
 				>
 			</File>
 			<File
-				RelativePath=".\FlashEEPROM.h"
+				RelativePath=".\src\FlashEEPROM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\fmod.h"
+				RelativePath=".\src\fmod.h"
 				>
 			</File>
 			<File
-				RelativePath=".\glew.h"
+				RelativePath=".\src\glew.h"
 				>
 			</File>
 			<File
-				RelativePath=".\GLWindow.h"
+				RelativePath=".\src\GLWindow.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Handlers.h"
+				RelativePath=".\src\Handlers.h"
 				>
 			</File>
 			<File
-				RelativePath=".\InstructionCache.h"
+				RelativePath=".\src\InstructionCache.h"
 				>
 			</File>
 			<File
-				RelativePath=".\InstructionDependencies.h"
+				RelativePath=".\src\InstructionDependencies.h"
 				>
 			</File>
 			<File
-				RelativePath=".\joystick.h"
+				RelativePath=".\src\joystick.h"
 				>
 			</File>
 			<File
-				RelativePath=".\media.h"
+				RelativePath=".\src\media.h"
 				>
 			</File>
 			<File
-				RelativePath=".\memory.h"
+				RelativePath=".\src\memory.h"
 				>
 			</File>
 			<File
-				RelativePath=".\MemoryManager.h"
+				RelativePath=".\src\MemoryManager.h"
 				>
 			</File>
 			<File
-				RelativePath=".\mpe.h"
+				RelativePath=".\src\mpe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\mpe_alloc.h"
+				RelativePath=".\src\mpe_alloc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\nativecodecache.h"
+				RelativePath=".\src\nativecodecache.h"
 				>
 			</File>
 			<File
-				RelativePath=".\NuanceRes.h"
+				RelativePath=".\src\NuanceRes.h"
 				>
 			</File>
 			<File
-				RelativePath=".\NuonEnvironment.h"
+				RelativePath=".\src\NuonEnvironment.h"
 				>
 			</File>
 			<File
-				RelativePath=".\NuonMemoryManager.h"
+				RelativePath=".\src\NuonMemoryManager.h"
 				>
 			</File>
 			<File
-				RelativePath=".\NuonMemoryMap.h"
+				RelativePath=".\src\NuonMemoryMap.h"
 				>
 			</File>
 			<File
-				RelativePath=".\nuonrom.h"
+				RelativePath=".\src\nuonrom.h"
 				>
 			</File>
 			<File
-				RelativePath=".\OverlayManager.h"
+				RelativePath=".\src\OverlayManager.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PageMap.h"
+				RelativePath=".\src\PageMap.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PatchManager.h"
+				RelativePath=".\src\PatchManager.h"
 				>
 			</File>
 			<File
@@ -1084,87 +1084,87 @@
 				>
 			</File>
 			<File
-				RelativePath=".\PrintALU.h"
+				RelativePath=".\src\PrintALU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintECU.h"
+				RelativePath=".\src\PrintECU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintMEM.h"
+				RelativePath=".\src\PrintMEM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintMisc.h"
+				RelativePath=".\src\PrintMisc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintMUL.h"
+				RelativePath=".\src\PrintMUL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PrintRCU.h"
+				RelativePath=".\src\PrintRCU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants.h"
+				RelativePath=".\src\PropagateConstants.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_ALU.h"
+				RelativePath=".\src\PropagateConstants_ALU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_ECU.h"
+				RelativePath=".\src\PropagateConstants_ECU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_MEM.h"
+				RelativePath=".\src\PropagateConstants_MEM.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_MUL.h"
+				RelativePath=".\src\PropagateConstants_MUL.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PropagateConstants_RCU.h"
+				RelativePath=".\src\PropagateConstants_RCU.h"
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
+				RelativePath=".\src\resource.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ShaderProgram.h"
+				RelativePath=".\src\ShaderProgram.h"
 				>
 			</File>
 			<File
-				RelativePath=".\SuperBlock.h"
+				RelativePath=".\src\SuperBlock.h"
 				>
 			</File>
 			<File
-				RelativePath=".\SuperBlockConstants.h"
+				RelativePath=".\src\SuperBlockConstants.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Syscall.h"
+				RelativePath=".\src\Syscall.h"
 				>
 			</File>
 			<File
-				RelativePath=".\timer.h"
+				RelativePath=".\src\timer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Utility.h"
+				RelativePath=".\src\Utility.h"
 				>
 			</File>
 			<File
-				RelativePath=".\video.h"
+				RelativePath=".\src\video.h"
 				>
 			</File>
 			<File
-				RelativePath=".\X86EmitTypes.h"
+				RelativePath=".\src\X86EmitTypes.h"
 				>
 			</File>
 		</Filter>

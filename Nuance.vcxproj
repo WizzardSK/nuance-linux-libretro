@@ -70,6 +70,7 @@
       <AssemblerOutput />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>external\fmod-3.75\api\inc;external\glew-2.2.0\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>external\glew-2.2.0\lib\Release\Win32\glew32.lib;user32.lib;winmm.lib;external\fmod-3.75\api\lib\fmodvc.lib;opengl32.lib;dxguid.lib;dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -108,6 +109,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <StringPooling>true</StringPooling>
+      <AdditionalIncludeDirectories>external\fmod-3.75\api\inc;external\glew-2.2.0\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>external\glew-2.2.0\lib\Release\Win32\glew32.lib;user32.lib;winmm.lib;external\fmod-3.75\api\lib\fmodvc.lib;opengl32.lib;dxguid.lib;dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -125,286 +127,286 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="audio.cpp">
+    <ClCompile Include="src\audio.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="bdma_type12.cpp" />
-    <ClCompile Include="bdma_type5.cpp">
+    <ClCompile Include="src\bdma_type12.cpp" />
+    <ClCompile Include="src\bdma_type5.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="bdma_type8.cpp">
+    <ClCompile Include="src\bdma_type8.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="bdma_type9.cpp">
+    <ClCompile Include="src\bdma_type9.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="bios.cpp">
+    <ClCompile Include="src\bios.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="byteswap.cpp">
+    <ClCompile Include="src\byteswap.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="coff.cpp">
+    <ClCompile Include="src\coff.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="comm.cpp">
+    <ClCompile Include="src\comm.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="CriticalSection.cpp" />
-    <ClCompile Include="DecodeALU.cpp">
+    <ClCompile Include="src\CriticalSection.cpp" />
+    <ClCompile Include="src\DecodeALU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="DecodeECU.cpp">
+    <ClCompile Include="src\DecodeECU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="DecodeMEM.cpp">
+    <ClCompile Include="src\DecodeMEM.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="DecodeMUL.cpp">
+    <ClCompile Include="src\DecodeMUL.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="DecodeRCU.cpp">
+    <ClCompile Include="src\DecodeRCU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="dma.cpp">
+    <ClCompile Include="src\dma.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="EmitALU.cpp" />
-    <ClCompile Include="EmitECU.cpp" />
-    <ClCompile Include="EmitMEM.cpp" />
-    <ClCompile Include="EmitMisc.cpp" />
-    <ClCompile Include="EmitMUL.cpp" />
-    <ClCompile Include="EmitRCU.cpp" />
-    <ClCompile Include="ExecuteALU.cpp">
+    <ClCompile Include="src\EmitALU.cpp" />
+    <ClCompile Include="src\EmitECU.cpp" />
+    <ClCompile Include="src\EmitMEM.cpp" />
+    <ClCompile Include="src\EmitMisc.cpp" />
+    <ClCompile Include="src\EmitMUL.cpp" />
+    <ClCompile Include="src\EmitRCU.cpp" />
+    <ClCompile Include="src\ExecuteALU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="ExecuteECU.cpp">
+    <ClCompile Include="src\ExecuteECU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="ExecuteMEM.cpp">
+    <ClCompile Include="src\ExecuteMEM.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="ExecuteMisc.cpp" />
-    <ClCompile Include="ExecuteMUL.cpp">
+    <ClCompile Include="src\ExecuteMisc.cpp" />
+    <ClCompile Include="src\ExecuteMUL.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="ExecuteRCU.cpp">
+    <ClCompile Include="src\ExecuteRCU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="file.cpp">
+    <ClCompile Include="src\file.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="FlashEEPROM.cpp" />
-    <ClCompile Include="GLWindow.cpp" />
-    <ClCompile Include="InputManager.cpp" />
-    <ClCompile Include="InstructionCache.cpp">
+    <ClCompile Include="src\FlashEEPROM.cpp" />
+    <ClCompile Include="src\GLWindow.cpp" />
+    <ClCompile Include="src\InputManager.cpp" />
+    <ClCompile Include="src\InstructionCache.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="joystick.cpp">
+    <ClCompile Include="src\joystick.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="media.cpp">
+    <ClCompile Include="src\media.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="memory.cpp">
+    <ClCompile Include="src\memory.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="MemoryManager.cpp">
+    <ClCompile Include="src\MemoryManager.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="mpe.cpp">
+    <ClCompile Include="src\mpe.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="MPEControlRegisters.cpp">
+    <ClCompile Include="src\MPEControlRegisters.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="mpe_alloc.cpp">
+    <ClCompile Include="src\mpe_alloc.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="nativecodecache.cpp">
+    <ClCompile Include="src\nativecodecache.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="NuanceMain.cpp">
+    <ClCompile Include="src\NuanceMain.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="NuonEnvironment.cpp">
+    <ClCompile Include="src\NuonEnvironment.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="NuonMemoryManager.cpp">
+    <ClCompile Include="src\NuonMemoryManager.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="nuonrom.cpp">
+    <ClCompile Include="src\nuonrom.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="OverlayManager.cpp">
+    <ClCompile Include="src\OverlayManager.cpp">
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</WholeProgramOptimization>
     </ClCompile>
-    <ClCompile Include="PageMap.cpp" />
-    <ClCompile Include="PatchManager.cpp" />
-    <ClCompile Include="PerformanceTimer.cpp" />
-    <ClCompile Include="PresentationEngine.cpp" />
-    <ClCompile Include="PrintALU.cpp">
+    <ClCompile Include="src\PageMap.cpp" />
+    <ClCompile Include="src\PatchManager.cpp" />
+    <ClCompile Include="src\PerformanceTimer.cpp" />
+    <ClCompile Include="src\PresentationEngine.cpp" />
+    <ClCompile Include="src\PrintALU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="PrintECU.cpp">
+    <ClCompile Include="src\PrintECU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="PrintMEM.cpp">
+    <ClCompile Include="src\PrintMEM.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="PrintMisc.cpp" />
-    <ClCompile Include="PrintMUL.cpp">
+    <ClCompile Include="src\PrintMisc.cpp" />
+    <ClCompile Include="src\PrintMUL.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="PrintRCU.cpp">
+    <ClCompile Include="src\PrintRCU.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="PropagateConstantsHandlers.cpp" />
-    <ClCompile Include="PropagateConstants_ALU.cpp" />
-    <ClCompile Include="PropagateConstants_ECU.cpp" />
-    <ClCompile Include="PropagateConstants_MEM.cpp" />
-    <ClCompile Include="PropagateConstants_MUL.cpp" />
-    <ClCompile Include="PropagateConstants_RCU.cpp" />
-    <ClCompile Include="ShaderProgram.cpp" />
-    <ClCompile Include="SuperBlock.cpp" />
-    <ClCompile Include="SuperBlockConstants.cpp" />
-    <ClCompile Include="Syscall.cpp" />
-    <ClCompile Include="TestConditionCode.cpp">
+    <ClCompile Include="src\PropagateConstantsHandlers.cpp" />
+    <ClCompile Include="src\PropagateConstants_ALU.cpp" />
+    <ClCompile Include="src\PropagateConstants_ECU.cpp" />
+    <ClCompile Include="src\PropagateConstants_MEM.cpp" />
+    <ClCompile Include="src\PropagateConstants_MUL.cpp" />
+    <ClCompile Include="src\PropagateConstants_RCU.cpp" />
+    <ClCompile Include="src\ShaderProgram.cpp" />
+    <ClCompile Include="src\SuperBlock.cpp" />
+    <ClCompile Include="src\SuperBlockConstants.cpp" />
+    <ClCompile Include="src\Syscall.cpp" />
+    <ClCompile Include="src\TestConditionCode.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="timer.cpp">
+    <ClCompile Include="src\timer.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="Utility.cpp">
+    <ClCompile Include="src\Utility.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
-    <ClCompile Include="video.cpp">
+    <ClCompile Include="src\video.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Full</Optimization>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="audio.h" />
-    <ClInclude Include="basetypes.h" />
-    <ClInclude Include="bdma_type12.h" />
-    <ClInclude Include="bdma_type5.h" />
-    <ClInclude Include="bdma_type8.h" />
-    <ClInclude Include="bdma_type9.h" />
-    <ClInclude Include="Bios.h" />
-    <ClInclude Include="byteswap.h" />
-    <ClInclude Include="coff.h" />
-    <ClInclude Include="comm.h" />
-    <ClInclude Include="CriticalSection.h" />
-    <ClInclude Include="DecodeALU.h" />
-    <ClInclude Include="DecodeECU.h" />
-    <ClInclude Include="DecodeMEM.h" />
-    <ClInclude Include="DecodeMUL.h" />
-    <ClInclude Include="DecodeRCU.h" />
-    <ClInclude Include="dma.h" />
-    <ClInclude Include="EmitALU.h" />
-    <ClInclude Include="EmitECU.h" />
-    <ClInclude Include="EmitMEM.h" />
-    <ClInclude Include="EmitMisc.h" />
-    <ClInclude Include="EmitMUL.h" />
-    <ClInclude Include="EmitRCU.h" />
-    <ClInclude Include="ExecuteALU.h" />
-    <ClInclude Include="ExecuteECU.h" />
-    <ClInclude Include="ExecuteMEM.h" />
-    <ClInclude Include="ExecuteMisc.h" />
-    <ClInclude Include="ExecuteMUL.h" />
-    <ClInclude Include="ExecuteRCU.h" />
+    <ClInclude Include="src\audio.h" />
+    <ClInclude Include="src\basetypes.h" />
+    <ClInclude Include="src\bdma_type12.h" />
+    <ClInclude Include="src\bdma_type5.h" />
+    <ClInclude Include="src\bdma_type8.h" />
+    <ClInclude Include="src\bdma_type9.h" />
+    <ClInclude Include="src\Bios.h" />
+    <ClInclude Include="src\byteswap.h" />
+    <ClInclude Include="src\coff.h" />
+    <ClInclude Include="src\comm.h" />
+    <ClInclude Include="src\CriticalSection.h" />
+    <ClInclude Include="src\DecodeALU.h" />
+    <ClInclude Include="src\DecodeECU.h" />
+    <ClInclude Include="src\DecodeMEM.h" />
+    <ClInclude Include="src\DecodeMUL.h" />
+    <ClInclude Include="src\DecodeRCU.h" />
+    <ClInclude Include="src\dma.h" />
+    <ClInclude Include="src\EmitALU.h" />
+    <ClInclude Include="src\EmitECU.h" />
+    <ClInclude Include="src\EmitMEM.h" />
+    <ClInclude Include="src\EmitMisc.h" />
+    <ClInclude Include="src\EmitMUL.h" />
+    <ClInclude Include="src\EmitRCU.h" />
+    <ClInclude Include="src\ExecuteALU.h" />
+    <ClInclude Include="src\ExecuteECU.h" />
+    <ClInclude Include="src\ExecuteMEM.h" />
+    <ClInclude Include="src\ExecuteMisc.h" />
+    <ClInclude Include="src\ExecuteMUL.h" />
+    <ClInclude Include="src\ExecuteRCU.h" />
     <ClInclude Include="external\fmod-3.75\api\inc\fmod.h" />
     <ClInclude Include="external\glew-2.2.0\include\GL\glew.h" />
     <ClInclude Include="external\glew-2.2.0\include\GL\wglew.h" />
     <ClInclude Include="external\xxh3.h" />
     <ClInclude Include="external\xxhash.h" />
-    <ClInclude Include="file.h" />
-    <ClInclude Include="FlashEEPROM.h" />
-    <ClInclude Include="GLWindow.h" />
-    <ClInclude Include="Handlers.h" />
-    <ClInclude Include="NuanceMain.h" />
-    <ClInclude Include="InputManager.h" />
-    <ClInclude Include="InstructionCache.h" />
-    <ClInclude Include="InstructionDependencies.h" />
-    <ClInclude Include="joystick.h" />
-    <ClInclude Include="media.h" />
-    <ClInclude Include="memory.h" />
-    <ClInclude Include="MemoryManager.h" />
-    <ClInclude Include="mpe.h" />
-    <ClInclude Include="mpe_alloc.h" />
-    <ClInclude Include="nativecodecache.h" />
-    <ClInclude Include="NuanceRes.h" />
-    <ClInclude Include="NuonEnvironment.h" />
-    <ClInclude Include="NuonMemoryManager.h" />
-    <ClInclude Include="NuonMemoryMap.h" />
-    <ClInclude Include="nuonrom.h" />
-    <ClInclude Include="OverlayManager.h" />
-    <ClInclude Include="PageMap.h" />
-    <ClInclude Include="PatchManager.h" />
-    <ClInclude Include="PerformanceTimer.h" />
-    <ClInclude Include="PresentationEngine.h" />
-    <ClInclude Include="PrintALU.h" />
-    <ClInclude Include="PrintECU.h" />
-    <ClInclude Include="PrintMEM.h" />
-    <ClInclude Include="PrintMisc.h" />
-    <ClInclude Include="PrintMUL.h" />
-    <ClInclude Include="PrintRCU.h" />
-    <ClInclude Include="PropagateConstants.h" />
-    <ClInclude Include="PropagateConstants_ALU.h" />
-    <ClInclude Include="PropagateConstants_ECU.h" />
-    <ClInclude Include="PropagateConstants_MEM.h" />
-    <ClInclude Include="PropagateConstants_MUL.h" />
-    <ClInclude Include="PropagateConstants_RCU.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="ShaderProgram.h" />
-    <ClInclude Include="SuperBlock.h" />
-    <ClInclude Include="SuperBlockConstants.h" />
-    <ClInclude Include="Syscall.h" />
-    <ClInclude Include="timer.h" />
-    <ClInclude Include="Utility.h" />
-    <ClInclude Include="video.h" />
-    <ClInclude Include="X86EmitTypes.h" />
+    <ClInclude Include="src\file.h" />
+    <ClInclude Include="src\FlashEEPROM.h" />
+    <ClInclude Include="src\GLWindow.h" />
+    <ClInclude Include="src\Handlers.h" />
+    <ClInclude Include="src\NuanceMain.h" />
+    <ClInclude Include="src\InputManager.h" />
+    <ClInclude Include="src\InstructionCache.h" />
+    <ClInclude Include="src\InstructionDependencies.h" />
+    <ClInclude Include="src\joystick.h" />
+    <ClInclude Include="src\media.h" />
+    <ClInclude Include="src\memory.h" />
+    <ClInclude Include="src\MemoryManager.h" />
+    <ClInclude Include="src\mpe.h" />
+    <ClInclude Include="src\mpe_alloc.h" />
+    <ClInclude Include="src\nativecodecache.h" />
+    <ClInclude Include="src\NuanceRes.h" />
+    <ClInclude Include="src\NuonEnvironment.h" />
+    <ClInclude Include="src\NuonMemoryManager.h" />
+    <ClInclude Include="src\NuonMemoryMap.h" />
+    <ClInclude Include="src\nuonrom.h" />
+    <ClInclude Include="src\OverlayManager.h" />
+    <ClInclude Include="src\PageMap.h" />
+    <ClInclude Include="src\PatchManager.h" />
+    <ClInclude Include="src\PerformanceTimer.h" />
+    <ClInclude Include="src\PresentationEngine.h" />
+    <ClInclude Include="src\PrintALU.h" />
+    <ClInclude Include="src\PrintECU.h" />
+    <ClInclude Include="src\PrintMEM.h" />
+    <ClInclude Include="src\PrintMisc.h" />
+    <ClInclude Include="src\PrintMUL.h" />
+    <ClInclude Include="src\PrintRCU.h" />
+    <ClInclude Include="src\PropagateConstants.h" />
+    <ClInclude Include="src\PropagateConstants_ALU.h" />
+    <ClInclude Include="src\PropagateConstants_ECU.h" />
+    <ClInclude Include="src\PropagateConstants_MEM.h" />
+    <ClInclude Include="src\PropagateConstants_MUL.h" />
+    <ClInclude Include="src\PropagateConstants_RCU.h" />
+    <ClInclude Include="src\resource.h" />
+    <ClInclude Include="src\ShaderProgram.h" />
+    <ClInclude Include="src\SuperBlock.h" />
+    <ClInclude Include="src\SuperBlockConstants.h" />
+    <ClInclude Include="src\Syscall.h" />
+    <ClInclude Include="src\timer.h" />
+    <ClInclude Include="src\Utility.h" />
+    <ClInclude Include="src\video.h" />
+    <ClInclude Include="src\X86EmitTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="bitmap1.bmp" />

@@ -2,9 +2,9 @@
 #define OVERLAYMANAGER_H
 
 #include "basetypes.h"
-//#include "external\MurmurHash3.h"
+//#include "../external/MurmurHash3.h"
 #define XXH_INLINE_ALL
-#include "external/xxhash.h"
+#include "../external/xxhash.h"
 #include <list>
 
 class OverlayManager

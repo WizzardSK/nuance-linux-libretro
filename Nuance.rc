@@ -1,6 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "NuanceRes.h"
+#include "src/NuanceRes.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////

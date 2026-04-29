@@ -15,435 +15,435 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="audio.cpp">
+    <ClCompile Include="src\audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bdma_type12.cpp">
+    <ClCompile Include="src\bdma_type12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bdma_type5.cpp">
+    <ClCompile Include="src\bdma_type5.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bdma_type8.cpp">
+    <ClCompile Include="src\bdma_type8.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bdma_type9.cpp">
+    <ClCompile Include="src\bdma_type9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bios.cpp">
+    <ClCompile Include="src\bios.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="byteswap.cpp">
+    <ClCompile Include="src\byteswap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="coff.cpp">
+    <ClCompile Include="src\coff.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comm.cpp">
+    <ClCompile Include="src\comm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecodeALU.cpp">
+    <ClCompile Include="src\DecodeALU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecodeECU.cpp">
+    <ClCompile Include="src\DecodeECU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecodeMEM.cpp">
+    <ClCompile Include="src\DecodeMEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecodeMUL.cpp">
+    <ClCompile Include="src\DecodeMUL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecodeRCU.cpp">
+    <ClCompile Include="src\DecodeRCU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dma.cpp">
+    <ClCompile Include="src\dma.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitALU.cpp">
+    <ClCompile Include="src\EmitALU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitECU.cpp">
+    <ClCompile Include="src\EmitECU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitMEM.cpp">
+    <ClCompile Include="src\EmitMEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitMisc.cpp">
+    <ClCompile Include="src\EmitMisc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitMUL.cpp">
+    <ClCompile Include="src\EmitMUL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EmitRCU.cpp">
+    <ClCompile Include="src\EmitRCU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteALU.cpp">
+    <ClCompile Include="src\ExecuteALU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteECU.cpp">
+    <ClCompile Include="src\ExecuteECU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteMEM.cpp">
+    <ClCompile Include="src\ExecuteMEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteMisc.cpp">
+    <ClCompile Include="src\ExecuteMisc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteMUL.cpp">
+    <ClCompile Include="src\ExecuteMUL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecuteRCU.cpp">
+    <ClCompile Include="src\ExecuteRCU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="file.cpp">
+    <ClCompile Include="src\file.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FlashEEPROM.cpp">
+    <ClCompile Include="src\FlashEEPROM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GLWindow.cpp">
+    <ClCompile Include="src\GLWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InstructionCache.cpp">
+    <ClCompile Include="src\InstructionCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="joystick.cpp">
+    <ClCompile Include="src\joystick.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="media.cpp">
+    <ClCompile Include="src\media.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="memory.cpp">
+    <ClCompile Include="src\memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryManager.cpp">
+    <ClCompile Include="src\MemoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mpe.cpp">
+    <ClCompile Include="src\mpe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mpe_alloc.cpp">
+    <ClCompile Include="src\mpe_alloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MPEControlRegisters.cpp">
+    <ClCompile Include="src\MPEControlRegisters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nativecodecache.cpp">
+    <ClCompile Include="src\nativecodecache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NuanceMain.cpp">
+    <ClCompile Include="src\NuanceMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NuonEnvironment.cpp">
+    <ClCompile Include="src\NuonEnvironment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NuonMemoryManager.cpp">
+    <ClCompile Include="src\NuonMemoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nuonrom.cpp">
+    <ClCompile Include="src\nuonrom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverlayManager.cpp">
+    <ClCompile Include="src\OverlayManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PageMap.cpp">
+    <ClCompile Include="src\PageMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PatchManager.cpp">
+    <ClCompile Include="src\PatchManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PerformanceTimer.cpp">
+    <ClCompile Include="src\PerformanceTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PresentationEngine.cpp">
+    <ClCompile Include="src\PresentationEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintALU.cpp">
+    <ClCompile Include="src\PrintALU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintECU.cpp">
+    <ClCompile Include="src\PrintECU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintMEM.cpp">
+    <ClCompile Include="src\PrintMEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintMisc.cpp">
+    <ClCompile Include="src\PrintMisc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintMUL.cpp">
+    <ClCompile Include="src\PrintMUL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrintRCU.cpp">
+    <ClCompile Include="src\PrintRCU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstants_ALU.cpp">
+    <ClCompile Include="src\PropagateConstants_ALU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstants_ECU.cpp">
+    <ClCompile Include="src\PropagateConstants_ECU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstants_MEM.cpp">
+    <ClCompile Include="src\PropagateConstants_MEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstants_MUL.cpp">
+    <ClCompile Include="src\PropagateConstants_MUL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstants_RCU.cpp">
+    <ClCompile Include="src\PropagateConstants_RCU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PropagateConstantsHandlers.cpp">
+    <ClCompile Include="src\PropagateConstantsHandlers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderProgram.cpp">
+    <ClCompile Include="src\ShaderProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SuperBlock.cpp">
+    <ClCompile Include="src\SuperBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SuperBlockConstants.cpp">
+    <ClCompile Include="src\SuperBlockConstants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Syscall.cpp">
+    <ClCompile Include="src\Syscall.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestConditionCode.cpp">
+    <ClCompile Include="src\TestConditionCode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="timer.cpp">
+    <ClCompile Include="src\timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utility.cpp">
+    <ClCompile Include="src\Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="video.cpp">
+    <ClCompile Include="src\video.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CriticalSection.cpp">
+    <ClCompile Include="src\CriticalSection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InputManager.cpp">
+    <ClCompile Include="src\InputManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="audio.h">
+    <ClInclude Include="src\audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="basetypes.h">
+    <ClInclude Include="src\basetypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bdma_type12.h">
+    <ClInclude Include="src\bdma_type12.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bdma_type5.h">
+    <ClInclude Include="src\bdma_type5.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bdma_type9.h">
+    <ClInclude Include="src\bdma_type9.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Bios.h">
+    <ClInclude Include="src\Bios.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="byteswap.h">
+    <ClInclude Include="src\byteswap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="coff.h">
+    <ClInclude Include="src\coff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="comm.h">
+    <ClInclude Include="src\comm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CriticalSection.h">
+    <ClInclude Include="src\CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DecodeALU.h">
+    <ClInclude Include="src\DecodeALU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DecodeECU.h">
+    <ClInclude Include="src\DecodeECU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DecodeMEM.h">
+    <ClInclude Include="src\DecodeMEM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DecodeMUL.h">
+    <ClInclude Include="src\DecodeMUL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DecodeRCU.h">
+    <ClInclude Include="src\DecodeRCU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dma.h">
+    <ClInclude Include="src\dma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitALU.h">
+    <ClInclude Include="src\EmitALU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitECU.h">
+    <ClInclude Include="src\EmitECU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitMEM.h">
+    <ClInclude Include="src\EmitMEM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitMisc.h">
+    <ClInclude Include="src\EmitMisc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitMUL.h">
+    <ClInclude Include="src\EmitMUL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EmitRCU.h">
+    <ClInclude Include="src\EmitRCU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteALU.h">
+    <ClInclude Include="src\ExecuteALU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteECU.h">
+    <ClInclude Include="src\ExecuteECU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteMEM.h">
+    <ClInclude Include="src\ExecuteMEM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteMisc.h">
+    <ClInclude Include="src\ExecuteMisc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteMUL.h">
+    <ClInclude Include="src\ExecuteMUL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecuteRCU.h">
+    <ClInclude Include="src\ExecuteRCU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="file.h">
+    <ClInclude Include="src\file.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FlashEEPROM.h">
+    <ClInclude Include="src\FlashEEPROM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GLWindow.h">
+    <ClInclude Include="src\GLWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Handlers.h">
+    <ClInclude Include="src\Handlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InstructionCache.h">
+    <ClInclude Include="src\InstructionCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InstructionDependencies.h">
+    <ClInclude Include="src\InstructionDependencies.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="joystick.h">
+    <ClInclude Include="src\joystick.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="media.h">
+    <ClInclude Include="src\media.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="memory.h">
+    <ClInclude Include="src\memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryManager.h">
+    <ClInclude Include="src\MemoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mpe.h">
+    <ClInclude Include="src\mpe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mpe_alloc.h">
+    <ClInclude Include="src\mpe_alloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nativecodecache.h">
+    <ClInclude Include="src\nativecodecache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NuanceRes.h">
+    <ClInclude Include="src\NuanceRes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NuonEnvironment.h">
+    <ClInclude Include="src\NuonEnvironment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NuonMemoryManager.h">
+    <ClInclude Include="src\NuonMemoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NuonMemoryMap.h">
+    <ClInclude Include="src\NuonMemoryMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nuonrom.h">
+    <ClInclude Include="src\nuonrom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverlayManager.h">
+    <ClInclude Include="src\OverlayManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PageMap.h">
+    <ClInclude Include="src\PageMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PatchManager.h">
+    <ClInclude Include="src\PatchManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PerformanceTimer.h">
+    <ClInclude Include="src\PerformanceTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintALU.h">
+    <ClInclude Include="src\PrintALU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintECU.h">
+    <ClInclude Include="src\PrintECU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintMEM.h">
+    <ClInclude Include="src\PrintMEM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintMisc.h">
+    <ClInclude Include="src\PrintMisc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintMUL.h">
+    <ClInclude Include="src\PrintMUL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrintRCU.h">
+    <ClInclude Include="src\PrintRCU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants.h">
+    <ClInclude Include="src\PropagateConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants_ALU.h">
+    <ClInclude Include="src\PropagateConstants_ALU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants_ECU.h">
+    <ClInclude Include="src\PropagateConstants_ECU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants_MEM.h">
+    <ClInclude Include="src\PropagateConstants_MEM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants_MUL.h">
+    <ClInclude Include="src\PropagateConstants_MUL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropagateConstants_RCU.h">
+    <ClInclude Include="src\PropagateConstants_RCU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="src\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderProgram.h">
+    <ClInclude Include="src\ShaderProgram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SuperBlock.h">
+    <ClInclude Include="src\SuperBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SuperBlockConstants.h">
+    <ClInclude Include="src\SuperBlockConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Syscall.h">
+    <ClInclude Include="src\Syscall.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="timer.h">
+    <ClInclude Include="src\timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utility.h">
+    <ClInclude Include="src\Utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="video.h">
+    <ClInclude Include="src\video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="X86EmitTypes.h">
+    <ClInclude Include="src\X86EmitTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bdma_type8.h">
+    <ClInclude Include="src\bdma_type8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PresentationEngine.h">
+    <ClInclude Include="src\PresentationEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="external\fmod-3.75\api\inc\fmod.h">
@@ -461,10 +461,10 @@
     <ClInclude Include="external\xxhash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InputManager.h">
+    <ClInclude Include="src\InputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NuanceMain.h">
+    <ClInclude Include="src\NuanceMain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
