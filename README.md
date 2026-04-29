@@ -4,7 +4,7 @@ A NUON (VM Labs) emulator for Windows and Linux.
 
 Copyright 2002 - 2007 Mike Perry and 2020 - 2026 all the open source contributors (see separate license.txt)
 
-Continued using the released source in honour of the original author by Carsten Waechter (toxie at ainc.de) in 2020.
+Continued using the released source/docs in honour of the original author by Carsten Waechter (toxie at ainc.de) in 2020.
 Linux port by WizzardSK in 2026.
 
 NUON is a trademark of Genesis Microchip, Inc.
@@ -553,63 +553,149 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 ## History
 
 **version 0.6.7:**
-Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
-32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
-Can load games directly from ZIP/ISO files. Case-insensitive file matching for DVD data files.
+- Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
+- 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
+- Can load games directly from ZIP/ISO files. Case-insensitive file matching for DVD data files.
 
 **03/21/2025 version 0.6.6:**
-Implement (bi)linear address mirroring properly and enable it. Optimize (bi)linear memory reads, and some memory stores. Optimize DMA transfers (especially all that are triggered by T3K). Fix linear DMA if Write & Dup & Direct mode. Fix linear DMA when writing to local control register. Fix missing 0x7F mask for shifts in certain mul/shift ops when using the dynamic recompiler. Implement BDMA_Type8_Read_0 (e.g. fixes Space Invaders 'Overlay' play mode). Add zero 'area' return to GetPointerToMemory(), as some games read 'invalid' mem regions (like $0 which returns 0 on Nuon HW).
+- Implement (bi)linear address mirroring properly and enable it.
+- Optimize (bi)linear memory reads, and some memory stores.
+- Optimize DMA transfers (especially all that are triggered by T3K).
+- Fix linear DMA if Write & Dup & Direct mode.
+- Fix linear DMA when writing to local control register.
+- Fix missing 0x7F mask for shifts in certain mul/shift ops when using the dynamic recompiler.
+- Implement BDMA_Type8_Read_0 (e.g. fixes Space Invaders 'Overlay' play mode).
+- Add zero 'area' return to GetPointerToMemory(), as some games read 'invalid' mem regions (like $0 which returns 0 on Nuon HW).
 
 **01/04/2024 version 0.6.5:**
-Fix loading of nuance.cfg when drag and drop is used. Hide mouse cursor when in fullscreen mode. Make rendering window behave like the others when trying to close it (e.g. clicking 'X' and Alt-F4 work now). Fix user breakpoints. Fix 16/16z pixel format bilinear DMA. Enable kprintf outputs (also new documentation about it within this readme file). Fix regression in code interpreter (shift+XXX opcodes). Slightly optimize code interpreter (ALU add+/sub+XXX opcodes).
+- Fix loading of nuance.cfg when drag and drop is used.
+- Hide mouse cursor when in fullscreen mode.
+- Make rendering window behave like the others when trying to close it (e.g. clicking 'X' and Alt-F4 work now).
+- Fix user breakpoints.
+- Fix 16/16z pixel format bilinear DMA.
+- Enable kprintf outputs (also new documentation about it within this readme file).
+- Fix regression in code interpreter (shift+XXX opcodes).
+- Slightly optimize code interpreter (ALU add+/sub+XXX opcodes).
 
 **01/10/2023 version 0.6.4:**
-Fix command line file parsing, also drag and drop will now work properly. Fix wrong handling of global overlay alpha values > 0. Optimize OpenGL output shaders. Fix CRT-like shader for very high resolutions (e.g. 4K). Retweak CRT-like shader to be a bit more realistic compared to common CRT TVs back in the days.
+- Fix command line file parsing, also drag and drop will now work properly.
+- Fix wrong handling of global overlay alpha values > 0.
+- Optimize OpenGL output shaders. Fix CRT-like shader for very high resolutions (e.g. 4K).
+- Retweak CRT-like shader to be a bit more realistic compared to common CRT TVs back in the days.
 
 **01/04/2023 version 0.6.3:**
-Add new (optional) postprocessing CRT-like shader (`[UseCRTshader]` in the .cfg), enabled by default, looks best in fullscreen. Its now possible to specify a file that should be loaded directly from the command line, e.g. `nuance.exe C:\NuonGame\nuon.run` — this will also automatically launch in fullscreen mode, too. Add new `[Controller1Mappings]` section in the .cfg along with DirectInput support for joypads/sticks and an additional UI dialog to configure keys/buttons. Fix a lot of problems with the MPE IRAM overlay areas and the code caching of these. Make MPE IRAM overlay caching more efficient. Merlin Racing now is playable (although the AI carts are still driving around randomly). Update status window on single stepping, too. Add missing registers to status window. Add debug output for BIOS calls. Add new `[AutomaticLoadPopup]` section to configure if the automatic file selection pops up on startup or not.
+- Add new (optional) postprocessing CRT-like shader (`[UseCRTshader]` in the .cfg), enabled by default, looks best in fullscreen.
+- Its now possible to specify a file that should be loaded directly from the command line, e.g. `nuance.exe C:\NuonGame\nuon.run` — this will also automatically launch in fullscreen mode, too.
+- Add new `[Controller1Mappings]` section in the .cfg along with DirectInput support for joypads/sticks and an additional UI dialog to configure keys/buttons.
+- Fix a lot of problems with the MPE IRAM overlay areas and the code caching of these.
+- Make MPE IRAM overlay caching more efficient.
+- Merlin Racing now is playable (although the AI carts are still driving around randomly).
+- Update status window on single stepping, too.
+- Add missing registers to status window.
+- Add debug output for BIOS calls.
+- Add new `[AutomaticLoadPopup]` section to configure if the automatic file selection pops up on startup or not.
 
 **11/27/2022 version 0.6.2:**
-Tweak audio interrupts some more. Correctly set DST. Some internal buffer overflow protection. Improve debugging output a bit.
+- Tweak audio interrupts some more.
+- Correctly set DST.
+- Some internal buffer overflow protection.
+- Improve debugging output a bit.
 
 **09/19/2021 version 0.6.1:**
-Optimizations. Fix some more opcode implementations. Improve Video- and SysTimer precision.
+- Optimizations.
+- Fix some more opcode implementations.
+- Improve Video- and SysTimer precision.
 
 **5/28/2020, version 0.6.0:**
-Fix corrupted gfx in (at least) T3K. Fix wrong DMAs in Ballistic and Merlin Racing (so that these display mostly (always?) correct now). (Mostly) fix distorted sound. Optimizations all over the place (memory usage and performance). Always enable Pixel Shaders and fully support pixel mode 2 for more performance. Remove fields-per-second and always-update-video settings in the 'nuance.cfg'. Support Nuons VSyncing mechanism if a PC is emulating 'too fast'. Resolve a lot of hangs during gameplay, although this can still happen in some demanding situations (especially on low end PCs). Fix fullscreen toggle (via F1/ESC). Rudimentary support for x64/64bit compiles, needs to force-disable dynamic compiler though. Enable Reshade support by using double buffering.
+- Fix corrupted gfx in (at least) T3K.
+- Fix wrong DMAs in Ballistic and Merlin Racing (so that these display mostly (always?) correct now).
+- (Mostly) fix distorted sound.
+- Optimizations all over the place (memory usage and performance).
+- Always enable Pixel Shaders and fully support pixel mode 2 for more performance.
+- Remove fields-per-second and always-update-video settings in the 'nuance.cfg'.
+- Support Nuons VSyncing mechanism if a PC is emulating 'too fast'.
+- Resolve a lot of hangs during gameplay, although this can still happen in some demanding situations (especially on low end PCs).
+- Fix fullscreen toggle (via F1/ESC).
+- Rudimentary support for x64/64bit compiles, needs to force-disable dynamic compiler though.
+- Enable Reshade support by using double buffering.
 
 **5/30/2007, version 0.5.0:**
-Fixed tons of compiler bugs. Fixed TimeToSleep routine, allowing Snake to work again. Added compiler support for all remaining instructions including delayed branches. Implemented syscall interface. Added SetISRExitHook BIOS call. Fixed problem with minibios MPE hanging when audio library initialized prior to sprite library. Added functionality required to support bootloader.
+- Fixed tons of compiler bugs.
+- Fixed TimeToSleep routine, allowing Snake to work again.
+- Added compiler support for all remaining instructions including delayed branches.
+- Implemented syscall interface.
+- Added SetISRExitHook BIOS call.
+- Fixed problem with minibios MPE hanging when audio library initialized prior to sprite library.
+- Added functionality required to support bootloader.
 
 **2/05/2006, version 0.4.0:**
-Fixed most BIOS related bugs to the point where the only demos that do not run correctly are those that use libSYNTH or fancy z-buffer modes. Added support for FileOpen, FileClose, FileRead, FileWrite, FileLSeek, and FileStat. Added support for 4-bit DMA and 4-bit/8-bit framebuffer modes, fixing corrupted textures in Tetris. Implemented ability to recompile to native x86 machine code.
+- Fixed most BIOS related bugs to the point where the only demos that do not run correctly are those that use libSYNTH or fancy z-buffer modes.
+- Added support for FileOpen, FileClose, FileRead, FileWrite, FileLSeek, and FileStat.
+- Added support for 4-bit DMA and 4-bit/8-bit framebuffer modes, fixing corrupted textures in Tetris.
+- Implemented ability to recompile to native x86 machine code.
 
 **10/16/2004, version 0.3.2:**
-Fixed critical IntSetVector errors which were breaking user ISRs, particularly comm handlers. Added support for VDG interrupts. Fixed code in video_m32_o32 fragment shader and made it the default fragment shader instead of video_m32.fs. Added Atmel AT49BV162A/163A flash emulation to duplicate the flash functionality of the Samsung N501.
+- Fixed critical IntSetVector errors which were breaking user ISRs, particularly comm handlers.
+- Added support for VDG interrupts.
+- Fixed code in video_m32_o32 fragment shader and made it the default fragment shader instead of video_m32.fs.
+- Added Atmel AT49BV162A/163A flash emulation to duplicate the flash functionality of the Samsung N501.
 
 **7/03/2004, version 0.3.1:**
-Fixed thread synchronization oversight that caused abnormally slow execution of all programs using multiple framebuffers, namely commercial games. Tweaked internal cache routines to significantly reduce cache invalidation overhead and greatly improve performance of programs with large working sets, e.g. most stuff running out of external memory on mpe3.
+- Fixed thread synchronization oversight that caused abnormally slow execution of all programs using multiple framebuffers, namely commercial games.
+- Tweaked internal cache routines to significantly reduce cache invalidation overhead and greatly improve performance of programs with large working sets, e.g. most stuff running out of external memory on mpe3.
 
 **6/30/2004, version 0.3.0:**
-Added dynamic recompiler with support for block coalescing, constant propagation and dead code elimination. Added support for standard non-rectangle textures. Added pixel shader support for pixel mode 4 (GLSL required, no overlay support). Added optional command line parameter for specifying configuration file. Added compiler options and video options to configuration file.
+- Added dynamic recompiler with support for block coalescing, constant propagation and dead code elimination.
+- Added support for standard non-rectangle textures.
+- Added pixel shader support for pixel mode 4 (GLSL required, no overlay support).
+- Added optional command line parameter for specifying configuration file.
+- Added compiler options and video options to configuration file.
 
 **4/03/2004, Version 0.2.2:**
-Fixed BIOS interrupt level1 comm handler bug introduced in the previous bug fix release. Switched from Extgl to Glew for OpenGL extensions management.
+- Fixed BIOS interrupt level1 comm handler bug introduced in the previous bug fix release.
+- Switched from Extgl to Glew for OpenGL extensions management.
 
 **3/24/2004, Version 0.2.1:**
-Repaired bug in BIOS implementation that caused getenv to always return NULL.
+- Repaired bug in BIOS implementation that caused getenv to always return NULL.
 
 **3/22/2004, Version 0.2.0:**
-Fixed flag bug in MSB instruction handler. This fixes Decaying Orbit and the NISE audio library. Added audio playback support via the FMOD library. Updated the minibios bios implementation to fix potential issues with the NISE audio library. Added a second minibios implementation as required by the NISE audio library. Disabled stdout and stderr edit boxes due to memory sharing problems with FMOD. Added BIOS support for CommmSendRecvInfo, CommSendRecv, CommSendRecvInfo, TimerInit and SpinWait. Rewrote TimeToSleep in Nuon assembly to support a non-blocking version of the function that blocks only the MPE that called the function.
+- Fixed flag bug in MSB instruction handler.
+- This fixes Decaying Orbit and the NISE audio library.
+- Added audio playback support via the FMOD library.
+- Updated the minibios bios implementation to fix potential issues with the NISE audio library.
+- Added a second minibios implementation as required by the NISE audio library.
+- Disabled stdout and stderr edit boxes due to memory sharing problems with FMOD.
+- Added BIOS support for CommmSendRecvInfo, CommSendRecv, CommSendRecvInfo, TimerInit and SpinWait.
+- Rewrote TimeToSleep in Nuon assembly to support a non-blocking version of the function that blocks only the MPE that called the function.
 
 **11/25/2003, Version 0.1.0:**
-Major update from 0.0.1B. Honestly there are too many to list and I stopped keeping track somewhere in the middle. Dozens of critical bugs were squashed and the process, most of the remaining SDK demos began to work including MML2D, MML3D, M3DL and MGL demos. Most importantly, commercial games are now playable! In chronological order, the games that are playable are: Space Invaders XL, The Next Tetris, Merlin Racing and Tempest 3000. The Next Tetris suffers from texture corruption but the other three games are perfectly emulated. This release is a major milestone in the history of the emulator.
+- Major update from 0.0.1B.
+- Honestly there are too many to list and I stopped keeping track somewhere in the middle.
+- Dozens of critical bugs were squashed and the process, most of the remaining SDK demos began to work including MML2D, MML3D, M3DL and MGL demos.
+- Most importantly, commercial games are now playable! In chronological order, the games that are playable are: Space Invaders XL, The Next Tetris, Merlin Racing and Tempest 3000. The Next Tetris suffers from texture corruption but the other three games are perfectly emulated.
+- This release is a major milestone in the history of the emulator.
 
 **11/01/2003, Version 0.0.1B:**
-Bugfix release of 0.0.1A. Added a memory display to the register window which allows MPE local memory, main bus RAM and system BUS ram to be examined in single step mode. The display will not update during normal emulation. Decoding and output dependency bugs were fixed for ST_S #nnnn,\<label D\>,LD_P \<label\>,Vk, LD_PZ \<label\>,Vk, and LD_SV \<label\>,Vk. Critical instruction handler bugs were fixed in the DOTP Vi,Vj,>>svshift,Sk and DOTP Vi,Vj,#m,Sk handlers. The behavior of the MPERun and MPERunThread BIOS routines were modified to behave more like the official implementation. This fixes graphics banding issues in the raytrace demo. MPEAlloc was rewritten, eliminating faulty logic that did not seem to be frequently encountered. Support for the mpectl register cycle type bits was added. A potential mpeWasReset bit bug was fixed.
+- Bugfix release of 0.0.1A.
+- Added a memory display to the register window which allows MPE local memory, main bus RAM and system BUS ram to be examined in single step mode.
+- The display will not update during normal emulation.
+- Decoding and output dependency bugs were fixed for ST_S #nnnn,\<label D\>,LD_P \<label\>,Vk, LD_PZ \<label\>,Vk, and LD_SV \<label\>,Vk.
+- Critical instruction handler bugs were fixed in the DOTP Vi,Vj,>>svshift,Sk and DOTP Vi,Vj,#m,Sk handlers.
+- The behavior of the MPERun and MPERunThread BIOS routines were modified to behave more like the official implementation. This fixes graphics banding issues in the raytrace demo.
+- MPEAlloc was rewritten, eliminating faulty logic that did not seem to be frequently encountered.
+- Support for the mpectl register cycle type bits was added.
+- A potential mpeWasReset bit bug was fixed.
 
 **10/19/2003, Version 0.0.1A:**
-Bugfix release of 0.0.1. A scheduling bug caused the instruction scheduler to choose a non-optimal instruction order for packets containing three or more instructions. Fixing this bug drastically improves emulation performance for affected packets. A cut and paste error in the CMPWC immediate instruction handler triggered an attempt to write back the result of the comparison to an indeterminate register. This caused a program crash or register file corruption in some cases. The DecodeALU32 routine incorrectly decoded the operands for the SUBWC immediate reverse instruction causing corrupted program execution. The control panel window will now display a disassembly of the next instruction packet to be executed by the currently selected MPE. The disassembly output is updated whenever a new MPE is selected, an MPE is started or stopped, and when the single step button is used. The disassembly is not updated during normal emulation execution using the run button.
+- Bugfix release of 0.0.1.
+- A scheduling bug caused the instruction scheduler to choose a non-optimal instruction order for packets containing three or more instructions. Fixing this bug drastically improves emulation performance for affected packets.
+- A cut and paste error in the CMPWC immediate instruction handler triggered an attempt to write back the result of the comparison to an indeterminate register. This caused a program crash or register file corruption in some cases.
+- The DecodeALU32 routine incorrectly decoded the operands for the SUBWC immediate reverse instruction causing corrupted program execution.
+- The control panel window will now display a disassembly of the next instruction packet to be executed by the currently selected MPE.
+- The disassembly output is updated whenever a new MPE is selected, an MPE is started or stopped, and when the single step button is used. The disassembly is not updated during normal emulation execution using the run button.
 
 **10/12/2003, Version 0.0.1:**
-The first release of Nuance. Think of it as NuonEm out for vengeance. The emulator is now compiled under VC7 rather than BCB. The user interface now uses the Qt library in place of Win32. Additional optimizations make Nuance considerably faster than NuonEm 0.1.6F.
+- The first release of Nuance. Think of it as NuonEm out for vengeance.
+- The emulator is now compiled under VC7 rather than BCB.
+- The user interface now uses the Qt library in place of Win32.
+- Additional optimizations make Nuance considerably faster than NuonEm 0.1.6F.
