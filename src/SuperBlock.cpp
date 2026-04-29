@@ -347,8 +347,8 @@ bool SuperBlock::EmitCodeBlock(NativeCodeCache &codeCache, const bool bContainsB
       codeCache.X86Emit_MOVIR_Ptr((uintptr_t)&(codeCache.emitVars.mpe->cc), x86Reg::x86Reg_esi);
       codeCache.X86Emit_MOVIR_Ptr((uintptr_t)&(codeCache.emitVars.mpe->tempCC), x86Reg::x86Reg_edi);
 #else
-      codeCache.X86Emit_MOVIR((int32)(uintptr_t)&(codeCache.emitVars.mpe->cc), x86Reg::x86Reg_esi);
-      codeCache.X86Emit_MOVIR((int32)(uintptr_t)&(codeCache.emitVars.mpe->tempCC), x86Reg::x86Reg_edi);
+      codeCache.X86Emit_MOVIR((uintptr_t)&(codeCache.emitVars.mpe->cc), x86Reg::x86Reg_esi);
+      codeCache.X86Emit_MOVIR((uintptr_t)&(codeCache.emitVars.mpe->tempCC), x86Reg::x86Reg_edi);
 #endif
       if(bContainsBranch)
       {

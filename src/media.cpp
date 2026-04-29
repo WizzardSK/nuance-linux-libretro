@@ -8,9 +8,7 @@
 #include "mpe_alloc.h"
 #include "NuonEnvironment.h"
 #include "NuonMemoryMap.h"
-#ifndef _WIN32
 #include "iso9660.h"
-#endif
 
 extern NuonEnvironment nuonEnv;
 extern uint32 mpeFlags[];
@@ -290,9 +288,9 @@ void MediaRead(MPE &mpe)
     if(!fileNameArray[handle].empty() && buffer && ((eMedia)fileModeArray[handle] != eMedia::MEDIA_WRITE))
     {
       FILE* inFile = nullptr;
-      fopen_s(&inFile,fileNameArray[handle].c_str(),"rb");
+      if (fopen_s(&inFile,fileNameArray[handle].c_str(),"rb") != 0)
+        inFile = nullptr;
 
-#ifndef _WIN32
       // If file not found on disk, try reading from ISO
       if (!inFile) {
         extern std::string g_ISOPath;
@@ -306,15 +304,15 @@ void MediaRead(MPE &mpe)
           ISO9660Reader isoReader;
           if (isoReader.open(g_ISOPath.c_str())) {
             // Find file in ISO — try various case combinations
-            std::string isoPath = g_ISOPrefix + "/" + fname;
+            std::string isoPath = g_ISOPrefix + '/' + fname;
             uint32_t lba, fsize;
             if (isoReader.findFile(isoPath.c_str(), lba, fsize)) {
               // Read directly from ISO into NUON memory
               void* pBuf = nuonEnv.GetPointerToMemory(mpe.mpeIndex, buffer);
-              FILE* isoFp = fopen64(g_ISOPath.c_str(), "rb");
+              FILE* isoFp = ISO_FOPEN(g_ISOPath.c_str(), "rb");
               if (isoFp) {
                 off64_t byteOffset = (off64_t)lba * 2048 + (off64_t)startblock * BLOCK_SIZE_DVD;
-                fseeko64(isoFp, byteOffset, SEEK_SET);
+                ISO_FSEEK(isoFp, byteOffset, SEEK_SET);
                 uint32_t readCount = (uint32)fread(pBuf, BLOCK_SIZE_DVD, blockcount, isoFp);
                 fclose(isoFp);
                 if (readCount >= (blockcount - 1)) {
@@ -333,7 +331,6 @@ void MediaRead(MPE &mpe)
           }
         }
       }
-#endif
 
       if(inFile)
       {

@@ -17,6 +17,7 @@ typedef unsigned __int8 uint8;
 typedef unsigned __int16 uint16;
 typedef unsigned __int32 uint32;
 typedef unsigned __int64 uint64;
+typedef signed __int64 off64_t;
 #else
 #include <cstdint>
 typedef int8_t int8;

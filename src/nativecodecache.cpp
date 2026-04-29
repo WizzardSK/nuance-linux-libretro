@@ -205,7 +205,6 @@ void NativeCodeCache::X86Emit_Group1RR(const x86Reg regDest, const x86Reg regSrc
 
 void NativeCodeCache::X86Emit_Group1RM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
-
   //OP m8, reg8, OP m16, reg16 or OP m32, reg32
 
   if(regSrc < x86Reg::x86Reg_ax)
@@ -231,7 +230,6 @@ void NativeCodeCache::X86Emit_Group1RM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_Group1MR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
-
   //OP reg8, m8, OP reg16, m16 or OP reg32, m32
   if(regDest < x86Reg::x86Reg_ax)
   {
@@ -256,7 +254,6 @@ void NativeCodeCache::X86Emit_Group1MR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_Group1IR(const intptr_t imm, const x86Reg regDest, const uint8 groupIndex)
 {
-
   if(regDest < x86Reg::x86Reg_ax)
   {
     //r8,imm8
@@ -328,7 +325,6 @@ void NativeCodeCache::X86Emit_Group1IR(const intptr_t imm, const x86Reg regDest,
 
 void NativeCodeCache::X86Emit_Group1IM(const int32 imm, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
-
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     //mem8,imm8
@@ -382,7 +378,6 @@ void NativeCodeCache::X86Emit_Group1IM(const int32 imm, const x86MemPtr ptrType,
 
 void NativeCodeCache::X86Emit_Group2IR(const x86Reg regDest, const uint8 shiftCount, const uint8 groupIndex)
 {
-
   //SHIFTOP r8, CL, SHIFTOP r16, CL, or SHIFTOP r32, CL
   
   if(regDest < x86Reg::x86Reg_ax)
@@ -433,7 +428,6 @@ void NativeCodeCache::X86Emit_Group2IR(const x86Reg regDest, const uint8 shiftCo
 
 void NativeCodeCache::X86Emit_Group2IM(const x86MemPtr ptrType, const uint8 shiftCount, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
-
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     if(shiftCount == 1)
@@ -482,7 +476,6 @@ void NativeCodeCache::X86Emit_Group2IM(const x86MemPtr ptrType, const uint8 shif
 
 void NativeCodeCache::X86Emit_Group2RR(const x86Reg regDest, const uint8 groupIndex)
 {
-
   //SHIFTOP r8, CL, SHIFTOP r16, CL, or SHIFTOP r32, CL
   
   if(regDest < x86Reg::x86Reg_ax)
@@ -806,7 +799,6 @@ void NativeCodeCache::X86Emit_AAS()
 
 void NativeCodeCache::X86Emit_INCR(const x86Reg reg)
 {
-
   if(reg < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xFE;
@@ -825,7 +817,6 @@ void NativeCodeCache::X86Emit_INCR(const x86Reg reg)
 
 void NativeCodeCache::X86Emit_DECR(const x86Reg reg)
 {
-
   if(reg < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xFE;
@@ -933,7 +924,6 @@ void NativeCodeCache::X86Emit_IMULMRR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //imul reg16, r16
@@ -946,7 +936,6 @@ void NativeCodeCache::X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_IMULIRR(const x86Reg regDest, const int32 imm, const x86Reg regSrc)
 {
-
   if(regSrc < x86Reg::x86Reg_eax)
   {
     //reg16, r8, imm8 or reg16, r16, imm16
@@ -1094,7 +1083,6 @@ void NativeCodeCache::X86Emit_JCC(uint8 *pTarget, const int8 conditionCode)
 
 void NativeCodeCache::X86Emit_JCC_Label(const int8 conditionCode, const uint32 labelIndex)
 {
-
   if(labelIndex >= patchMgr.numLabels)
   {
     patchMgr.AddPatch(pEmitLoc + 2, PatchType::PatchType_Rel32, pEmitLoc + 6, labelIndex);
@@ -1191,7 +1179,6 @@ void NativeCodeCache::X86Emit_JNLE(uint8 *pTarget)
 
 void NativeCodeCache::X86Emit_TESTRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   //OP r8, reg8, OP r16, reg16 or OP r32, reg32
   if(regSrc < x86Reg::x86Reg_ax)
   {
@@ -1266,7 +1253,6 @@ void NativeCodeCache::X86Emit_XCHGRM(const x86Reg regSrc, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   X86Emit_Group1RR(regDest,regSrc,17);
 }
 
@@ -1366,7 +1352,6 @@ void NativeCodeCache::X86Emit_CDQ()
 
 void NativeCodeCache::X86Emit_CALLI(uintptr_t offset, uint16 seg)
 {
-
   offset -= (uint32)(pEmitLoc + 5);
 
   if(seg == 0)
@@ -1420,7 +1405,6 @@ void NativeCodeCache::X86Emit_JMPI(uint8 *target, uint16 seg)
 
 void NativeCodeCache::X86Emit_JMPI_Label(const uint32 labelIndex)
 {
-
   if(labelIndex >= patchMgr.numPatches)
   {
     patchMgr.AddPatch(pEmitLoc + 1, PatchType::PatchType_Rel32, pEmitLoc + 5, labelIndex);
@@ -1473,7 +1457,6 @@ void NativeCodeCache::X86Emit_LAHF()
 
 void NativeCodeCache::X86Emit_MOVMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   if((base > 7) && ((regDest == x86Reg::x86Reg_eax) || (regDest == x86Reg::x86Reg_ax) || (regDest == x86Reg::x86Reg_al)))
   {
     if(regDest == x86Reg::x86Reg_al)
@@ -1499,7 +1482,6 @@ void NativeCodeCache::X86Emit_MOVMR(const x86Reg regDest, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVRM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   if((base > 7) && ((regSrc == x86Reg::x86Reg_eax) || (regSrc == x86Reg::x86Reg_ax) || (regSrc == x86Reg::x86Reg_al)))
   {
     if(regSrc == x86Reg::x86Reg_al)
@@ -1750,7 +1732,6 @@ void NativeCodeCache::X86Emit_SARRM(const x86MemPtr ptrType, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_RETN(uint16 iw)
 {
-
   if(iw == 0)
   {
     *pEmitLoc++ = 0xC3;
@@ -1765,7 +1746,6 @@ void NativeCodeCache::X86Emit_RETN(uint16 iw)
 
 void NativeCodeCache::X86Emit_MOVIM(const int32 imm, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     //m8,imm8
@@ -2154,7 +2134,6 @@ void NativeCodeCache::X86Emit_CMC()
 
 void NativeCodeCache::X86Emit_NOTR(const x86Reg regDest)
 {
-
   if(regDest < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2191,7 +2170,6 @@ void NativeCodeCache::X86Emit_NOTM(const x86MemPtr ptrType, const uintptr_t base
 
 void NativeCodeCache::X86Emit_IMULRR(const x86Reg regSrc)
 {
-
   if(regSrc < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2209,7 +2187,6 @@ void NativeCodeCache::X86Emit_IMULRR(const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_IMULMR(const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     *pEmitLoc++ = 0xF6;
@@ -2228,7 +2205,6 @@ void NativeCodeCache::X86Emit_IMULMR(const x86MemPtr ptrType, const uintptr_t ba
 
 void NativeCodeCache::X86Emit_NEGR(const x86Reg regDest)
 {
-
   if(regDest < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2247,7 +2223,6 @@ void NativeCodeCache::X86Emit_NEGR(const x86Reg regDest)
 
 void NativeCodeCache::X86Emit_TESTIR(const uint32 imm, const x86Reg regSrc)
 {
-
   if(regSrc < x86Reg::x86Reg_ax)
   {
     if(regSrc == x86Reg::x86Reg_al)
@@ -2534,7 +2509,6 @@ void NativeCodeCache::X86Emit_SETNOM(const uintptr_t base, const x86IndexReg ind
 
 void NativeCodeCache::X86Emit_SETBR(const x86Reg reg)
 {
-
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x92;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)2,((uint32)reg & 0x07));
@@ -2563,7 +2537,6 @@ void NativeCodeCache::X86Emit_SETNBM(const uintptr_t base, const x86IndexReg ind
 
 void NativeCodeCache::X86Emit_SETZR(const x86Reg reg)
 {
-
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x94;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)2,((uint32)reg & 0x07));
@@ -2733,7 +2706,6 @@ void NativeCodeCache::X86Emit_SETNLEM(const uintptr_t base, const x86IndexReg in
 
 void NativeCodeCache::X86Emit_CMOVORR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2760,7 +2732,6 @@ void NativeCodeCache::X86Emit_CMOVOMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNORR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2787,7 +2758,6 @@ void NativeCodeCache::X86Emit_CMOVNOMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVBRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2814,7 +2784,6 @@ void NativeCodeCache::X86Emit_CMOVBMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2841,7 +2810,6 @@ void NativeCodeCache::X86Emit_CMOVNBMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVZRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2868,7 +2836,6 @@ void NativeCodeCache::X86Emit_CMOVZMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNZRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2895,7 +2862,6 @@ void NativeCodeCache::X86Emit_CMOVNZMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVBERR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2922,7 +2888,6 @@ void NativeCodeCache::X86Emit_CMOVBEMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVNBERR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2951,7 +2916,6 @@ void NativeCodeCache::X86Emit_CMOVNBEMR(const x86Reg regDest, const uintptr_t ba
 
 void NativeCodeCache::X86Emit_CMOVSRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2978,7 +2942,6 @@ void NativeCodeCache::X86Emit_CMOVSMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNSRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3057,7 +3020,6 @@ void NativeCodeCache::X86Emit_CMOVNPMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVLRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3084,7 +3046,6 @@ void NativeCodeCache::X86Emit_CMOVLMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNLRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3111,7 +3072,6 @@ void NativeCodeCache::X86Emit_CMOVNLMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVLERR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3138,7 +3098,6 @@ void NativeCodeCache::X86Emit_CMOVLEMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVNLERR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3201,7 +3160,6 @@ void NativeCodeCache::X86Emit_MOVQMR(const x86Reg regDest, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_MOVDQUMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   //SSE2
   *pEmitLoc++ = 0xF3;
   *pEmitLoc++ = 0x0F;
@@ -3212,7 +3170,6 @@ void NativeCodeCache::X86Emit_MOVDQUMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_MOVDQAMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   //SSE2
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3241,7 +3198,6 @@ void NativeCodeCache::X86Emit_MOVQRM(const x86Reg regSrc, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVDQURM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   //SSE2
   *pEmitLoc++ = 0xF3;
   *pEmitLoc++ = 0x0F;
@@ -3252,7 +3208,6 @@ void NativeCodeCache::X86Emit_MOVDQURM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_MOVDQARM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   //SSE2
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3263,7 +3218,6 @@ void NativeCodeCache::X86Emit_MOVDQARM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_SHLDIRR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3278,7 +3232,6 @@ void NativeCodeCache::X86Emit_SHLDIRR(const x86Reg regDest, const x86Reg regSrc,
 
 void NativeCodeCache::X86Emit_SHLDRRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3317,7 +3270,6 @@ void NativeCodeCache::X86Emit_SHLDRMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_SHRDIRR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3332,7 +3284,6 @@ void NativeCodeCache::X86Emit_SHRDIRR(const x86Reg regDest, const x86Reg regSrc,
 
 void NativeCodeCache::X86Emit_SHRDRRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3388,7 +3339,6 @@ void NativeCodeCache::X86Emit_MOVZXRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVZXMR(const x86Reg regDest, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   uint8 opcode = 0xB6;
 
   if(regDest < x86Reg::x86Reg_eax)
@@ -3423,7 +3373,6 @@ void NativeCodeCache::X86Emit_MOVSXRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVSXMR(const x86Reg regDest, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
-
   uint8 opcode = 0xBE;
 
   if(regDest < x86Reg::x86Reg_eax)
@@ -3441,7 +3390,6 @@ void NativeCodeCache::X86Emit_MOVSXMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_PSRADRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3460,7 +3408,6 @@ void NativeCodeCache::X86Emit_PSRADRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSRADIR(const x86Reg regDest, const uint8 shiftCount)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3481,7 +3428,6 @@ void NativeCodeCache::X86Emit_PSRADIR(const x86Reg regDest, const uint8 shiftCou
 
 void NativeCodeCache::X86Emit_PSRLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3500,7 +3446,6 @@ void NativeCodeCache::X86Emit_PSRLDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSRLDIR(const x86Reg regDest, const uint8 shiftCount)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3521,7 +3466,6 @@ void NativeCodeCache::X86Emit_PSRLDIR(const x86Reg regDest, const uint8 shiftCou
 
 void NativeCodeCache::X86Emit_PSLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3540,7 +3484,6 @@ void NativeCodeCache::X86Emit_PSLDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSLDIR(const x86Reg regDest, const uint8 shiftCount)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3561,7 +3504,6 @@ void NativeCodeCache::X86Emit_PSLDIR(const x86Reg regDest, const uint8 shiftCoun
 
 void NativeCodeCache::X86Emit_PMULLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   //SSE4.1
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3573,7 +3515,6 @@ void NativeCodeCache::X86Emit_PMULLDRR(const x86Reg regDest, const x86Reg regSrc
 
 void NativeCodeCache::X86Emit_PHADDDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   //SSSE3
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3609,7 +3550,6 @@ void NativeCodeCache::X86Emit_DPPSRR(const x86Reg regDest, const x86Reg regSrc, 
 
 void NativeCodeCache::X86Emit_MOVDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3628,7 +3568,6 @@ void NativeCodeCache::X86Emit_MOVDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVDRR2(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regSrc < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3680,7 +3619,6 @@ void NativeCodeCache::X86Emit_MOVLHRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_SHUFIR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
-
   //SSE
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0xC6;
@@ -3691,7 +3629,6 @@ void NativeCodeCache::X86Emit_SHUFIR(const x86Reg regDest, const x86Reg regSrc, 
 
 void NativeCodeCache::X86Emit_PANDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3800,7 +3737,6 @@ void NativeCodeCache::X86Emit_PANDNRM(const x86Reg regSrc, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_PSUBDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3855,7 +3791,6 @@ void NativeCodeCache::X86Emit_PSUBDRM(const x86Reg regSrc, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_PADDRR(const x86Reg regDest, const x86Reg regSrc)
 {
-
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3907,4 +3842,3 @@ void NativeCodeCache::X86Emit_PADDRM(const x86Reg regSrc, const uintptr_t base, 
   }
   X86Emit_ModRegRM(x86ModType::x86ModType_mem,(x86ModReg)((uint32)regSrc & 0x07), base, index, scale, disp);
 }
-

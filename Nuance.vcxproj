@@ -365,6 +365,7 @@
     <ClInclude Include="src\FlashEEPROM.h" />
     <ClInclude Include="src\GLWindow.h" />
     <ClInclude Include="src\Handlers.h" />
+    <ClInclude Include="src\iso9660.h" />
     <ClInclude Include="src\NuanceMain.h" />
     <ClInclude Include="src\InputManager.h" />
     <ClInclude Include="src\InstructionCache.h" />

@@ -868,7 +868,7 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
       if(bDirect)
       {
         directValue = SwapBytes(intaddr);
-#ifndef LITTLE_ENDIAN
+#ifndef NUANCE_LITTLE_ENDIAN
         if(wordSize == 1)
           directValue >>= 16;
 #endif
@@ -882,7 +882,7 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
         //internal address is: bRemote ? system address (but still in MPE memory) : local to MPE
         directValue = *((uint32 *)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC)));
 
-#ifndef LITTLE_ENDIAN
+#ifndef NUANCE_LITTLE_ENDIAN
         if(wordSize == 1)
         {
           directValue >>= 16;
@@ -938,14 +938,14 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
       case 0: //illegal, but fall through to case 1 anyway
         assert(false);
       case 1: //Byte 1 only (LSB bits [7:0] of each word)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         mask = 0xFF00;
 #else
         mask = 0x00FF;
 #endif
         break;
       case 2: //Byte 0 only (MSB bits [15:8] of each word)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         mask = 0x00FF;
 #else
         mask = 0xFF00;
@@ -1468,7 +1468,7 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
         //Dup but not Direct: read scalar from memory, no need to swap
         directValue = *(uint32 *)intMemory;
       }
-#ifndef LITTLE_ENDIAN
+#ifndef NUANCE_LITTLE_ENDIAN
       if(wordsize == 1)
         directValue >>= 16;
 #endif

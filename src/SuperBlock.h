@@ -21,7 +21,7 @@ public:
   #ifdef USE_ASMJIT
     bAllowCompile = true;
   #else
-    bAllowCompile = false; //!! on 64bit this is always force disabled for now, as no x64 code can be emitted
+    bAllowCompile = false; //!! on 64bit this is always force disabled for now, as no x64 code can be emitted yet
   #endif
 #else
     bAllowCompile = true;

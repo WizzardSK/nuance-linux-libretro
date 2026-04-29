@@ -2147,7 +2147,7 @@ bool MPE::FetchDecodeExecute()
         pcexec = pcroute;
         ExecuteNuances(*pInstructionCacheEntry);
       }
-      else if(pcexec >= ROM_BIOS_BASE && pcexec < ROM_PE_BASE)
+      else if(/*pcexec >= ROM_BIOS_BASE &&*/ pcexec < ROM_PE_BASE)
       {
         cycleCounter++;
         //Execute BIOS function: force to one of 256 entries

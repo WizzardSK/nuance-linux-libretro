@@ -5,8 +5,13 @@
 
 #include <cstdio>
 
+#ifdef _MSC_VER 
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 // Large file support for 32-bit builds
-#if defined(__i386__) || defined(_M_IX86)
+#if !defined(_MSC_VER) && (defined(__i386__) || defined(_M_IX86))
 #define ISO_FOPEN fopen64
 #define ISO_FSEEK(f, off, w) fseeko64(f, (off64_t)(off), w)
 #else
@@ -166,7 +171,6 @@ public:
         if (!dirPath || dirPath[0] == '\0' || strcmp(dirPath, "/") == 0)
             return readDir(rootLBA, rootSize);
 
-        uint32_t lba, size;
         // Navigate to directory
         uint32_t curLBA = rootLBA, curSize = rootSize;
         std::string spath(dirPath);

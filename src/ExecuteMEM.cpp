@@ -61,7 +61,7 @@ void GenerateMirrorLookupTable()
             struct { uint8 u8[2]; };
             uint16 u16;
         } xtmp;
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         xtmp.u8[1] = mirrorLookup8[i&0xFF];
         xtmp.u8[0] = mirrorLookup8[(i>>8)&0xFF];
 #else
@@ -161,7 +161,7 @@ __forceinline uint32 SaturateColorComponents32bit(uint32 Y, uint32 Cr, uint32 Cb
   assert(Cr2 == Cr);
   assert(Cb2 == Cb);*/
 
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
   return Y | (Cr << 8) | (Cb << 16);
 #else
   return (Y << 24) | (Cr << 16) | (Cb << 8);
@@ -174,7 +174,7 @@ __forceinline uint16 SaturateColorComponents16bitSwapped(uint32 Y, uint32 Cr, ui
   Cr = satColCrCb16[(Cr >> 22) + ChnormOffset];
   Cb = satColCrCb16[(Cb >> 22) + ChnormOffset];
 
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
   return (uint16)Y | SwapBytes((uint16)((Cr << 5) | Cb));
 #else
   return (uint16)((Y << 8) | (Cr << 5) | Cb);
@@ -556,7 +556,7 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
       _mm_store_si128((__m128i*)regs, tmp0); //!! is this always aligned?
       regs[3] = regs3;
 #else
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       regs[0] = (pixelData32 << 22) & (0xFFUL << 22);
       regs[1] = (pixelData32 << 14) & (0xFFUL << 22);
       regs[2] = (pixelData32 <<  6) & (0xFFUL << 22);
@@ -649,7 +649,7 @@ void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &n
     {
       //32 bit or 32+32Z (both behave the same for LD_P)
       const uint32 pixelData32 = *((uint32*)memPtr);
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFUL << 22);
       mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFUL << 22);
       mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFUL << 22);
@@ -738,7 +738,7 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
 
       _mm_store_si128((__m128i*)regs, tmp0); //!! is this always aligned?
 #else
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       regs[0] = (pixelData32 << 22) & (0xFFUL << 22);
       regs[1] = (pixelData32 << 14) & (0xFFUL << 22);
       regs[2] = (pixelData32 <<  6) & (0xFFUL << 22);
@@ -755,7 +755,7 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
       }
 #endif
       if(pixType == 0x4)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         regs[3] = (pixelData32 & 0xFF000000u);
 #else
         regs[3] = (pixelData32 << 24);
@@ -840,7 +840,7 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
     {
       //32 bit
       const uint32 pixelData32 = ((uint32*)memPtr)[0];
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFUL << 22);
       mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFUL << 22);
       mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFUL << 22);
@@ -850,7 +850,7 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
       mpe.regs[dest+2] = (pixelData32 << 14) & (0xFFUL << 22);
 #endif
       if(pixType == 0x4)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         mpe.regs[dest+3] = (pixelData32 & 0xFF000000u);
 #else
         mpe.regs[dest+3] = (pixelData32 << 24);
@@ -1272,7 +1272,7 @@ void __fastcall _StorePixelAbsolute(const MPE* const __restrict mpe, void* const
     case 0x6:
     {
       //32 bit
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       *((uint32 *)memPtr) = SaturateColorComponents32bit(regs[0], regs[1], regs[2], ChnormOffset) | (*((uint32*)memPtr) & 0xFF000000u);
 #else
       *((uint32 *)memPtr) = SaturateColorComponents32bit(regs[0], regs[1], regs[2], ChnormOffset) | (*((uint32*)memPtr) & 0xFFu);
@@ -1327,7 +1327,7 @@ void Execute_StorePixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
     case 0x6:
     {
       //32 bit
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
       *((uint32 *)memPtr) = SaturateColorComponents32bit(pRegs[src], pRegs[src+1], pRegs[src+2], ChnormOffset) | (*((uint32*)memPtr) & 0xFF000000u);
 #else
       *((uint32 *)memPtr) = SaturateColorComponents32bit(pRegs[src], pRegs[src+1], pRegs[src+2], ChnormOffset) | (*((uint32*)memPtr) & 0xFFu);
@@ -1371,7 +1371,7 @@ void __fastcall _StorePixelZAbsolute(const MPE* const __restrict mpe, void* cons
       //32 bit
       uint32 pixelData32 = SaturateColorComponents32bit(regs[0], regs[1], regs[2], ChnormOffset);
       if(pixType == 0x4)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         pixelData32 |= (regs[3] & 0xFF000000u);
 #else
         pixelData32 |= (regs[3] >> 24);
@@ -1439,7 +1439,7 @@ void Execute_StorePixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance 
       //32 bit
       uint32 pixelData32 = SaturateColorComponents32bit(pRegs[src], pRegs[src+1], pRegs[src+2], ChnormOffset);
       if(pixType == 0x4)
-#ifdef LITTLE_ENDIAN
+#ifdef NUANCE_LITTLE_ENDIAN
         pixelData32 |= (pRegs[src+3] & 0xFF000000u);
 #else
         pixelData32 |= (pRegs[src+3] >> 24);

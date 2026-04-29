@@ -12,9 +12,11 @@
     #define ALLOW_NATIVE_CODE_EMIT false
   #endif
 #else
-#define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_NATIVE_CODE_BLOCK
-#define ALLOW_NATIVE_CODE_EMIT true
+  //#define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_BLOCK
+  #define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_NATIVE_CODE_BLOCK
+  #define ALLOW_NATIVE_CODE_EMIT true
 #endif
+
 #define COMPILE_SINGLE_PACKET false
 
 //#define LOG_COMM

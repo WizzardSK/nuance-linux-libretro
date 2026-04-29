@@ -41,6 +41,9 @@ extern vidTexInfo videoTexInfo;
 bool bQuit = false;
 static bool bRun = false;
 
+std::string g_ISOPath;   // path to mounted ISO (for reading data files) //!! wire up
+std::string g_ISOPrefix; // NUON directory name inside ISO (e.g. "NUON") //!! wire up
+
 static bool load4firsttime = true;
 
 GLWindow display;
