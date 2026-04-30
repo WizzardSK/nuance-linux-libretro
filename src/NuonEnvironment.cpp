@@ -15,6 +15,8 @@
 #include "NuonEnvironment.h"
 #include "NuonMemoryMap.h"
 
+#include "miniaudio.h"
+
 extern GLWindow display;
 
 extern VidDisplay structMainDisplay;
@@ -32,83 +34,126 @@ extern VidDisplay structMainDisplay;
     }
   }
 
-  static schar F_CALLBACKAPI StreamCallback(FSOUND_STREAM *stream, void *buff, int len, void* userdata)
+  void NuonEnvironment::MiniAudioDataCallback(ma_device* pDevice, void* pOutput, const void* /*pInput*/, ma_uint32 frameCount)
   {
-    NuonEnvironment * const nuonEnv = (NuonEnvironment*)userdata;
-    const uint8* const pNuonAudioBuffer = nuonEnv->pNuonAudioBuffer;
+    NuonEnvironment* const nuonEnv = (NuonEnvironment*)pDevice->pUserData;
+    const ma_uint32 bytesNeeded = frameCount * 4; // s16 stereo = 4 bytes/frame
+    uint8* const ring = nuonEnv->audioRing;
+    const uint32 ringSize = nuonEnv->audioRingSize;
 
-    if(!buff || !pNuonAudioBuffer)
-      return FALSE;
+    if(!ring || ringSize == 0)
+    {
+      memset(pOutput, 0, bytesNeeded);
+      return;
+    }
 
-    assert(len == (nuonEnv->nuonAudioBufferSize>>1));
+    // SPSC ring drain: read latest producer position with acquire, our own one with relaxed
+    const uint32 r = nuonEnv->audioRingReadPos.load(std::memory_order_relaxed);
+    const uint32 w = nuonEnv->audioRingWritePos.load(std::memory_order_acquire);
+    const uint32 avail = w - r; // unsigned wrap is fine: gap is bounded by ringSize
+    const ma_uint32 toCopy = (bytesNeeded < avail) ? bytesNeeded : avail;
 
-    _InterlockedExchange(&nuonEnv->audio_buffer_played, 1); // signal the NuanceMain loop that we did do some sound update
-    ConvertNuonAudioData(pNuonAudioBuffer + nuonEnv->audio_buffer_offset, (uint8*)buff, len);
-    return TRUE;
+    if(toCopy > 0)
+    {
+      const uint32 ringStart = r % ringSize;
+      const uint32 firstChunk = (ringStart + toCopy <= ringSize) ? toCopy : (ringSize - ringStart);
+      if(nuonEnv->audioMuted.load(std::memory_order_relaxed))
+        memset(pOutput, 0, toCopy); // still drain the ring, but emit silence
+      else
+      {
+        memcpy(pOutput, ring + ringStart, firstChunk);
+        if(firstChunk < toCopy)
+          memcpy((uint8*)pOutput + firstChunk, ring, toCopy - firstChunk);
+      }
+      nuonEnv->audioRingReadPos.store(r + toCopy, std::memory_order_release);
+    }
+
+    if(toCopy < bytesNeeded)
+      memset((uint8*)pOutput + toCopy, 0, bytesNeeded - toCopy); // true underrun (producer behind)
   }
 
-//InitAudio: Initialize sound library, create audio stream
+//InitAudio: Initialize miniaudio device for s16 stereo playback
 //Playback rate is the initially requested one (to avoid a resampling step), or 48000 Hz if exceeding supported ones,
 //Format is signed 16 bit stereo samples (for now, due to most apps using NISE)
 //Nuon sound samples must be byte-swapped for use by libraries which require
-//little-endian byte ordering
-
-#define MIX_RATE (48000) // all tested games so far are actually using 32k due to NISE
-#define MAX_SOFTWARE_CHANNELS (2)
-#define INIT_FLAGS FSOUND_INIT_GLOBALFOCUS
-#define DEFAULT_SAMPLE_FORMAT (FSOUND_16BITS | FSOUND_STEREO | FSOUND_SIGNED)
+//little-endian byte ordering (handled in ConvertNuonAudioData)
 
 void NuonEnvironment::InitAudio()
 {
-  if(nuonAudioPlaybackRate == 0 || nuonAudioBufferSize == 0) // delay FMOD init until SetAudioPlaybackRate and AudioSetChannelMode has been called so that we can set requested rate and buffer size here (also avoids one resampling step then!)
+  if(nuonAudioPlaybackRate == 0 || nuonAudioBufferSize == 0) // delay init until SetAudioPlaybackRate and AudioSetChannelMode have been called, so we can configure rate/buffer here (also avoids one resampling step)
     return;
 
-  if(!bFMODInitialized)
+  if(audioDevice)
+    ma_device_uninit(audioDevice);
+  else
+    audioDevice = new ma_device;
+
+  // (Re)allocate the SPSC ring sized for the current Nuon period
+  audioRingPeriodBytes = nuonAudioBufferSize >> 1;
+  audioRingSize        = AUDIO_RING_SLOTS * audioRingPeriodBytes;
+  delete[] audioRing;
+  audioRing = new uint8[audioRingSize];
+  audioRingWritePos.store(0, std::memory_order_relaxed);
+  audioRingReadPos.store(0, std::memory_order_relaxed);
+
+  // both should never happen
+  audioDeviceRate = nuonAudioPlaybackRate;
+  if (audioDeviceRate > 96000)
+    audioDeviceRate = 96000;
+  else if (audioDeviceRate < 16000)
+    audioDeviceRate = 16000;
+
+  ma_device_config cfg = ma_device_config_init(ma_device_type_playback);
+  cfg.playback.format    = ma_format_s16;
+  cfg.playback.channels  = 2;
+  cfg.sampleRate         = audioDeviceRate;                // all tested games so far are actually using 32k due to NISE
+  cfg.periodSizeInFrames = (nuonAudioBufferSize >> 1) / 4; // bytes per period -> frames (4 bytes/frame)
+  cfg.dataCallback       = MiniAudioDataCallback;
+  cfg.pUserData          = this;
+
+  if(ma_device_init(NULL, &cfg, audioDevice) != MA_SUCCESS)
   {
-    //Select default sound driver
-    FSOUND_SetDriver(0);
-    FSOUND_SetMixer(FSOUND_MIXER_QUALITY_AUTODETECT);
-    //Initialize FMOD
-    if(FSOUND_Init(nuonAudioPlaybackRate <= 65535 ? nuonAudioPlaybackRate : MIX_RATE, MAX_SOFTWARE_CHANNELS, INIT_FLAGS)) // 65535 = max rate of FMOD
-      bFMODInitialized = true;
-    else
-      return;
+    delete audioDevice;
+    audioDevice = nullptr;
+    audioDeviceRate = 0;
+    return;
   }
 
-  if(audioStream)
-  {
-    FSOUND_Stream_Stop(audioStream);
-    FSOUND_Stream_Close(audioStream);
-  }
-
+  ma_device_set_master_volume(audioDevice, audioVolume);
   MuteAudio(false);
 
-  //Create stream
-  audioStream = FSOUND_Stream_Create(StreamCallback, (nuonAudioBufferSize>>1), // >>1: see callback, kinda double buffering in there
-    DEFAULT_SAMPLE_FORMAT, nuonAudioPlaybackRate, this);
-    
-  if(audioStream)
-    audioChannel = FSOUND_Stream_Play(FSOUND_FREE,audioStream);
+  if(ma_device_start(audioDevice) != MA_SUCCESS)
+  {
+    ma_device_uninit(audioDevice);
+    delete audioDevice;
+    audioDevice = nullptr;
+    audioDeviceRate = 0;
+    return;
+  }
 }
 
 void NuonEnvironment::CloseAudio()
 {
-  if(bFMODInitialized)
+  if(audioDevice)
   {
     MuteAudio(true);
-    if(audioStream)
-    {
-      FSOUND_Stream_Stop(audioStream);
-      FSOUND_Stream_Close(audioStream);
-      audioStream = nullptr;
-    }
+    ma_device_uninit(audioDevice); // joins audio thread; safe to free ring after this
+    delete audioDevice;
+    audioDevice = nullptr;
+    audioDeviceRate = 0;
   }
+  delete[] audioRing;
+  audioRing = nullptr;
+  audioRingSize = 0;
+  audioRingPeriodBytes = 0;
+  audioRingWritePos.store(0, std::memory_order_relaxed);
+  audioRingReadPos.store(0, std::memory_order_relaxed);
 }
 
 void NuonEnvironment::MuteAudio(const bool mute)
 {
-  if(bFMODInitialized)
-    FSOUND_SetMute(FSOUND_ALL,mute ? TRUE : FALSE);
+  //!! should this also disable audio interrupts?!
+  audioMuted.store(mute, std::memory_order_relaxed);
 }
 
 void NuonEnvironment::SetAudioPlaybackRate()
@@ -116,22 +161,14 @@ void NuonEnvironment::SetAudioPlaybackRate()
   if (nuonAudioChannelMode & ENABLE_SAMP_INT)
     cyclesPerAudioInterrupt = 54000000 / nuonAudioPlaybackRate;
 
-  if(!bFMODInitialized)
+  if(!audioDevice)
     InitAudio();
-
-  if(bFMODInitialized && audioStream)
+  else if(audioDeviceRate != nuonAudioPlaybackRate)
   {
-    if(FSOUND_IsPlaying(audioChannel))
-    {
-      // both should never happen
-      uint32 rate = nuonAudioPlaybackRate;
-      if (rate > 96000)
-        rate = 96000;
-      else if (rate < 16000)
-        rate = 16000;
-        
-      FSOUND_SetFrequency(audioChannel,rate);
-    }
+    // miniaudio has no real-time sample-rate change like the old FMOD FSOUND_SetFrequency.
+    // Reopen the device at the new rate. This causes a brief audio glitch, but matches
+    // FMOD's observable behavior of "audio now plays at the new rate".
+    RestartAudio();
   }
 }
 
@@ -144,22 +181,41 @@ void NuonEnvironment::RestartAudio()
 
 void NuonEnvironment::StopAudio()
 {
-  if(bFMODInitialized && audioStream)
-    FSOUND_Stream_Stop(audioStream);
+  if(audioDevice)
+    ma_device_stop(audioDevice);
 }
-
-//static uint32 lastLinearVolumeSetting = 0;
 
 void NuonEnvironment::SetAudioVolume(uint32 volume)
 {
-  if(bFMODInitialized)
-  {
-    if(volume > 255)
-      volume = 255;
+  if(volume > 255)
+    volume = 255;
+  audioVolume = (float)volume / 255.0f;
+  if(audioDevice)
+    ma_device_set_master_volume(audioDevice, audioVolume);
+}
 
-    FSOUND_SetVolume(FSOUND_ALL,volume);
-    //lastLinearVolumeSetting = volume;
-  }
+bool NuonEnvironment::TryPushAudioPeriod()
+{
+  if(!pNuonAudioBuffer || !audioRing)
+    return false;
+
+  const uint32 periodBytes = audioRingPeriodBytes;
+  const uint32 ringSize    = audioRingSize;
+  const uint32 w           = audioRingWritePos.load(std::memory_order_relaxed);
+  const uint32 r           = audioRingReadPos.load(std::memory_order_acquire);
+  if((w - r) + periodBytes > ringSize) // ring is full — back-pressure
+    return false;
+
+  // Copy + byte-swap one Nuon period into the ring slot.
+  ConvertNuonAudioData(pNuonAudioBuffer + audio_buffer_offset,
+                       audioRing + (w % ringSize),
+                       periodBytes);
+  audioRingWritePos.store(w + periodBytes, std::memory_order_release);
+
+  audio_buffer_offset = (nuonAudioChannelMode & ENABLE_HALF_INT) ? 0 : (nuonAudioBufferSize >> 1); //!! ENABLE_HALF_INT leads to better sound in Tetris, although one would assume it should be ENABLE_WRAP_INT here
+  oldNuonAudioChannelMode = nuonAudioChannelMode;
+  TriggerAudioInterrupt();
+  return true;
 }
 
 void *NuonEnvironment::GetPointerToMemory(const uint32 mpe_idx, const uint32 address, const bool bCheckAddress)
@@ -346,7 +402,6 @@ void NuonEnvironment::Init()
 
   pNuonAudioBuffer = nullptr;
   audio_buffer_offset = 0;
-  audio_buffer_played = 0;
   oldNuonAudioChannelMode = nuonAudioChannelMode = 0;
   nuonAudioPlaybackRate = 0; //!! was 32000
   nuonAudioBufferSize = 0; //!! was 1024
@@ -450,8 +505,6 @@ NuonEnvironment::~NuonEnvironment()
 
   //Close stream and shut down audio library
   CloseAudio();
-  FSOUND_Close();
-  bFMODInitialized = false;
 
   //Free up string memory
   delete[] dvdBase;

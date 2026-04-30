@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <string>
 #include <windows.h>
+#include <shellapi.h>
 #include <Commctrl.h>
 #include <tchar.h>
 #include <commdlg.h>
@@ -25,6 +26,7 @@
 #include "ExecuteMEM.h"
 #include "timer.h"
 #include "Bios.h"
+#include "archive.h"
 
 NuonEnvironment nuonEnv;
 
@@ -41,8 +43,8 @@ extern vidTexInfo videoTexInfo;
 bool bQuit = false;
 static bool bRun = false;
 
-std::string g_ISOPath;   // path to mounted ISO (for reading data files) //!! wire up
-std::string g_ISOPrefix; // NUON directory name inside ISO (e.g. "NUON") //!! wire up
+std::string g_ISOPath;   // path to mounted ISO (for reading data files); set by archive::ResolveGameFile
+std::string g_ISOPrefix; // NUON directory name inside ISO (e.g. "NUON"); set by archive::ResolveGameFile
 
 static bool load4firsttime = true;
 
@@ -465,10 +467,27 @@ bool Load(const char* file = nullptr)
     if(file)
       ofn.lpstrFile = (char*)file;
 
-    bool bSuccess = nuonEnv.mpe[3].LoadNuonRomFile(ofn.lpstrFile);
+    // For .iso/.img/.zip, extract the boot file to a temp location and load from there.
+    // For plain .run/.cof/.nuon this just returns the input unchanged.
+    const std::string resolved = ResolveGameFile(ofn.lpstrFile);
+    if(resolved.empty())
+    {
+      if(file)
+      {
+        MessageBox(NULL,"Cannot open or extract NUON game from file",ERROR,MB_ICONWARNING);
+        exit(0);
+      }
+      else
+        MessageBox(NULL,"Cannot open or extract NUON game from file",ERROR,MB_ICONWARNING);
+
+      return false;
+    }
+    const char* loadPath = resolved.c_str();
+
+    bool bSuccess = nuonEnv.mpe[3].LoadNuonRomFile(loadPath);
     if(!bSuccess)
     {
-      bSuccess = nuonEnv.mpe[3].LoadCoffFile(ofn.lpstrFile);
+      bSuccess = nuonEnv.mpe[3].LoadCoffFile(loadPath);
       if(file && !bSuccess)
       {
         MessageBox(NULL,"Cannot open file or Invalid COFF or NUONROM-DISK file",ERROR,MB_ICONWARNING);
@@ -477,10 +496,10 @@ bool Load(const char* file = nullptr)
       else if(!bSuccess)
         MessageBox(NULL,"Invalid COFF or NUONROM-DISK file",ERROR,MB_ICONWARNING);
     }
-    
+
     if(bSuccess)
     {
-      nuonEnv.SetDVDBaseFromFileName(ofn.lpstrFile);
+      nuonEnv.SetDVDBaseFromFileName(loadPath);
       nuonEnv.mpe[3].Go();
       UpdateControlPanelDisplay();
       SetWindowPos(display.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
@@ -848,6 +867,15 @@ INT_PTR CALLBACK ControlPanelDialogProc(HWND hwndDlg,UINT msg,WPARAM wParam,LPAR
     case WM_CLOSE:
       bQuit = true;
       return FALSE;
+    case WM_DROPFILES:
+    {
+      HDROP hDrop = (HDROP)wParam;
+      char path[MAX_PATH] = {};
+      if (DragQueryFileA(hDrop, 0, path, MAX_PATH))
+        Load(path);
+      DragFinish(hDrop);
+      return TRUE;
+    }
     case WM_COMMAND:
       switch(HIWORD(wParam))
       {
@@ -1064,6 +1092,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   hDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_CONTROL_PANEL),NULL,ControlPanelDialogProc);
   const HWND hStatusDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_STATUS_DIALOG),NULL,StatusWindowDialogProc);
 
+  // Accept drag-and-dropped files (.run/.cof/.iso/.zip) on the control panel and
+  // the GL display window. Both route through Load() -> ResolveGameFile().
+  DragAcceptFiles(hDlg, TRUE);
+  if (display.hWnd)
+    DragAcceptFiles(display.hWnd, TRUE);
+
   iconApp = LoadIcon(hInstance,MAKEINTRESOURCE(IDI_APPICON));
   bmpLEDOn = LoadBitmap(hInstance,MAKEINTRESOURCE(IDB_LED_ON));
   bmpLEDOff = LoadBitmap(hInstance,MAKEINTRESOURCE(IDB_LED_OFF));
@@ -1100,6 +1134,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   ofn.Flags = OFN_LONGNAMES|OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;
   ofn.lpstrFile = openFileName;
   ofn.nMaxFile = sizeof(openFileName);
+  // OPENFILENAME filter strings are double-NUL-terminated pairs of "label\0pattern\0..."
+  ofn.lpstrFilter =
+    "NUON files (*.run;*.cof;*.nuon;*.iso;*.img;*.zip)\0*.run;*.cof;*.nuon;*.iso;*.img;*.zip\0"
+    "NUON executables (*.run;*.cof;*.nuon)\0*.run;*.cof;*.nuon\0"
+    "Disc images (*.iso;*.img)\0*.iso;*.img\0"
+    "ZIP archives (*.zip)\0*.zip\0"
+    "All files (*.*)\0*.*\0";
+  ofn.nFilterIndex = 1;
 
   SendMessage(hDlg,WM_SETICON,ICON_SMALL,LPARAM(iconApp));
   SendMessage(hStatusDlg,WM_SETICON,ICON_SMALL,LPARAM(iconApp));
@@ -1211,19 +1253,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         } else last_time2 = new_time;
 
-        // audTimer
+        // audTimer - push one Nuon audio period into the host audio ring. The ring decouples
+        // Nuon period size from miniaudio's callback chunk size; if the ring is full we just
+        // skip and try again next loop iteration
         if (nuonEnv.timer_rate[2] > 0)
         {
         if (nuonEnv.pNuonAudioBuffer && // was nuon audio setup already?
         (new_time >= last_time3 + nuonEnv.timer_rate[2]) && // did enough time pass for new audio data to be ready?
         ((nuonEnv.nuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT)) != (nuonEnv.oldNuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT))) && // was a new audio interrupt requested?
-        ((((nuonEnv.mpe[0].intsrc & nuonEnv.mpe[0].inten1) | (nuonEnv.mpe[1].intsrc & nuonEnv.mpe[1].inten1) | (nuonEnv.mpe[2].intsrc & nuonEnv.mpe[2].inten1) | (nuonEnv.mpe[3].intsrc & nuonEnv.mpe[3].inten1)) & INT_AUDIO) == 0) && // & (INT_AUDIO | INT_COMMXMIT | INT_VIDTIMER) // are any audio interrupts still pending?
-        _InterlockedExchange(&nuonEnv.audio_buffer_played,0) == 1) // was an audio buffer already played since last cycle?
+        ((((nuonEnv.mpe[0].intsrc & nuonEnv.mpe[0].inten1) | (nuonEnv.mpe[1].intsrc & nuonEnv.mpe[1].inten1) | (nuonEnv.mpe[2].intsrc & nuonEnv.mpe[2].inten1) | (nuonEnv.mpe[3].intsrc & nuonEnv.mpe[3].inten1)) & INT_AUDIO) == 0)) // & (INT_AUDIO | INT_COMMXMIT | INT_VIDTIMER) // are any audio interrupts still pending?
         {
-          nuonEnv.audio_buffer_offset = (nuonEnv.nuonAudioChannelMode & ENABLE_HALF_INT) ? 0 : (nuonEnv.nuonAudioBufferSize >> 1); //!! ENABLE_HALF_INT leads to better sound in Tetris, although one would assume it should be ENABLE_WRAP_INT here
-          nuonEnv.oldNuonAudioChannelMode = nuonEnv.nuonAudioChannelMode;
-          nuonEnv.TriggerAudioInterrupt();
-          last_time3 = new_time;
+          if (nuonEnv.TryPushAudioPeriod())
+            last_time3 = new_time;
         }
         } else last_time3 = new_time;
       }
@@ -1272,6 +1313,7 @@ CLEANUP AND APPLICATION SHUTDOWN CODE
   EndDialog(hStatusDlg,IDOK);
 
   VideoCleanup();
+  CleanupArchives();
 
   return 0;
 }

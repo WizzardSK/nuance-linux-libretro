@@ -27,7 +27,7 @@
 #include "timer.h"
 #include "Bios.h"
 #include "NuanceUI.h"
-#include "iso9660.h"
+#include "archive.h"
 
 NuonEnvironment nuonEnv;
 
@@ -125,200 +125,14 @@ static void Run()
   bRun = true;
 }
 
-static std::vector<std::string> tempMountPoints;
-
-static std::vector<std::string> tempDirs; // non-mount temp dirs to clean up
-
-static void CleanupMounts()
-{
-  for (auto it = tempMountPoints.rbegin(); it != tempMountPoints.rend(); ++it) {
-    std::string cmd = "fusermount -uz \"" + *it + "\" 2>/dev/null";
-    system(cmd.c_str());
-    rmdir(it->c_str());
-  }
-  tempMountPoints.clear();
-  for (auto& d : tempDirs) {
-    std::string cmd = "rm -rf \"" + d + "\" 2>/dev/null";
-    system(cmd.c_str());
-  }
-  tempDirs.clear();
-}
-
-static std::string MountPath(const char* archivePath)
-{
-  char tmpl[] = "/tmp/nuance_XXXXXX";
-  char* dir = mkdtemp(tmpl);
-  if (!dir) return "";
-  std::string mountPoint = dir;
-
-  // Try fuse-zip for .zip, archivemount for others, fuseiso for .iso
-  std::string path(archivePath);
-  std::string cmd;
-  int ret = -1;
-
-  // Detect type
-  size_t len = path.size();
-  bool isZip = (len > 4 && strcasecmp(path.c_str() + len - 4, ".zip") == 0);
-  bool isIso = (len > 4 && (strcasecmp(path.c_str() + len - 4, ".iso") == 0 ||
-                             strcasecmp(path.c_str() + len - 4, ".img") == 0));
-
-  if (isIso) {
-    // For ISO: try fuseiso first, then udisksctl, then extract NUON dir via 7z
-    cmd = "fuseiso \"" + path + "\" \"" + mountPoint + "\" 2>/dev/null";
-    ret = system(cmd.c_str());
-    if (ret != 0) {
-      // Extract only NUON directory from ISO (much faster than full mount)
-      cmd = "7z x -y -o\"" + mountPoint + "\" \"" + path + "\" NUON/ nuon/ Nuon/ > /dev/null 2>&1";
-      ret = system(cmd.c_str());
-      if (ret == 0) {
-        // 7z extracted, not mounted — don't add to mount list, just use the dir
-        fprintf(stderr, "Extracted NUON dir from ISO: %s\n", path.c_str());
-        return mountPoint;
-      }
-    }
-  }
-  if (ret != 0 && isZip) {
-    // mount-zip supports random access (seekable), fuse-zip does not
-    cmd = "mount-zip \"" + path + "\" \"" + mountPoint + "\" 2>/dev/null";
-    ret = system(cmd.c_str());
-  }
-  if (ret != 0 && isZip) {
-    cmd = "fuse-zip -r \"" + path + "\" \"" + mountPoint + "\" 2>/dev/null";
-    ret = system(cmd.c_str());
-  }
-  if (ret != 0) {
-    cmd = "archivemount -o readonly \"" + path + "\" \"" + mountPoint + "\" 2>/dev/null";
-    ret = system(cmd.c_str());
-  }
-
-  if (ret != 0) {
-    fprintf(stderr, "Failed to mount: %s\n", archivePath);
-    rmdir(mountPoint.c_str());
-    return "";
-  }
-
-  fprintf(stderr, "Mounted: %s -> %s\n", archivePath, mountPoint.c_str());
-  tempMountPoints.push_back(mountPoint);
-  return mountPoint;
-}
-
-static std::string popen_line(const std::string& cmd)
-{
-  FILE* fp = popen(cmd.c_str(), "r");
-  if (!fp) return "";
-  char buf[1024] = {};
-  if (fgets(buf, sizeof(buf), fp)) {
-    size_t len = strlen(buf);
-    if (len > 0 && buf[len-1] == '\n') buf[len-1] = '\0';
-  }
-  pclose(fp);
-  return buf;
-}
-
-static std::string MountAndFind(const char* archivePath)
-{
-  fprintf(stderr, "Mounting: %s\n", archivePath);
-
-  std::string mp = MountPath(archivePath);
-  if (mp.empty()) return "";
-
-  // Look for nuon.run or NUON.CD
-  std::string result = popen_line("find \"" + mp + "\" -maxdepth 5 \\( -iname 'nuon.run' -o -iname 'NUON.CD' \\) -print -quit 2>/dev/null");
-
-  // If not found, look for an ISO inside and read it via ISO9660 parser
-  if (result.empty()) {
-    std::string iso = popen_line("find \"" + mp + "\" -maxdepth 2 \\( -iname '*.iso' -o -iname '*.img' \\) -print -quit 2>/dev/null");
-    if (!iso.empty()) {
-      fprintf(stderr, "Found ISO inside: %s\n", iso.c_str());
-      ISO9660Reader reader;
-      if (reader.open(iso.c_str())) {
-        // Extract only the boot file (nuon.run / NUON.CD), read data files from ISO at runtime
-        const char* tryPaths[] = {
-          "NUON/nuon.run", "NUON/NUON.CD", "NUON/cd_app.cof",
-          "nuon/nuon.run", "nuon/NUON.CD", nullptr
-        };
-        uint32_t lba, fsize;
-        const char* foundPath = nullptr;
-        for (const char** f = tryPaths; *f; f++) {
-          if (reader.findFile(*f, lba, fsize)) { foundPath = *f; break; }
-        }
-
-        if (foundPath) {
-          char tmpl2[] = "/tmp/nuance_iso_XXXXXX";
-          char* isoDir = mkdtemp(tmpl2);
-          if (isoDir) {
-            std::string ff(foundPath);
-            std::string subdir = ff.substr(0, ff.find('/'));
-            std::string nuonDir = std::string(isoDir) + "/" + subdir;
-            mkdir(nuonDir.c_str(), 0755);
-            tempDirs.push_back(isoDir);
-
-            std::string bootName = ff.substr(ff.find('/') + 1);
-            std::string dstPath = nuonDir + "/" + bootName;
-            reader.extractFile(foundPath, dstPath.c_str());
-            fprintf(stderr, "  Extracted boot: %s\n", foundPath);
-
-            // Store ISO path globally so MediaOpen can read data files from ISO
-            extern std::string g_ISOPath;
-            extern std::string g_ISOPrefix;
-            g_ISOPath = iso;
-            g_ISOPrefix = subdir;
-            fprintf(stderr, "  ISO data path: %s/%s/\n", iso.c_str(), subdir.c_str());
-
-            result = dstPath;
-          }
-        }
-        reader.close();
-      }
-    }
-  }
-
-  // Fallback: cd_app.cof
-  if (result.empty())
-    result = popen_line("find \"" + mp + "\" -maxdepth 5 -iname 'cd_app.cof' -print -quit 2>/dev/null");
-
-  if (result.empty()) {
-    fprintf(stderr, "No NUON game found in: %s\n", archivePath);
-    return "";
-  }
-
-  fprintf(stderr, "Found: %s\n", result.c_str());
-  return result;
-}
-
-static bool IsISOFile(const char* path)
-{
-  size_t len = strlen(path);
-  if (len < 4) return false;
-  const char* ext = path + len - 4;
-  return (strcasecmp(ext, ".iso") == 0 || strcasecmp(ext, ".img") == 0 ||
-          (len >= 5 && strcasecmp(path + len - 5, ".chd") == 0));
-}
-
-static bool IsArchiveFile(const char* path)
-{
-  size_t len = strlen(path);
-  if (len < 3) return false;
-  const char* ext = path + len;
-  // Check common archive extensions
-  for (const char* e : {".zip", ".7z", ".gz", ".rar", ".bz2", ".xz"}) {
-    size_t elen = strlen(e);
-    if (len >= elen && strcasecmp(path + len - elen, e) == 0) return true;
-  }
-  return false;
-}
-
 bool Load(const char* file)
 {
   if (!file) return false;
 
-  std::string actualFile = file;
-
-  // Handle ISO/IMG files — extract NUON.CD from them
-  if (IsISOFile(file) || IsArchiveFile(file)) {
-    fprintf(stderr, "Extracting: %s\n", file);
-    actualFile = MountAndFind(file);
-    if (actualFile.empty()) return false;
+  const std::string actualFile = ResolveGameFile(file);
+  if (actualFile.empty()) {
+    fprintf(stderr, "Cannot resolve / extract: %s\n", file);
+    return false;
   }
 
   // Try loading as NUONROM-DISK/Bles first, then as raw COFF
@@ -425,16 +239,15 @@ int main(int argc, char* argv[])
           }
         } else last_time2 = new_time;
 
+        // audTimer — push one Nuon audio period into the host audio ring (byte-swapped), advance the
+        // DMA half pointer, fire INT_AUDIO. Ring full -> skip this iteration
         if (nuonEnv.timer_rate[2] > 0) {
           if (nuonEnv.pNuonAudioBuffer &&
               (new_time >= last_time3 + (uint64)nuonEnv.timer_rate[2]) &&
               ((nuonEnv.nuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT)) != (nuonEnv.oldNuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT))) &&
-              ((((nuonEnv.mpe[0].intsrc & nuonEnv.mpe[0].inten1) | (nuonEnv.mpe[1].intsrc & nuonEnv.mpe[1].inten1) | (nuonEnv.mpe[2].intsrc & nuonEnv.mpe[2].inten1) | (nuonEnv.mpe[3].intsrc & nuonEnv.mpe[3].inten1)) & INT_AUDIO) == 0) &&
-              _InterlockedExchange(&nuonEnv.audio_buffer_played, 0) == 1) {
-            nuonEnv.audio_buffer_offset = (nuonEnv.nuonAudioChannelMode & ENABLE_HALF_INT) ? 0 : (nuonEnv.nuonAudioBufferSize >> 1);
-            nuonEnv.oldNuonAudioChannelMode = nuonEnv.nuonAudioChannelMode;
-            nuonEnv.TriggerAudioInterrupt();
-            last_time3 = new_time;
+              ((((nuonEnv.mpe[0].intsrc & nuonEnv.mpe[0].inten1) | (nuonEnv.mpe[1].intsrc & nuonEnv.mpe[1].inten1) | (nuonEnv.mpe[2].intsrc & nuonEnv.mpe[2].inten1) | (nuonEnv.mpe[3].intsrc & nuonEnv.mpe[3].inten1)) & INT_AUDIO) == 0)) {
+            if (nuonEnv.TryPushAudioPeriod())
+              last_time3 = new_time;
           }
         } else last_time3 = new_time;
       }
@@ -472,7 +285,7 @@ int main(int argc, char* argv[])
 
   VideoCleanup();
   display.CleanUp();
-  CleanupMounts();
+  CleanupArchives();
 
   return 0;
 }

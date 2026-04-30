@@ -80,7 +80,7 @@ NuanceResurrection/
 
 ## Usage (Linux)
 
-The Linux version can load games directly from ISO or ZIP files:
+The Linux version can load games directly from ISO or ZIP/RAR/7z files:
 
 ```bash
 ./nuance /path/to/game.zip
@@ -89,7 +89,7 @@ The Linux version can load games directly from ISO or ZIP files:
 ```
 
 Audio output uses miniaudio (bundled) which auto-detects PulseAudio or ALSA.
-Video uses X11/GLX with GLEW (bundled source).  ZIP/ISO files are mounted
+Video uses X11/GLX with GLEW (bundled source).  ZIP/RAR/7z/ISO files are mounted
 via FUSE (mount-zip/archivemount) for instant loading without extraction.
 
 ### Linux keyboard shortcuts
@@ -109,6 +109,31 @@ via FUSE (mount-zip/archivemount) for instant loading without extraction.
 | F11 | Show disassembly of current packet |
 
 The window title bar shows Kc/s and FPS in real time.
+
+## Usage (Windows)
+
+The Windows build can also load games directly from ISO and ZIP files
+(no need to unpack these first):
+
+```
+Nuance.exe C:\path\to\game.zip
+Nuance.exe C:\path\to\game.iso
+Nuance.exe C:\path\to\NUON\nuon.run
+```
+
+You can also drag-and-drop a `.run` / `.cof` / `.nuon` / `.iso` / `.img` / `.zip`
+onto either the control panel window, or the game window - it will go through the
+same loader as the Load File button. The file dialog now filters by NUON-related
+extensions by default.
+
+ZIPs and ISOs are handled by bundled libraries (miniz + a built-in ISO9660 parser),
+so there are no external runtime dependencies. ZIPs containing an inner ISO have
+just the ISO extracted and read on the fly; ZIPs containing an extracted NUON
+folder have all entries unpacked to a temp directory. RAR and 7z are not
+supported on Windows - please extract those manually first.
+
+Audio output uses miniaudio (bundled) which routes through WASAPI / DirectSound /
+WinMM automatically.
 
 ## Configuration
 
@@ -555,7 +580,12 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 **version 0.6.7:**
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
-- Can load games directly from ZIP/ISO files on Linux. Case-insensitive file matching for DVD data files.
+- Replace FMOD 3.75 with miniaudio. No more outdated FMOD SDK / `fmod.dll` dependency.
+- Due to this, decouple host audio from Nuon DMA via a ring buffer (which was implicitly done by FMOD under the hood).
+- Audio interrupts are kept intact while muted (matches previous behavior, needs to be verified on real HW).
+- Drag and drop support for the UI.
+- Can load games directly from ZIP/ISO files on Windows.
+- On Linux additionally supports RAR/7z via FUSE tools.
 
 **03/21/2025 version 0.6.6:**
 - Implement (bi)linear address mirroring properly and enable it.

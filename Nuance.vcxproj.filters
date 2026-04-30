@@ -15,6 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="external\miniaudio_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="external\miniz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\archive.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -446,7 +455,13 @@
     <ClInclude Include="src\PresentationEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="external\fmod-3.75\api\inc\fmod.h">
+    <ClInclude Include="external\miniaudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external\miniz.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\archive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="external\glew-2.2.0\include\GL\glew.h">

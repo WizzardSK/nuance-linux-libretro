@@ -4,10 +4,15 @@
 #define ISO9660_H
 
 #include <cstdio>
+#include <cerrno>
 
-#ifdef _MSC_VER 
+#ifdef _MSC_VER
+#include <windows.h>
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define logout(x) MessageBox(NULL,x,ERROR,MB_ICONWARNING)
+#else
+#define logout(x) fprintf(stderr,x)
 #endif
 
 // Large file support for 32-bit builds
@@ -67,9 +72,11 @@ class ISO9660Reader {
             size_t nlen = strlen(name);
             if (nlen > 0 && name[nlen-1] == '.' && !strchr(name, '.')) name[nlen-1] = '\0';
 
-            fprintf(stderr, "ISO9660 readDir: entry '%s' (len=%u, bytes=%02x%02x%02x%02x) lba=%u size=%u dir=%d\n",
-                name, nameLen, (uint8_t)name[0], nameLen>1?(uint8_t)name[1]:0, nameLen>2?(uint8_t)name[2]:0, nameLen>3?(uint8_t)name[3]:0,
-                eLBA, eSize, isDir);
+            //char o[1024];
+            //sprintf(o, "ISO9660 readDir: entry '%s' (len=%u, bytes=%02x%02x%02x%02x) lba=%u size=%u dir=%d\n",
+            //    name, nameLen, (uint8_t)name[0], nameLen>1?(uint8_t)name[1]:0, nameLen>2?(uint8_t)name[2]:0, nameLen>3?(uint8_t)name[3]:0,
+            //    eLBA, eSize, isDir);
+            //logout(o);
             entries.push_back({name, eLBA, eSize, isDir});
             pos += recLen;
         }
@@ -82,18 +89,20 @@ public:
 
     bool open(const char* isoPath) {
         fp = ISO_FOPEN(isoPath, "rb");
-        if (!fp) { fprintf(stderr, "ISO9660: cannot open %s (errno=%d)\n", isoPath, errno); return false; }
+        if (!fp) { char o[1024]; sprintf(o, "ISO9660: cannot open %s (errno=%d)\n", isoPath, errno); logout(o); return false; }
 
         // Read primary volume descriptor at sector 16
         uint8_t pvd[2048];
         ISO_FSEEK(fp, 16 * 2048, SEEK_SET);
-        if (fread(pvd, 1, 2048, fp) != 2048) { fprintf(stderr, "ISO9660: cannot read PVD\n"); close(); return false; }
-        if (pvd[0] != 1 || memcmp(&pvd[1], "CD001", 5) != 0) { fprintf(stderr, "ISO9660: invalid PVD signature\n"); close(); return false; }
+        if (fread(pvd, 1, 2048, fp) != 2048) { char o[1024]; sprintf(o, "ISO9660: cannot read PVD\n"); logout(o); close(); return false; }
+        if (pvd[0] != 1 || memcmp(&pvd[1], "CD001", 5) != 0) { char o[1024]; sprintf(o, "ISO9660: invalid PVD signature\n"); logout(o); close(); return false; }
 
         // Root directory record at offset 156
         rootLBA = read32le(&pvd[156 + 2]);
         rootSize = read32le(&pvd[156 + 10]);
-        fprintf(stderr, "ISO9660: opened, root LBA=%u size=%u\n", rootLBA, rootSize);
+        //char o[1024];
+        //sprintf(o, "ISO9660: opened, root LBA=%u size=%u\n", rootLBA, rootSize);
+        //logout(o);
         return true;
     }
 
@@ -115,12 +124,15 @@ public:
             std::string component = spath.substr(start, end - start);
 
             auto entries = readDir(curLBA, curSize);
-            fprintf(stderr, "ISO9660: findFile looking for '%s' in dir (LBA=%u, %zu entries)\n",
-                component.c_str(), curLBA, entries.size());
+            //char o[1024];
+            //sprintf(o, "ISO9660: findFile looking for '%s' in dir (LBA=%u, %zu entries)\n",
+            //    component.c_str(), curLBA, entries.size());
+            //logout(o);
             bool found = false;
             for (auto& e : entries) {
                 int cmpResult = strcasecmp(e.name.c_str(), component.c_str());
-                fprintf(stderr, "ISO9660:   cmp '%s' vs '%s' = %d\n", e.name.c_str(), component.c_str(), cmpResult);
+                //sprintf(o, "ISO9660:   cmp '%s' vs '%s' = %d\n", e.name.c_str(), component.c_str(), cmpResult);
+                //logout(o);
                 if (cmpResult == 0) {
                     if (end >= spath.size()) {
                         // Last component — this is the file
@@ -143,13 +155,13 @@ public:
 
     // Extract a file to disk
     bool extractFile(const char* isoPath, const char* destPath) {
-        fprintf(stderr, "ISO9660: extractFile '%s' -> '%s'\n", isoPath, destPath); fflush(stderr);
+        //fprintf(stderr, "ISO9660: extractFile '%s' -> '%s'\n", isoPath, destPath); fflush(stderr);
         uint32_t lba, size;
-        if (!findFile(isoPath, lba, size)) { fprintf(stderr, "ISO9660: file not found\n"); return false; }
-        fprintf(stderr, "ISO9660: found at LBA=%u size=%u, writing...\n", lba, size); fflush(stderr);
+        if (!findFile(isoPath, lba, size)) { char o[1024]; sprintf(o, "ISO9660: file not found\n"); logout(o); return false; }
+        //fprintf(stderr, "ISO9660: found at LBA=%u size=%u, writing...\n", lba, size); fflush(stderr);
 
         FILE* out = fopen(destPath, "wb");
-        if (!out) { fprintf(stderr, "ISO9660: cannot create %s\n", destPath); return false; }
+        if (!out) { char o[1024]; sprintf(o, "ISO9660: cannot create %s\n", destPath); logout(o); return false; }
 
         ISO_FSEEK(fp, (long long)lba * 2048, SEEK_SET);
         uint8_t buf[65536];

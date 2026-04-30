@@ -6,13 +6,15 @@
 #include <windows.h>
 #include <string>
 #include <cstdio>
-#include <fmod.h>
+#include <atomic>
 #include "audio.h"
 #include "mpe.h"
 #include "InputManager.h"
 #include "NuonMemoryManager.h"
 #include "SuperBlock.h"
 #include "FlashEEPROM.h"
+
+struct ma_device; // to avoid including miniaudio.h
 
 enum class ConfigTokenType
 {
@@ -50,7 +52,9 @@ public:
 class NuonEnvironment
 {
 public:
-  NuonEnvironment() : dvdBase(nullptr), bFMODInitialized(false), audioChannel(0), debugLogFile(0), debugLogFileName(0),
+  NuonEnvironment() : dvdBase(nullptr), audioDevice(nullptr), audioDeviceRate(0), audioMuted(false), audioVolume(1.0f),
+    audioRing(nullptr), audioRingSize(0), audioRingPeriodBytes(0), audioRingWritePos(0), audioRingReadPos(0),
+    debugLogFile(0), debugLogFileName(0),
     controllerDefaultMapping{ // Note that the default mapping should always map to keyboard as it will also be used if no other joypad/stick is connected!
         // Original key mappings included with Nuance
         ControllerButtonMapping(InputManager::KEY, 'R', 0), // CTRLR_BITNUM_BUTTON_C_RIGHT
@@ -108,6 +112,12 @@ public:
   void RestartAudio();
   void SetAudioVolume(uint32 volume);
   void SetAudioPlaybackRate();
+
+  // Push the current Nuon DMA half into the host audio ring (byte-swapped), advance the
+  // half pointer, ack the channel-mode toggle, fire INT_AUDIO. Returns true if a period
+  // was pushed. Returns false if the ring isn't ready or has no free slot - caller should
+  // try again on the next loop iteration
+  bool TryPushAudioPeriod();
 
   bool IsAudioHalfInterruptEnabled() const
   {
@@ -186,10 +196,8 @@ public:
   uint32 nuonAudioBufferSize;
   //PC pointer to Nuon audio buffer in main bus or system bus DRAM
   uint8 * volatile pNuonAudioBuffer;
-  //Current position in the audio buffer for the sound output callback
+  //Current half of the Nuon DMA buffer to push into the audio ring next
   uint32 audio_buffer_offset;
-  //0 or 1, depending if the audio callback has played since the last emulation cycle
-  LONG audio_buffer_played;
   //Bitflag value passed back as return value in _AudioQuerySampleRates
   //The constructor initializes this variable.  Supported rates are
   //16000/22050/24000/32000/44100/48000/64000/88200/96000
@@ -232,6 +240,10 @@ private:
   ConfigTokenType ReadConfigLine(FILE *file, char buf[1025]);
   bool LoadConfigFile(const std::string& fileName);
 
+  // miniaudio device callback - static so miniaudio can call it as a C function pointer
+  // member so it can see the private ring/mute state via the userdata pointer
+  static void MiniAudioDataCallback(struct ma_device* pDevice, void* pOutput, const void* pInput, unsigned int frameCount);
+
   std::string cfgFileName;
   char *dvdBase;
   char *debugLogFileName;
@@ -242,10 +254,21 @@ private:
   ControllerButtonMapping controller1Mapping[16];       // dto.
   GUID controller1Di8Dev;
 
-  // FMOD specific stuff
-  bool bFMODInitialized;
-  FSOUND_STREAM* audioStream;
-  int audioChannel;
+  // miniaudio backend (opaque pointer; full type lives in miniaudio.h, included only by NuonEnvironment.cpp and the impl TU)
+  ma_device* audioDevice;
+  uint32 audioDeviceRate;       // sample rate the device was last initialized at (0 if no device)
+  std::atomic<bool> audioMuted; // read by audio thread, written by main thread
+  float audioVolume;            // 0.0..1.0
+
+  // SPSC ring of pre-byte-swapped audio bytes. Producer = main loop (push one Nuon period at a time)
+  // consumer = audio callback (drain whatever miniaudio asks for). Decouples Nuon-side period size
+  // from miniaudio's callback chunk size, so neither silence padding nor re-reads happen in the steady state
+  static constexpr uint32 AUDIO_RING_SLOTS = 4;
+  uint8* audioRing;                      // sized AUDIO_RING_SLOTS * (nuonAudioBufferSize >> 1)
+  uint32 audioRingSize;                  // total bytes (multiple of period bytes, never zero when ring is alive)
+  uint32 audioRingPeriodBytes;           // (nuonAudioBufferSize >> 1) at allocation time
+  std::atomic<uint32> audioRingWritePos; // monotonic byte counter, written by main thread, read with acquire by audio thread
+  std::atomic<uint32> audioRingReadPos;  // monotonic byte counter, written by audio thread, read with acquire by main thread
 };
 
 #endif

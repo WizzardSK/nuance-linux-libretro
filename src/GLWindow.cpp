@@ -1,5 +1,6 @@
 #include "basetypes.h"
 #include <windows.h>
+#include <shellapi.h>
 #include <process.h>
 #include <tchar.h>
 #include <mutex>
@@ -8,6 +9,8 @@
 #include "GLWindow.h"
 #include "NuanceMain.h"
 #include "video.h"
+
+extern bool Load(const char* file);
 
 /****************************************************************************
 OpenGL Window Code
@@ -470,6 +473,16 @@ LRESULT CALLBACK GLWindow::GLWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
     case WM_CLOSE:
       bQuit = true;
+      return 0;
+
+    case WM_DROPFILES:
+      {
+        HDROP hDrop = (HDROP)wParam;
+        char path[MAX_PATH] = {};
+        if (DragQueryFileA(hDrop, 0, path, MAX_PATH))
+          Load(path);
+        DragFinish(hDrop);
+      }
       return 0;
 
     case WM_DESTROY:

@@ -6,17 +6,21 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 #include "GLWindow.h"
 #include "NuanceMain.h"
 #include "NuanceUI.h"
 #include "video.h"
 #include "joystick.h"
 
+extern bool Load(const char* file);
 extern vidTexInfo videoTexInfo;
 extern std::mutex gfx_lock;
 
@@ -24,6 +28,13 @@ static Display* xDisplay = nullptr;
 static Window xWindow = 0;
 static GLXContext glxContext = nullptr;
 static Atom wmDeleteMessage;
+
+// XDND (drag-and-drop) atoms and per-drag state. Filled in CreateWindowGL.
+static Atom xdndAware, xdndEnter, xdndPosition, xdndStatus, xdndDrop, xdndLeave;
+static Atom xdndFinished, xdndSelection, xdndActionCopy, xdndUriList, xdndTargetProp;
+static Window  xdndSourceWindow = 0;
+static long    xdndSourceVersion = 0;
+static bool    xdndWillAccept   = false;
 
 GLWindow::GLWindow()
 {
@@ -135,6 +146,22 @@ bool GLWindow::CreateWindowGL()
   wmDeleteMessage = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
   XSetWMProtocols(xDisplay, xWindow, &wmDeleteMessage, 1);
 
+  // XDND drag-and-drop: cache atoms and advertise version 5 to drop sources.
+  xdndAware       = XInternAtom(xDisplay, "XdndAware",       False);
+  xdndEnter       = XInternAtom(xDisplay, "XdndEnter",       False);
+  xdndPosition    = XInternAtom(xDisplay, "XdndPosition",    False);
+  xdndStatus      = XInternAtom(xDisplay, "XdndStatus",      False);
+  xdndDrop        = XInternAtom(xDisplay, "XdndDrop",        False);
+  xdndLeave       = XInternAtom(xDisplay, "XdndLeave",       False);
+  xdndFinished    = XInternAtom(xDisplay, "XdndFinished",    False);
+  xdndSelection   = XInternAtom(xDisplay, "XdndSelection",   False);
+  xdndActionCopy  = XInternAtom(xDisplay, "XdndActionCopy",  False);
+  xdndUriList     = XInternAtom(xDisplay, "text/uri-list",   False);
+  xdndTargetProp  = XInternAtom(xDisplay, "NUANCE_XDND",     False);
+  const long xdndVersion = 5;
+  XChangeProperty(xDisplay, xWindow, xdndAware, XA_ATOM, 32,
+                  PropModeReplace, (unsigned char*)&xdndVersion, 1);
+
   XMapWindow(xDisplay, xWindow);
 
   glxContext = glXCreateContext(xDisplay, vi, nullptr, GL_TRUE);
@@ -213,6 +240,97 @@ static int XKeyToVKey(KeySym key)
   }
 }
 
+// URL-decode in place (handles %XX escapes). Used for parsing text/uri-list payloads.
+static void UrlDecodeInPlace(std::string& s)
+{
+  size_t w = 0;
+  for (size_t r = 0; r < s.size(); ) {
+    if (s[r] == '%' && r + 2 < s.size()) {
+      auto hex = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
+        if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
+        return -1;
+      };
+      const int hi = hex(s[r+1]), lo = hex(s[r+2]);
+      if (hi >= 0 && lo >= 0) { s[w++] = (char)((hi << 4) | lo); r += 3; continue; }
+    }
+    s[w++] = s[r++];
+  }
+  s.resize(w);
+}
+
+// Send an XdndStatus reply telling the source whether we accept and which action.
+static void XdndSendStatus(Window source, bool accept)
+{
+  XEvent ev = {};
+  ev.xclient.type = ClientMessage;
+  ev.xclient.display = xDisplay;
+  ev.xclient.window = source;
+  ev.xclient.message_type = xdndStatus;
+  ev.xclient.format = 32;
+  ev.xclient.data.l[0] = (long)xWindow;
+  ev.xclient.data.l[1] = accept ? 1 : 0; // bit 0: will accept; bit 1: want subsequent positions
+  ev.xclient.data.l[2] = 0; // x,y of safe rectangle (none = whole window)
+  ev.xclient.data.l[3] = 0; // w,h
+  ev.xclient.data.l[4] = accept ? (long)xdndActionCopy : 0;
+  XSendEvent(xDisplay, source, False, NoEventMask, &ev);
+  XFlush(xDisplay);
+}
+
+// Send XdndFinished after we're done processing the drop.
+static void XdndSendFinished(Window source, bool accepted)
+{
+  XEvent ev = {};
+  ev.xclient.type = ClientMessage;
+  ev.xclient.display = xDisplay;
+  ev.xclient.window = source;
+  ev.xclient.message_type = xdndFinished;
+  ev.xclient.format = 32;
+  ev.xclient.data.l[0] = (long)xWindow;
+  ev.xclient.data.l[1] = accepted ? 1 : 0;
+  ev.xclient.data.l[2] = accepted ? (long)xdndActionCopy : 0;
+  XSendEvent(xDisplay, source, False, NoEventMask, &ev);
+  XFlush(xDisplay);
+}
+
+// Pull the dropped data out of our XDND target property and route it through Load().
+static void XdndHandleSelectionNotify()
+{
+  Atom actualType = None;
+  int actualFormat = 0;
+  unsigned long nItems = 0, bytesAfter = 0;
+  unsigned char* data = nullptr;
+
+  if (XGetWindowProperty(xDisplay, xWindow, xdndTargetProp, 0, 65536, True,
+                         AnyPropertyType, &actualType, &actualFormat,
+                         &nItems, &bytesAfter, &data) == Success && data) {
+    // text/uri-list: lines separated by CRLF, each "file:///path%20with%20escapes".
+    // Take the first non-empty, non-comment line.
+    std::string blob((const char*)data, nItems);
+    XFree(data);
+
+    size_t lineEnd = blob.find('\n');
+    std::string first = (lineEnd == std::string::npos) ? blob : blob.substr(0, lineEnd);
+    while (!first.empty() && (first.back() == '\r' || first.back() == '\n'))
+      first.pop_back();
+
+    if (!first.empty() && first[0] != '#') {
+      const char* kFilePrefix = "file://";
+      if (first.compare(0, strlen(kFilePrefix), kFilePrefix) == 0)
+        first.erase(0, strlen(kFilePrefix));
+      UrlDecodeInPlace(first);
+      if (!first.empty()) Load(first.c_str());
+    }
+  }
+
+  if (xdndSourceWindow) {
+    XdndSendFinished(xdndSourceWindow, xdndWillAccept);
+    xdndSourceWindow = 0;
+    xdndWillAccept = false;
+  }
+}
+
 void GLWindow::MessagePump()
 {
   if (inputManager) inputManager->UpdateState(applyControllerState, nullptr, nullptr);
@@ -267,8 +385,54 @@ void GLWindow::MessagePump()
         break;
       }
       case ClientMessage:
-        if ((Atom)ev.xclient.data.l[0] == wmDeleteMessage)
+        if (ev.xclient.message_type == xdndEnter) {
+          xdndSourceWindow  = (Window)ev.xclient.data.l[0];
+          xdndSourceVersion = (ev.xclient.data.l[1] >> 24) & 0xff;
+          // Check if source advertises text/uri-list. If the high bit of data.l[1] is
+          // set the type list is in a property; otherwise data.l[2..4] hold up to 3 atoms.
+          xdndWillAccept = false;
+          if (ev.xclient.data.l[1] & 1) {
+            Atom actualType = None; int actualFormat = 0;
+            unsigned long nItems = 0, bytesAfter = 0;
+            unsigned char* data = nullptr;
+            Atom typeListAtom = XInternAtom(xDisplay, "XdndTypeList", False);
+            if (XGetWindowProperty(xDisplay, xdndSourceWindow, typeListAtom, 0, 1024, False,
+                                   XA_ATOM, &actualType, &actualFormat,
+                                   &nItems, &bytesAfter, &data) == Success && data) {
+              const Atom* atoms = (const Atom*)data;
+              for (unsigned long i = 0; i < nItems; i++)
+                if (atoms[i] == xdndUriList) { xdndWillAccept = true; break; }
+              XFree(data);
+            }
+          } else {
+            for (int i = 2; i <= 4; i++)
+              if ((Atom)ev.xclient.data.l[i] == xdndUriList) { xdndWillAccept = true; break; }
+          }
+        }
+        else if (ev.xclient.message_type == xdndPosition) {
+          XdndSendStatus((Window)ev.xclient.data.l[0], xdndWillAccept);
+        }
+        else if (ev.xclient.message_type == xdndLeave) {
+          xdndSourceWindow = 0;
+          xdndWillAccept = false;
+        }
+        else if (ev.xclient.message_type == xdndDrop) {
+          if (xdndWillAccept) {
+            const Time t = (xdndSourceVersion >= 1) ? (Time)ev.xclient.data.l[2] : CurrentTime;
+            XConvertSelection(xDisplay, xdndSelection, xdndUriList, xdndTargetProp, xWindow, t);
+            // Reply (XdndFinished) is sent from XdndHandleSelectionNotify after the SelectionNotify arrives.
+          } else {
+            XdndSendFinished((Window)ev.xclient.data.l[0], false);
+            xdndSourceWindow = 0;
+          }
+        }
+        else if ((Atom)ev.xclient.data.l[0] == wmDeleteMessage) {
           bQuit = true;
+        }
+        break;
+      case SelectionNotify:
+        if (ev.xselection.property == xdndTargetProp)
+          XdndHandleSelectionNotify();
         break;
     }
   }

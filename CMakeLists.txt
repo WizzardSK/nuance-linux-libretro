@@ -20,19 +20,27 @@ target_compile_definitions(glew_static PUBLIC GLEW_STATIC GLEW_NO_GLU)
 target_link_libraries(glew_static PUBLIC OpenGL::GL)
 set_property(TARGET glew_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# FMOD stub
-add_library(fmod_stub STATIC external/fmod_stub.cpp)
-target_include_directories(fmod_stub PUBLIC external)
-target_compile_definitions(fmod_stub PUBLIC F_API= DLL_API=)
-set_property(TARGET fmod_stub PROPERTY POSITION_INDEPENDENT_CODE ON)
+## miniaudio (single-TU implementation)
+add_library(miniaudio_impl STATIC external/miniaudio_impl.cpp)
+target_include_directories(miniaudio_impl PUBLIC external)
+set_property(TARGET miniaudio_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# MurmurHash3
-add_library(murmurhash STATIC external/MurmurHash3.cpp)
-target_include_directories(murmurhash PUBLIC external)
-set_property(TARGET murmurhash PROPERTY POSITION_INDEPENDENT_CODE ON)
+# miniz (single-file ZIP reader)
+# Bring miniz in unconditionally; on Linux we don't currently use it (FUSE tools handle ZIPs)
+# but compiling it is cheap and lets us drop the FUSE deps later-on, if wanted
+add_library(miniz_impl STATIC external/miniz.c)
+target_include_directories(miniz_impl PUBLIC external)
+set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# MurmurHash3 — currently unused (the codebase uses xxHash instead). Kept on disk
+# in case OverlayManager ever switches back; uncomment to re-enable
+#add_library(murmurhash STATIC external/MurmurHash3.cpp)
+#target_include_directories(murmurhash PUBLIC external)
+#set_property(TARGET murmurhash PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Main executable sources
 set(NUANCE_SOURCES
+    src/archive.cpp
     src/audio.cpp
     src/bdma_type12.cpp
     src/bdma_type5.cpp
@@ -115,7 +123,6 @@ target_include_directories(${NUANCE_TARGET} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glew-2.2.0/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/fmod-3.75/api/inc
     ${SDL2_INCLUDE_DIRS}
 )
 
@@ -128,8 +135,9 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
 
 target_link_libraries(${NUANCE_TARGET} PRIVATE
     glew_static
-    fmod_stub
-    murmurhash
+    miniaudio_impl
+    miniz_impl
+    #murmurhash # unused — see add_library above
     OpenGL::GL
     ${SDL2_LIBRARIES}
     pthread
