@@ -1,7 +1,6 @@
 Game Compatibility:
 
-Not all commercial games are supported.  The level of compatibility for the major
-commercial releases are described below:
+Not all commercial games are supported.  The level of compatibility for the major commercial releases are described below:
 
 Compatibility Level:
 ====================
@@ -11,7 +10,7 @@ Space Invaders XL
 Playable, BUT rarely hangs in Battle Mode and Time Attack.
 
 The Next Tetris
------------------
+---------------
 Playable, distorted music/speech.
 
 Merlin Racing
@@ -28,14 +27,22 @@ Playable, BUT
 2) hangs (only if dynamic compilation enabled) on entering level select
    WORKAROUND enter options->vector test before
 (so best is to do 1) and 2) first before starting the game at all)
-Also music does not loop correctly.
+Also music does not loop correctly (loops waaaaaay too early, another indication that something is fishy with the somehow special T3K audio handling).
 
 Ballistic
 ---------
 Close to perfect.
 
-Freefall 3050 AD
-----------------
+Crayon Shin-Chan 3
+------------------
+Playable.
+
+Bust A Move 4
+-------------
+Unreleased so far, but exists. Thus not tested.
+
+Freefall 3050 A.D.
+------------------
 Unplayable.  Will require MPEG playback.
 
 Iron Soldier 3

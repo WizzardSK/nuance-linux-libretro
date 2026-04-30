@@ -1092,7 +1092,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   hDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_CONTROL_PANEL),NULL,ControlPanelDialogProc);
   const HWND hStatusDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_STATUS_DIALOG),NULL,StatusWindowDialogProc);
 
-  // Accept drag-and-dropped files (.run/.cof/.iso/.zip) on the control panel and
+  // Accept drag-and-dropped files (.run/.cd/.cof/.iso/.zip) on the control panel and
   // the GL display window. Both route through Load() -> ResolveGameFile().
   DragAcceptFiles(hDlg, TRUE);
   if (display.hWnd)
@@ -1136,8 +1136,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   ofn.nMaxFile = sizeof(openFileName);
   // OPENFILENAME filter strings are double-NUL-terminated pairs of "label\0pattern\0..."
   ofn.lpstrFilter =
-    "NUON files (*.run;*.cof;*.nuon;*.iso;*.img;*.zip)\0*.run;*.cof;*.nuon;*.iso;*.img;*.zip\0"
-    "NUON executables (*.run;*.cof;*.nuon)\0*.run;*.cof;*.nuon\0"
+    "NUON files (*.run;*.cd;*.cof;*.nuon;*.iso;*.img;*.zip)\0*.run;*.cd;*.cof;*.nuon;*.iso;*.img;*.zip\0"
+    "NUON executables (*.run;*.cd;*.cof;*.nuon)\0*.run;*.cd;*.cof;*.nuon\0"
     "Disc images (*.iso;*.img)\0*.iso;*.img\0"
     "ZIP archives (*.zip)\0*.zip\0"
     "All files (*.*)\0*.*\0";

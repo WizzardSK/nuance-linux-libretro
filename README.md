@@ -121,7 +121,7 @@ Nuance.exe C:\path\to\game.iso
 Nuance.exe C:\path\to\NUON\nuon.run
 ```
 
-You can also drag-and-drop a `.run` / `.cof` / `.nuon` / `.iso` / `.img` / `.zip`
+You can also drag-and-drop a `.run` / `.cd` / `.cof` / `.nuon` / `.iso` / `.img` / `.zip`
 onto either the control panel window, or the game window - it will go through the
 same loader as the Load File button. The file dialog now filters by NUON-related
 extensions by default.

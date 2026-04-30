@@ -5,7 +5,7 @@
 
 // Resolve a user-supplied input path to a loadable game file
 //
-// If the input is a plain .run / .cof / .nuon, returns the input unchanged.
+// If the input is a plain .run / .cd / .cof / .nuon, returns the input unchanged.
 // If the input is an ISO/IMG, ZIP (on Linux also 7z,RAR,etc.), the archive is
 // opened/mounted and the NUON boot file (nuon.run / NUON.CD / cd_app.cof) is
 // extracted to a temp location whose path is returned
