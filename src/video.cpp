@@ -408,6 +408,14 @@ void RenderVideo(const int winwidth, const int winheight)
     bTexturesInitialized = true;
   }
 
+  // Re-bind the shader program every frame. In standalone the GL context
+  // keeps the shader bound from InitTextures forever, but the libretro HW
+  // render path swaps GL state between frames (RetroArch may bind its own
+  // shader for menu/UI), so without this re-bind the YCrCbA → RGB pixel
+  // shader is missing and the textured quad shows up as black.
+  if(bShadersInstalled)
+    shaderProgram.StartShaderProgram();
+
   if(!bSetupViewport)
   {
     if(bUseSeparateThread) gfx_lock.lock();
