@@ -235,7 +235,10 @@ void MPE::DecodeInstruction_ALU16(const uint8 * const iPtr, InstructionCacheEntr
       //asl #m, Sk
       entry->packetInfo |= aslFlags;
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_HANDLER)] = Handler_ASL;
-      entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = (32UL - field_1F);
+      //#m=0 must decode to SRC1=0, not 32, to avoid colliding with the
+      //AS->ASL conversion path (where SRC1=32 means "shift left by 32 = clear")
+      //and to avoid relying on x86 shift-count masking (UB in C++).
+      entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = ((32U - field_1F) & 0x1FU);
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC2)] = field_3E0;
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_DEST)] = field_3E0;
       entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E0);
@@ -268,7 +271,7 @@ void MPE::DecodeInstruction_ALU16(const uint8 * const iPtr, InstructionCacheEntr
       //btst #m, Sj
       entry->packetInfo |= btstFlags;
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_HANDLER)] = Handler_BTST;
-      entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = (1UL << field_1F);
+      entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = (1U << field_1F);
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC2)] = field_3E0;
       entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_DEST)] = field_3E0;
       entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E0);
@@ -1018,7 +1021,10 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->packetInfo |= aslFlags;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_HANDLER)] = Handler_ASL;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC2)] = field_3E00000; //Si
-          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 32UL - field_1F; //#m
+          //#m=0 must decode to SRC1=0, not 32, to avoid colliding with the
+          //AS->ASL conversion path (where SRC1=32 means "shift left by 32 = clear")
+          //and to avoid relying on x86 shift-count masking (UB in C++).
+          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = ((32U - field_1F) & 0x1FU); //#m
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_DEST)] = field_1F0000;  // Sk
           entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E00000);
           entry->scalarOutputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_1F0000);
@@ -1076,7 +1082,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E00000) | SCALAR_REG_DEPENDENCY_MASK(field_1F0000);
           entry->scalarOutputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_1F0000);
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVZ;
-          if(field_1F & 0x10UL)
+          if(field_1F & 0x10U)
           {
             entry->packetInfo |= rolFlags;
             entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 32u - field_1F;
@@ -1104,7 +1110,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->packetInfo |= bitsFlags;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_HANDLER)] = Handler_BITSScalar;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_INFO)] = field_1F;
-          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 0xFFFFFFFFUL >> (31 - field_1F); // mask ($FFFFFFFF >> (31 - #n))
+          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 0xFFFFFFFFU >> (31 - field_1F); // mask ($FFFFFFFF >> (31 - #n))
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC2)] = field_1F0000; // >>Si
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_DEST)] = field_3E00000; //Sk
           entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E00000) | SCALAR_REG_DEPENDENCY_MASK(field_1F0000);
@@ -1116,7 +1122,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->packetInfo |= bitsFlags;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_HANDLER)] = Handler_BITSImmediate;
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_INFO)] = field_1F;
-          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 0xFFFFFFFFUL >> (31 - field_1F); // mask ($FFFFFFFF >> (31 - #n))
+          entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = 0xFFFFFFFFU >> (31 - field_1F); // mask ($FFFFFFFF >> (31 - #n))
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC2)] = field_1F0000; // >>#m
           entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_DEST)] = field_3E00000; //Sk
           entry->scalarInputDependencies[SLOT_ALU] = SCALAR_REG_DEPENDENCY_MASK(field_3E00000);

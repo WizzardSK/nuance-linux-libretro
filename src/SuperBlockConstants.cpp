@@ -14,7 +14,7 @@ bool SuperBlockConstants::EvaluateBranchCondition(const uint32 whichCondition, b
 {
   bool bIsConstant = false;
 
-  switch(whichCondition & 0x1FUL)
+  switch(whichCondition & 0x1FU)
   {
     case 0:
       if(IsMiscRegisterConstant(CONSTANT_REG_Z))
@@ -97,55 +97,46 @@ bool SuperBlockConstants::EvaluateBranchCondition(const uint32 whichCondition, b
       }
       break;
     case 11:
-      //!(C + Z): if either C and Z is constant and true, the condition is constant and the branch is not taken,
-      //otherwise both C and Z must be constant
-      if(IsMiscRegisterConstant(CONSTANT_REG_C))
+      //!(C + Z) (hi): true iff both C and Z are clear.
+      //If either is constant and SET, the branch is not taken.
+      //If both are constant and CLEAR, the branch IS taken.
+      //Otherwise (some operand unknown but not yet pinned down), bail.
+      if(IsMiscRegisterConstant(CONSTANT_REG_C) && (GetMiscRegisterConstant(CONSTANT_REG_C) != 0))
       {
-        const uint32 flag1 = GetMiscRegisterConstant(CONSTANT_REG_C);
-        if(flag1 != 0)
-        {
-          bIsConstant = true;
-          branchResult = false;
-        }
-        else
-        {
-          if(IsMiscRegisterConstant(CONSTANT_REG_Z))
-          {
-            if(GetMiscRegisterConstant(CONSTANT_REG_Z))
-            {
-              bIsConstant = true;
-              branchResult = (GetMiscRegisterConstant(CONSTANT_REG_Z) == 0);
-            }
-          }
-        }
+        bIsConstant = true;
+        branchResult = false;
       }
-      else if(IsMiscRegisterConstant(CONSTANT_REG_Z))
+      else if(IsMiscRegisterConstant(CONSTANT_REG_Z) && (GetMiscRegisterConstant(CONSTANT_REG_Z) != 0))
       {
-        const uint32 flag1 = GetMiscRegisterConstant(CONSTANT_REG_Z);
-        if(flag1 != 0)
-        {
-          bIsConstant = true;
-          branchResult = false;
-        }
+        bIsConstant = true;
+        branchResult = false;
+      }
+      else if(IsMiscRegisterConstant(CONSTANT_REG_C) && IsMiscRegisterConstant(CONSTANT_REG_Z))
+      {
+        //Both C and Z are constant 0 here -> hi is true.
+        bIsConstant = true;
+        branchResult = true;
       }
       break;
     case 12:
-      //Z + N.~V + ~N.V: if Z is constant and true, the condition is constant and the branch is taken,
-      //otherwise both N and V must be constant
-      if(IsMiscRegisterConstant(CONSTANT_REG_N) && IsMiscRegisterConstant(CONSTANT_REG_V))
+      //Z + N.~V + ~N.V (le): true iff Z is set OR (N XOR V).
+      //Mirrors case 16 (gt): check Z first, then fall back to N XOR V when Z is constant 0.
+      //The previous code evaluated (N XOR V) whenever N and V were constant, ignoring
+      //Z=1 (which makes le true regardless) - that mishandled e.g. cmp x,x => le must fire.
+      if(IsMiscRegisterConstant(CONSTANT_REG_Z))
       {
-        bIsConstant = true;
-        const uint32 flag1 = GetMiscRegisterConstant(CONSTANT_REG_N);
-        const uint32 flag2 = GetMiscRegisterConstant(CONSTANT_REG_V);
-        //N(~V) || (~N)V
-        branchResult = ((flag1 ^ flag2) != 0);
-      }
-      else if(IsMiscRegisterConstant(CONSTANT_REG_Z))
-      {
-        if(GetMiscRegisterConstant(CONSTANT_REG_Z))
+        if(GetMiscRegisterConstant(CONSTANT_REG_Z) != 0)
         {
           bIsConstant = true;
           branchResult = true;
+        }
+        else if(IsMiscRegisterConstant(CONSTANT_REG_N) && IsMiscRegisterConstant(CONSTANT_REG_V))
+        {
+          bIsConstant = true;
+          const uint32 flag1 = GetMiscRegisterConstant(CONSTANT_REG_N);
+          const uint32 flag2 = GetMiscRegisterConstant(CONSTANT_REG_V);
+          //N(~V) || (~N)V
+          branchResult = ((flag1 ^ flag2) != 0);
         }
       }
       break;

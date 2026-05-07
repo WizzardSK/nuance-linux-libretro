@@ -252,7 +252,7 @@ The configuration entries applicable to dynamic compilation are:
 - **`[DynamicCompiler]`** Enabled/Disabled: forces (slower) interpretation when disabled, recommended: Enabled
 
 - **`[CompilerConstantPropagation]`** Enabled/Disabled: toggles constant propagation phase that is performed after fetching
-  the block instructions. NOTE: Still buggy, recommended: Disabled
+  the block instructions. NOTE: Might still be a bit buggy in corner cases, but recommended: Enabled
 
 - **`[CompilerDeadCodeElimination]`** Enabled/Disabled: toggles dead code elimination phase that is performed after constant
   propagation. NOTE: Still buggy, recommended: Disabled
@@ -586,6 +586,10 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 - Drag and drop support for the UI.
 - Can load games directly from ZIP/ISO files on Windows.
 - On Linux additionally supports RAR/7z via FUSE tools.
+- All "with carry" opcodes (=addwc/subwc/cmpwc variants) should now behave as written in the ISA spec.
+- BTST is still not same as ISA spec (as apparently a real HW bug).
+- Multiple bugs in the "CompilerConstantPropagation"-enabled path fixed, so enabled by default now, leading to more performance.
+- Correct Audio Buffer sizes used for all configurations (via GetBufferSize()).
 
 **03/21/2025 version 0.6.6:**
 - Implement (bi)linear address mirroring properly and enable it.

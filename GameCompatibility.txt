@@ -17,7 +17,7 @@ Merlin Racing
 -------------
 Playable, BUT some screen corruption when watching the Adventure intro, 
 and minor gfx glitches during the race.
-And most noticeably: AI karts are driving around more or less randomly.
+And most noticeably: AI karts are driving around more or less randomly (NOT when JIT compiler turned off).
 
 Tempest 3000
 ------------
