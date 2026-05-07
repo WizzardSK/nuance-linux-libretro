@@ -3,7 +3,7 @@
 
 #include "basetypes.h"
 #include "InstructionCache.h"
-#include "nativecodecache.h"
+#include "NativeCodeCache.h"
 #include "SuperBlockConstants.h"
 
 #define MAX_SUPERBLOCK_PACKETS 120

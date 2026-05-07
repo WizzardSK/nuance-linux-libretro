@@ -5,7 +5,7 @@
 #include "ExecuteMEM.h"
 #include "InstructionCache.h"
 #include "mpe.h"
-#include "nativecodecache.h"
+#include "NativeCodeCache.h"
 #include "NuonEnvironment.h"
 #include "X86EmitTypes.h"
 

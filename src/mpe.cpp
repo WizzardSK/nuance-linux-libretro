@@ -20,7 +20,7 @@
 #include "InstructionCache.h"
 #include "InstructionDependencies.h"
 #include "mpe.h"
-#include "nativecodecache.h"
+#include "NativeCodeCache.h"
 #include "NuonEnvironment.h"
 #include "NuonMemoryMap.h"
 #include "OverlayManager.h"
