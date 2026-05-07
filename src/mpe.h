@@ -26,7 +26,7 @@
 
 #include "basetypes.h"
 #include "InstructionCache.h"
-#include "nativecodecache.h"
+#include "NativeCodeCache.h"
 #include "NuonMemoryMap.h"
 #include "OverlayManager.h"
 #include "Syscall.h"

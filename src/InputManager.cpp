@@ -1,6 +1,6 @@
 #include "InputManager.h"
 #include "joystick.h"
-#include "nuonenvironment.h"
+#include "NuonEnvironment.h"
 
 #include <cstdio>
 

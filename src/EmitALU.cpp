@@ -2,7 +2,7 @@
 #include "InstructionCache.h"
 #include "InstructionDependencies.h"
 #include "EmitMisc.h"
-#include "nativecodecache.h"
+#include "NativeCodeCache.h"
 #include "PatchManager.h"
 #include "mpe.h"
 
