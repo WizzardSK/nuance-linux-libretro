@@ -71,11 +71,47 @@ void Execute_BITSImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuanc
 
 void Execute_BTST(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
+  // SPEC MISMATCH - DO NOT "FIX":
+  // "MPE Instruction Set Reference" describes BTST:
+  //   z : set if the selected bit is zero, cleared otherwise.
+  //   n : set if the selected bit was bit 31 and it was not zero.
+  //   c : unchanged.
+  //   v : cleared.
+  //
+  // The N-flag clause looks like a sign-of-MSB rule for "treat the source as
+  // negative if bit 31 is set". A spec-following implementation would
+  // be the commented-out block below.
+  //
+  // HOWEVER, T3K's own audio engine at 0x80014e3a..0x80014f54 contains what
+  // looks like a CPU self-test for BTST: it sets r6 to known values
+  // (0x80000000, 0xF00FF00F, 0x7FFFFFFF), forces CC to a known starting
+  // value with `st_s #imm,cc`, runs `btst #$1F,r6`, reads CC back, ANDs
+  // with 0x1FF, and `cmp`s against an expected post-state. For
+  // r6=0x80000000 / initial CC=0x1F7, the expected post-CC is 0x1F2 —
+  // i.e., bit 3 (N, value 0x08) is *cleared*, not set, even though bit 31
+  // was tested and was non-zero. The other two tests are consistent.
+  //
+  // Since T3K is silicon-validated, the real hardware does NOT
+  // set N for bit-31 BTST despite the spec wording. The original emulator
+  // implementation (clear N along with Z/V, only set Z when the bit is 0)
+  // matches that observed silicon behaviour and is therefore preserved.
+  //
+  // This is also undermined by Mike Perry's instructiontest.c prog,
+  // which mentions this NUON BTST hardware bug/behavior in there.
+
+  const uint32 mask = nuance.fields[FIELD_ALU_SRC1]; // (1 << bitN) per DecodeALU
+  const uint32 bit = mask & pRegs[nuance.fields[FIELD_ALU_SRC2]];
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
-  if(!(nuance.fields[FIELD_ALU_SRC1] & pRegs[nuance.fields[FIELD_ALU_SRC2]]))
+  if(!bit)
   {
     mpe.cc |= CC_ALU_ZERO;
   }
+#if 0 // see above
+  if((mask == 0x80000000u) && bit)
+  {
+    mpe.cc |= CC_ALU_NEGATIVE;
+  }
+#endif
 }
 
 void Execute_BUTT(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -159,7 +195,7 @@ void Execute_MSB(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
     //return the ones count... if n was originally 0 or -1 then the ones count
     //will be zero which is exactly what we want
-    sigbits = ((uint32)n) & 0x1FUL;
+    sigbits = ((uint32)n) & 0x1FU;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = sigbits;
@@ -172,7 +208,7 @@ void Execute_MSB(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_SAT(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  int32 mask = (0x01UL << nuance.fields[FIELD_ALU_SRC2]) - 1;
+  int32 mask = (0x01U << nuance.fields[FIELD_ALU_SRC2]) - 1;
   const int32 n = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 dest = nuance.fields[FIELD_ALU_DEST];
 
@@ -217,14 +253,14 @@ void Execute_SAT(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_AS(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FUL;
+        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FU;
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_OVERFLOW | CC_ALU_NEGATIVE | CC_ALU_CARRY);
 
   if(src1 & 0x20)
   {
     //shift left
-    src1 = 64UL - src1;
+    src1 = 64U - src1;
     //carry = bit 31 of source
     mpe.cc |= ((src2 >> 30) & CC_ALU_CARRY);
     const uint32 result = src2 << src1;
@@ -314,14 +350,14 @@ void Execute_ASR(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_LS(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FUL;
+        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FU;
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_OVERFLOW | CC_ALU_NEGATIVE | CC_ALU_CARRY);
 
   if(src1 & 0x20)
   {
     //shift left
-    src1 = 64UL - src1;
+    src1 = 64U - src1;
     //carry = bit 31 of source
     mpe.cc |= ((src2 >> 30) & CC_ALU_CARRY);
     const uint32 result = src2 << src1;
@@ -386,7 +422,7 @@ void Execute_LSR(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_ROT(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FUL;
+        uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] & 0x3FU;
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_OVERFLOW | CC_ALU_NEGATIVE);
@@ -394,7 +430,7 @@ void Execute_ROT(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   if(src1 & 0x20)
   {
     //shift left
-    src1 = 64UL - src1;
+    src1 = 64U - src1;
     const uint32 result = _lrotl(src2,src1);
     mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
 
@@ -946,12 +982,12 @@ void Execute_ANDImmediateShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nua
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= (src1 << (64UL - src2));
+    dest &= (src1 << (64U - src2));
   }
   else
   {
@@ -1019,12 +1055,12 @@ void Execute_ANDScalarShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuance
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= (src1 << (64UL - src2));
+    dest &= (src1 << (64U - src2));
   }
   else
   {
@@ -1048,12 +1084,12 @@ void Execute_ANDScalarRotateScalar(MPE &mpe, const uint32 pRegs[48], const Nuanc
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= _lrotl(src1, 64UL - src2);
+    dest &= _lrotl(src1, 64U - src2);
   }
   else
   {
@@ -1113,12 +1149,12 @@ void Execute_FTSTImmediateShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nu
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= (src1 << (64UL - src2));
+    dest &= (src1 << (64U - src2));
   }
   else
   {
@@ -1180,12 +1216,12 @@ void Execute_FTSTScalarShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuanc
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= (src1 << (64UL - src2));
+    dest &= (src1 << (64U - src2));
   }
   else
   {
@@ -1207,12 +1243,12 @@ void Execute_FTSTScalarRotateScalar(MPE &mpe, const uint32 pRegs[48], const Nuan
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest &= _lrotl(src1, 64UL - src2);
+    dest &= _lrotl(src1, 64U - src2);
   }
   else
   {
@@ -1274,12 +1310,12 @@ void Execute_ORImmediateShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuan
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest |= (src1 << (64UL - src2));
+    dest |= (src1 << (64U - src2));
   }
   else
   {
@@ -1347,12 +1383,12 @@ void Execute_ORScalarShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuance 
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest |= (src1 << (64UL - src2));
+    dest |= (src1 << (64U - src2));
   }
   else
   {
@@ -1376,12 +1412,12 @@ void Execute_ORScalarRotateScalar(MPE &mpe, const uint32 pRegs[48], const Nuance
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest |= _lrotl(src1, 64UL - src2);
+    dest |= _lrotl(src1, 64U - src2);
   }
   else
   {
@@ -1445,12 +1481,12 @@ void Execute_EORImmediateShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nua
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest ^= (src1 << (64UL - src2));
+    dest ^= (src1 << (64U - src2));
   }
   else
   {
@@ -1518,12 +1554,12 @@ void Execute_EORScalarShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuance
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest ^= (src1 << (64UL - src2));
+    dest ^= (src1 << (64U - src2));
   }
   else
   {
@@ -1547,12 +1583,12 @@ void Execute_EORScalarRotateScalar(MPE &mpe, const uint32 pRegs[48], const Nuanc
   mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
 
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
-  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FUL;
+  const uint32 src2 = (((int32)(pRegs[nuance.fields[FIELD_ALU_SRC2]] << 26)) >> 26) & 0x3FU;
         uint32 dest = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
   if(src2 & 0x20)
   {
-    dest ^= _lrotl(src1, 64UL - src2);
+    dest ^= _lrotl(src1, 64U - src2);
   }
   else
   {
@@ -1576,7 +1612,7 @@ void Execute_ADDWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _addcarry_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src1, src2, &result) ? CC_ALU_CARRY : 0;
@@ -1589,9 +1625,9 @@ void Execute_ADDWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1602,7 +1638,7 @@ void Execute_ADDWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _addcarry_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src1, src2, &result) ? CC_ALU_CARRY : 0;
@@ -1615,9 +1651,9 @@ void Execute_ADDWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1628,7 +1664,7 @@ void Execute_ADDWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   const uint32 src1 = ((int32)pRegs[nuance.fields[FIELD_ALU_SRC1]]) >> nuance.fields[FIELD_ALU_SRC2];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _addcarry_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src1, src2, &result) ? CC_ALU_CARRY : 0;
@@ -1641,9 +1677,9 @@ void Execute_ADDWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1654,7 +1690,7 @@ void Execute_ADDWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] << nuance.fields[FIELD_ALU_SRC2]; // do not cast to u64 before shift!
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _addcarry_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src1, src2, &result) ? CC_ALU_CARRY : 0;
@@ -1667,9 +1703,9 @@ void Execute_ADDWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1680,7 +1716,7 @@ void Execute_SUBWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1693,9 +1729,9 @@ void Execute_SUBWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1706,7 +1742,7 @@ void Execute_SUBWCImmediateReverse(MPE &mpe, const uint32 pRegs[48], const Nuanc
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 src2 = nuance.fields[FIELD_ALU_SRC2];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1719,9 +1755,9 @@ void Execute_SUBWCImmediateReverse(MPE &mpe, const uint32 pRegs[48], const Nuanc
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1732,7 +1768,7 @@ void Execute_SUBWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1745,9 +1781,9 @@ void Execute_SUBWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1758,7 +1794,7 @@ void Execute_SUBWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   const uint32 src1 = ((int32)pRegs[nuance.fields[FIELD_ALU_SRC1]]) >> nuance.fields[FIELD_ALU_SRC2];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1771,9 +1807,9 @@ void Execute_SUBWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1784,7 +1820,7 @@ void Execute_SUBWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] << nuance.fields[FIELD_ALU_SRC2]; // do not cast to u64 before shift!
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1797,9 +1833,9 @@ void Execute_SUBWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = result;
@@ -1810,7 +1846,7 @@ void Execute_CMPWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   const uint32 src1 = nuance.fields[FIELD_ALU_SRC1];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1823,9 +1859,9 @@ void Execute_CMPWCImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 }
 
@@ -1834,7 +1870,7 @@ void Execute_CMPWCImmediateReverse(MPE &mpe, const uint32 pRegs[48], const Nuanc
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 src2 = nuance.fields[FIELD_ALU_SRC2];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1847,9 +1883,9 @@ void Execute_CMPWCImmediateReverse(MPE &mpe, const uint32 pRegs[48], const Nuanc
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 }
 
@@ -1858,7 +1894,7 @@ void Execute_CMPWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_SRC2]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1871,9 +1907,9 @@ void Execute_CMPWCScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 }
 
@@ -1882,7 +1918,7 @@ void Execute_CMPWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   const uint32 src1 = ((int32)pRegs[nuance.fields[FIELD_ALU_SRC1]]) >> nuance.fields[FIELD_ALU_SRC2];
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1895,9 +1931,9 @@ void Execute_CMPWCScalarShiftRightImmediate(MPE &mpe, const uint32 pRegs[48], co
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 }
 
@@ -1906,7 +1942,7 @@ void Execute_CMPWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   const uint32 src1 = pRegs[nuance.fields[FIELD_ALU_SRC1]] << nuance.fields[FIELD_ALU_SRC2]; // do not cast to u64 before shift!
   const uint32 src2 = pRegs[nuance.fields[FIELD_ALU_DEST]];
 
-  mpe.cc &= ~(CC_ALU_ZERO | CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY);
+  mpe.cc &= ~(CC_ALU_NEGATIVE | CC_ALU_OVERFLOW | CC_ALU_CARRY); // WC: do NOT clear Z here (spec: z unchanged if result==0, cleared otherwise)
 
   uint32 result;
   mpe.cc |= _subborrow_u32((mpe.tempCC & CC_ALU_CARRY) >> 1, src2, src1, &result) ? CC_ALU_CARRY : 0;
@@ -1919,8 +1955,8 @@ void Execute_CMPWCScalarShiftLeftImmediate(MPE &mpe, const uint32 pRegs[48], con
   {
     mpe.cc |= CC_ALU_NEGATIVE;
   }
-  if(!result)
+  if(result)
   {
-    mpe.cc |= CC_ALU_ZERO;
+    mpe.cc &= ~CC_ALU_ZERO;
   }
 }

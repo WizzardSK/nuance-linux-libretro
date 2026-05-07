@@ -6,7 +6,7 @@
 #include "PatchManager.h"
 #include "mpe.h"
 
-static const __m128i sub_sv_mask = _mm_set_epi32(0xFFFF0000UL, 0xFFFF0000UL, 0xFFFF0000UL, 0xFFFF0000UL);
+static const __m128i sub_sv_mask = _mm_set_epi32(0xFFFF0000U, 0xFFFF0000U, 0xFFFF0000U, 0xFFFF0000U);
 
 void Emit_ABS(EmitterVariables * const vars, const Nuance &nuance)
 {
@@ -201,6 +201,14 @@ void Emit_BITSImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BTST(EmitterVariables * const vars, const Nuance &nuance)
 {
+  // SPEC MISMATCH (also see ExecuteALU.cpp Execute_BTST for the full
+  // explanation): NUON-doc describes BTST as "set N when
+  // the selected bit was bit 31 and the bit was not zero"; but T3K's
+  // self-test at 0x80014e3a expects N to stay 0 in that case. 
+  // Same for Mike Perry's original instructiontest.c program that mentions
+  // a NUON hardware bug. Both this JIT path and the interpreter (Execute_BTST)
+  // implement only Z (and clear N/V), matching observed NUON HW behaviour.
+
   const uint32 mask = nuance.fields[FIELD_ALU_SRC1];
   const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
@@ -226,6 +234,17 @@ void Emit_BTST(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_edx);
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ecx);
   }
+
+#if 0 // see above
+  if ((vars->miscRegOutDep & DEPENDENCY_FLAG_N) && mask == 0x80000000u)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_ebx);
+    vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ecx);
+    vars->mpe->nativeCodeCache.X86Emit_MOVIR(CC_ALU_NEGATIVE, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_CMOVNZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ecx);
+  }
+#endif
 
   if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVZ)
   {
@@ -470,7 +489,7 @@ void Emit_SAT(EmitterVariables * const vars, const Nuance &nuance)
 {
   const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
   const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const int32 mask = (0x01UL << nuance.fields[FIELD_ALU_SRC2]) - 1;
+  const int32 mask = (0x01U << nuance.fields[FIELD_ALU_SRC2]) - 1;
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   //const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4281,7 +4300,7 @@ void Emit_ADDWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4303,14 +4322,20 @@ void Emit_ADDWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4362,7 +4387,7 @@ void Emit_ADDWCScalar(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4384,14 +4409,20 @@ void Emit_ADDWCScalar(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4444,7 +4475,7 @@ void Emit_ADDWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4466,14 +4497,20 @@ void Emit_ADDWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4526,7 +4563,7 @@ void Emit_ADDWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4548,14 +4585,20 @@ void Emit_ADDWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4605,7 +4648,7 @@ void Emit_SUBWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4627,14 +4670,20 @@ void Emit_SUBWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4684,7 +4733,7 @@ void Emit_SUBWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4706,14 +4755,20 @@ void Emit_SUBWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4765,7 +4820,7 @@ void Emit_SUBWCScalar(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4787,14 +4842,20 @@ void Emit_SUBWCScalar(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4847,7 +4908,7 @@ void Emit_SUBWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4869,14 +4930,20 @@ void Emit_SUBWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -4929,7 +4996,7 @@ void Emit_SUBWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -4951,14 +5018,20 @@ void Emit_SUBWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -5003,7 +5076,7 @@ void Emit_CMPWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -5025,14 +5098,20 @@ void Emit_CMPWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -5077,7 +5156,7 @@ void Emit_CMPWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -5099,14 +5178,20 @@ void Emit_CMPWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -5153,7 +5238,7 @@ void Emit_CMPWCScalar(EmitterVariables * const vars, const Nuance &nuance)
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -5175,14 +5260,20 @@ void Emit_CMPWCScalar(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -5230,7 +5321,7 @@ void Emit_CMPWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -5252,14 +5343,20 @@ void Emit_CMPWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
 
@@ -5307,7 +5404,7 @@ void Emit_CMPWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
       vars->mpe->nativeCodeCache.X86Emit_SETZR(x86Reg::x86Reg_dl);
     }
   
-    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+    vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(FLAG_DEPENDENCIES(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)), x86MemPtr::x86MemPtr_dword, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
     vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
   }
 
@@ -5329,13 +5426,19 @@ void Emit_CMPWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
     vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dh);
   }
 
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
-  {
-    vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_al, x86Reg::x86Reg_dl);
-  }
-
-  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVCZ)
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_NVC)
   {
     vars->mpe->nativeCodeCache.X86Emit_ORRM(x86Reg::x86Reg_eax, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
+  }
+
+  // WC Z-flag fix: spec says "z: unchanged if the result is zero, cleared
+  // otherwise." dl was set by SETZR earlier (1 if result==0, 0 if !=0).
+  // Build mask = (~CC_ALU_ZERO) | dl  ==> 0xFFFFFFFE if dl==0 (clears Z),
+  // or 0xFFFFFFFF if dl==1 (preserves Z). Then AND CC with that mask.
+  if(vars->miscRegOutDep & DEPENDENCY_FLAG_Z)
+  {
+    vars->mpe->nativeCodeCache.X86Emit_MOVZXRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_dl);
+    vars->mpe->nativeCodeCache.X86Emit_ORIR(~CC_ALU_ZERO, x86Reg::x86Reg_edx);
+    vars->mpe->nativeCodeCache.X86Emit_ANDRM(x86Reg::x86Reg_edx, ccRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, ccRegDisp);
   }
 }
