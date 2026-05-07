@@ -41,7 +41,7 @@ void DeviceDetect(MPE &mpe)
 
     if((config & CONTROLLER_CHANGED_BIT) == 0)
     {
-      mpe.regs[0] = 0xFFFFFFFFUL; //unchanged: -1
+      mpe.regs[0] = 0xFFFFFFFFU; //unchanged: -1
       return;
     }
 

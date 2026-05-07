@@ -18,10 +18,10 @@ static FILE *blockFile;
 
 #define NOP_IBYTE_LENGTH (2)
 
-#define BRANCH_SLOT (0x4UL)
-#define DELAY_SLOT_ANY (0x3UL)
-#define DELAY_SLOT_1 (0x2UL)
-#define DELAY_SLOT_2 (0x1UL)
+#define BRANCH_SLOT (0x4U)
+#define DELAY_SLOT_ANY (0x3U)
+#define DELAY_SLOT_1 (0x2U)
+#define DELAY_SLOT_2 (0x1U)
 
 static bool IsBranchConditionCompilable(const uint32 startAddress, const uint32 mpeIndex, const uint32 condition)
 {
@@ -523,8 +523,8 @@ void SuperBlock::PrintBlockToFile(SuperBlockCompileType compileType, uint32 size
   fprintf(blockFile,"Constants Propagated: %s\n",constants.bConstantPropagated ? "TRUE" : "FALSE");
   fprintf(blockFile,"Instruction Count: %li\n",numInstructions);
   fprintf(blockFile,"Packet Count: %li\n",packetsProcessed);
-  fprintf(blockFile,"Code Size: %lu bytes\n",size);
-  fprintf(blockFile,"Code Cache Usage: %lu bytes\n",pMPE->nativeCodeCache.GetUsedCodeBufferSize());
+  fprintf(blockFile,"Code Size: %u bytes\n",size);
+  fprintf(blockFile,"Code Cache Usage: %u bytes\n",pMPE->nativeCodeCache.GetUsedCodeBufferSize());
   if(compileType == SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_SINGLE)
   {
     fprintf(blockFile,"Compile Type: IL single\n\n");

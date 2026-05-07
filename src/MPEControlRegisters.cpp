@@ -19,7 +19,7 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       //mpectl: bits 0,2,4,6,8,10,12,14 and 23 read as 0
       //bits 16,17,18,19,20,21,22,28,29,30 and 31 are reserved
       //and also forced to 0
-      return mpectl & ~(0xF0FF5555UL);
+      return mpectl & ~(0xF0FF5555U);
     case 0x1:
       //excepsrc
       return excepsrc;
@@ -28,13 +28,13 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       return 0;
     case 0x3:
       //excephalten
-      return excephalten & 0x1FFFUL;
+      return excephalten & 0x1FFFU;
     case 0x4:
-      return tempCC & 0x7FFUL;
+      return tempCC & 0x7FFU;
     case 0x5:
       return pcfetch;
     case 0x6:
-      return pcroute & 0xFFFFFFFEUL;
+      return pcroute & 0xFFFFFFFEU;
     case 0x7:
       return pcexec;
     case 0x8:
@@ -54,7 +54,7 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       return 0;
     case 0xF:
       //intctl
-      return (intctl & 0xAA);
+      return (intctl & 0xAAU);
     case 0x10:
       //inten1
     case 0x11:
@@ -65,11 +65,11 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       return 0;
     case 0x13:
       //inten2sel
-      return (inten2sel & 0x1F);
+      return (inten2sel & 0x1FU);
     case 0x1E:
-      return entrypRegs[COUNTER_REG+0] & 0xFFFF;
+      return entrypRegs[COUNTER_REG+0] & 0xFFFFU;
     case 0x1F:
-      return entrypRegs[COUNTER_REG+1] & 0xFFFF;
+      return entrypRegs[COUNTER_REG+1] & 0xFFFFU;
     case 0x20:
       //rx
       return entrypRegs[INDEX_REG+REG_X];
@@ -77,11 +77,11 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       //ry
       return entrypRegs[INDEX_REG+REG_Y];
     case 0x22:
-      return entrypRegs[XYR_REG] & ((0x3FFUL << 16) | 0x3FFUL);
+      return entrypRegs[XYR_REG] & ((0x3FFU << 16) | 0x3FFU);
     case 0x23:
-      return xybase & 0xFFFFFFFCUL;
+      return xybase & 0xFFFFFFFCU;
     case 0x24:
-      return entrypRegs[XYC_REG] & ~((1UL << 11) | (1UL << 27) | (1UL << 31));
+      return entrypRegs[XYC_REG] & ~((1U << 11) | (1U << 27) | (1U << 31));
     case 0x25:
       //ru
       return entrypRegs[INDEX_REG+REG_U];
@@ -89,21 +89,21 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       //rv
       return entrypRegs[INDEX_REG+REG_V];
     case 0x27:
-      return entrypRegs[UVR_REG] & ((0x3FFUL << 16) | 0x3FFUL);
+      return entrypRegs[UVR_REG] & ((0x3FFU << 16) | 0x3FFU);
     case 0x28:
-      return uvbase & 0xFFFFFFFCUL;
+      return uvbase & 0xFFFFFFFCU;
     case 0x29:
-      return entrypRegs[UVC_REG] & ~((1UL << 11) | (1UL << 27) | (1UL << 31));
+      return entrypRegs[UVC_REG] & ~((1U << 11) | (1U << 27) | (1U << 31));
     case 0x2A:
-      return linpixctl & ((1UL << 28) | (15UL << 20));
+      return linpixctl & ((1U << 28) | (15U << 20));
     case 0x2B:
-      return clutbase & 0xFFFFFFC0UL;
+      return clutbase & 0xFFFFFFC0U;
     case 0x2C:
-      return entrypRegs[SVS_REG] & 0x03UL;
+      return entrypRegs[SVS_REG] & 0x03U;
     case 0x2D:
       return (((int32)(entrypRegs[ACS_REG] << 25)) >> 25);
     case 0x2E:
-      return sp & 0xFFFFFFF0UL;
+      return sp & 0xFFFFFFF0U;
     case 0x2F:
       return dabreak;
     case 0x30:
@@ -140,35 +140,35 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
     case 0x4F:
       return entrypRegs[(address >> 4) - 0x30];
     case 0x50:
-      return odmactl & 0x60;
+      return odmactl & 0x60U;
     case 0x51:
-      return odmacptr & 0x207FFFF0UL;
+      return odmacptr & 0x207FFFF0U;
     case 0x60:
-      return mdmactl & ~((3UL << 14) | (1UL << 8) | 0xF);
+      return mdmactl & ~((3U << 14) | (1U << 8) | 0xFU);
     case 0x61:
-      return mdmacptr & 0x207FFFF0UL;
+      return mdmacptr & 0x207FFFF0U;
     case 0x7E:
       //comminfo
-      return comminfo & ((0xFFUL << 16) | 0xFFUL); // matches with doc
+      return comminfo & ((0xFFU << 16) | 0xFFU); // matches with doc
     case 0x7F:
       //commctl
-      return commctl & ((0x3UL << 30) | (0xFFFUL << 12) | 0xFFUL); // matches with doc
+      return commctl & ((0x3U << 30) | (0xFFFU << 12) | 0xFFU); // matches with doc
     case 0x80:
     {
       //scalar commxmit register
-      return commxmit[(address & 0x0F)>>2];
+      return commxmit[(address & 0x0FU)>>2];
     }
     case 0x81:
     {
-      if((address & 0x0F)==0x0C)
+      if((address & 0x0FU)==0x0CU)
         //commrecv3: reading this register clears recv buffer full bit in commctl
         commctl &= ~COMM_RECV_BUFFER_FULL_BIT;
       //scalar commrecv register
-      return commrecv[(address & 0x0F)>>2];
+      return commrecv[(address & 0x0FU)>>2];
     }
     case 0xFF:
     {
-      switch(address & 0x0F)
+      switch(address & 0x0FU)
       {
         case 0x00:
           //configa
@@ -264,16 +264,16 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x3:
       //excephalten
-      excephalten = data & 0x1FFFUL;
+      excephalten = data & 0x1FFFU;
       return;
     case 0x4:
-      cc = data & 0x7FFUL;
+      cc = data & 0x7FFU;
       return;
     case 0x5:
       pcfetch = data;
       return;
     case 0x6:
-      pcroute = data & 0xFFFFFFFEUL;
+      pcroute = data & 0xFFFFFFFEU;
       return;
     case 0x7:
       pcexec = data;
@@ -288,10 +288,10 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       rzi2 = data;
       return;
     case 0xB:
-      intvec1 = data & 0xFFFFFFFEUL;
+      intvec1 = data & 0xFFFFFFFEU;
       return;
     case 0xC:
-      intvec2 = data & 0xFFFFFFFEUL;
+      intvec2 = data & 0xFFFFFFFEU;
       return;
     case 0xD:
       //intsrc: writing 0 has no effect, writing 1 sets bit
@@ -311,12 +311,12 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0xF:
       //intctl
-      intctl |= (data & 0xAAUL);
-      intctl &= ~((data << 1) & 0xAAUL);
+      intctl |= (data & 0xAAU);
+      intctl &= ~((data << 1) & 0xAAU);
       return;
     case 0x10:
       //inten1
-      inten1 = data & (~((3UL << 2) | (3UL << 10) | (3UL << 14)));
+      inten1 = data & (~((3U << 2) | (3U << 10) | (3U << 14)));
       return;
     case 0x11:
       //inten1set: sets corresponding bits of inten1
@@ -328,11 +328,11 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x13:
       //inten2sel
-      inten2sel = data & 0x1FUL;
+      inten2sel = data & 0x1FU;
       return;
     case 0x1E:
       //rc0: lower 16 bits only
-      rc0 = data & 0xFFFFUL;
+      rc0 = data & 0xFFFFU;
       cc |= CC_COUNTER0_ZERO;
 
       if(rc0 != 0)
@@ -342,7 +342,7 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x1F:
       //rc1: lower 16 bits only
-      rc1 = data & 0xFFFFUL;
+      rc1 = data & 0xFFFFU;
       cc |= CC_COUNTER1_ZERO;
 
       if(rc1 != 0)
@@ -363,11 +363,11 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x23:
       //xybase: always on scalar boundary
-      xybase = data & 0xFFFFFFFCUL;
+      xybase = data & 0xFFFFFFFCU;
       return;
     case 0x24:
       //xyctl
-      xyctl = data & ~((1UL << 31) | (1UL << 27) | (1UL << 11));
+      xyctl = data & ~((1U << 31) | (1U << 27) | (1U << 11));
       return;
     case 0x25:
       //Ru
@@ -382,30 +382,30 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x28:
       //uvbase: always on scalar boundary
-      uvbase = data & 0xFFFFFFFCUL;
+      uvbase = data & 0xFFFFFFFCU;
       return;
     case 0x29:
       //uvctl
-      uvctl = data & ~((1UL << 31) | (1UL << 27) | (1UL << 11));
+      uvctl = data & ~((1U << 31) | (1U << 27) | (1U << 11));
       return;
     case 0x2A:
       //linpixctl: bits 20-23 and 28 only
-      linpixctl = data & ((0x01UL << 28) | (0xFUL << 20));
-      if(data & 0xFUL)
+      linpixctl = data & ((0x01U << 28) | (0xFU << 20));
+      if(data & 0xFU)
       {
         //!! M3DL sets the lower four bits in MPR_START, and the value seems
         //to be the pixel type, so this hack allows bits 0-3 to be mapped
         //to linpixctl bits 20-23
-        linpixctl |= ((data & 0x0FUL) << 20);
+        linpixctl |= ((data & 0x0FU) << 20);
       }
       return;
     case 0x2B:
       //clutbase: always on 64 byte boundary (possibly 1024 byte boundary)
-      clutbase = data & 0xFFFFFFC0UL;
+      clutbase = data & 0xFFFFFFC0U;
       return;
     case 0x2C:
       //svshift: lower 2 bits
-      svshift = data & 0x03UL;
+      svshift = data & 0x03U;
       return;
     case 0x2D:
       //acshift: lower 7 bits, sign extended
@@ -413,7 +413,7 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       return;
     case 0x2E:
       //stack pointer: always lies on vector boundary
-      sp = data & 0xFFFFFFF0UL;
+      sp = data & 0xFFFFFFF0U;
       return;
     case 0x2F:
       dabreak = data;
@@ -459,15 +459,15 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       //force bits 0 through 4 to 0 since DMA transfers
       //will execute immediately so commands are never
       //pending nor does data transfer ever appear active
-      odmactl = data & 0x60UL;
+      odmactl = data & 0x60U;
       return;
     case 0x51:
       //odmacptr: writing triggers Other BUS DMA
-      odmacptr = data & 0x207FFFF0UL;
+      odmacptr = data & 0x207FFFF0U;
       //Call GetPointerToMemory to warn if the address is invalid
-      nuonEnv.GetPointerToMemory(this->mpeIndex, odmacptr & 0xFFFFFFF0);
+      nuonEnv.GetPointerToMemory(this->mpeIndex, odmacptr & 0xFFFFFFF0U);
 
-      if(odmactl & 0x60UL)
+      if(odmactl & 0x60U)
       {
         //other bus DMA is enabled so do it!
         const uint32 * const dmacmd = (uint32 *)(&dtrom[odmacptr & MPE_VALID_MEMORY_MASK]);
@@ -475,7 +475,7 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
         const uint32 baseaddr = SwapBytes(dmacmd[1]);
         const uint32 intaddr = SwapBytes(dmacmd[2]);
         //clear all bits except bits 13, 16 - 23, and 28
-        dmaflags &= ((1UL << 28) | (0xFFUL << 16) | (1UL << 13));
+        dmaflags &= ((1U << 28) | (0xFFU << 16) | (1U << 13));
         //if(((baseaddr >= 0x20700000) && (baseaddr < 0x30000000)) || ((intaddr >= 0x20700000) && (intaddr < 0x30000000)))
         //{
           //!! assert??
@@ -495,34 +495,34 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       uint32 done_cnt_rd = (mdmactl >> 16) & 0xFF;
 
       //clear all existing mdmactl bits except for done_cnt_enable
-      mdmactl &= (~(1UL << 9));
+      mdmactl &= (~(1U << 9));
 
       //if done cnt disable bit is to be set
-      if(data & (1UL << 8))
+      if(data & (1U << 8))
       {
         //if the done count enable bit is also to be set
-        if(data & (1UL << 9))
+        if(data & (1U << 9))
         {
           //clear any errors, and reset the read and write counts to zero
           done_cnt_wr = done_cnt_rd = 0;
-          mdmactl |= (1UL << 9);
+          mdmactl |= (1U << 9);
         }
         else
         {
           //clear the enable bit
-          mdmactl &= (~(1UL << 9));
+          mdmactl &= (~(1U << 9));
         }
       }
-      else if(data & (1UL << 9))
+      else if(data & (1U << 9))
       {
-        mdmactl |= (1UL << 9);
+        mdmactl |= (1U << 9);
       }
 
       //if done_cnt_wr_dec is set and done count enabled
-      if((data & (1UL << 11)) && (mdmactl & (1UL << 9)))
+      if((data & (1U << 11)) && (mdmactl & (1U << 9)))
       {
         //if the write counter is not at an error state
-        if(done_cnt_wr < 0xFEUL)
+        if(done_cnt_wr < 0xFEU)
         {
           //decrement the write counter
           done_cnt_wr--;
@@ -530,32 +530,32 @@ void MPE::WriteControlRegister(const uint32 address, const uint32 data)
       }
 
       //if done_cnt_rd_dec is set and done count enabled
-      if((data & (1UL << 10)) && (mdmactl & (1UL << 9)))
+      if((data & (1U << 10)) && (mdmactl & (1U << 9)))
       {
         //if the read counter is not at an error state
-        if(done_cnt_rd < 0xFEUL)
+        if(done_cnt_rd < 0xFEU)
         {
           //decrement the read counter
           done_cnt_rd--;
         }
       }
 
-      mdmactl |= ((done_cnt_wr << 24) | (done_cnt_rd << 16) | (data & 0x60));
+      mdmactl |= ((done_cnt_wr << 24) | (done_cnt_rd << 16) | (data & 0x60U));
       return;
     }
     case 0x61:
     {
       //mdmacptr: writing triggers Main BUS DMA
-      mdmacptr = data & 0x207FFFF0UL;
+      mdmacptr = data & 0x207FFFF0U;
       //Call GetPointerToMemory to warn if the address is invalid
-      nuonEnv.GetPointerToMemory(this->mpeIndex, data & 0xFFFFFFF0);
+      nuonEnv.GetPointerToMemory(this->mpeIndex, data & 0xFFFFFFF0U);
 do_mdmacmd: // for batch commands
       const uint32* const dmacmd = (uint32 *)(&dtrom[mdmacptr & MPE_VALID_MEMORY_MASK]);
       const uint32 dmaflags = SwapBytes(dmacmd[0]);
       const uint32 baseaddr = SwapBytes(dmacmd[1]);
             uint32 intaddr = SwapBytes(dmacmd[2]);
 
-      switch((dmaflags >> 14) & 0x03UL)
+      switch((dmaflags >> 14) & 0x03U)
       {
         case 0:
           //linear DMA
@@ -570,39 +570,39 @@ do_mdmacmd: // for batch commands
               return;
           }
           DMALinear(*this,dmaflags,baseaddr,intaddr);
-          if(dmaflags & (1UL << 30)) // batch? -> repeat //!! was data before, but this should lead to potentially endless loops?
+          if(dmaflags & (1U << 30)) // batch? -> repeat //!! was data before, but this should lead to potentially endless loops?
           {
             mdmacptr += 16;
             goto do_mdmacmd;
           }
           else
           {
-            if(dmaflags & (1UL << 13))
+            if(dmaflags & (1U << 13))
             {
-              mdmactl &= (~(0xFFUL << 16));
+              mdmactl &= (~(0xFFU << 16));
               //increment done_rd_cnt in mdmactl
-              uint32 done_cnt_rd = (mdmactl >> 16) & 0xFF;
+              uint32 done_cnt_rd = (mdmactl >> 16) & 0xFFU;
               done_cnt_rd++;
 
-              if(done_cnt_rd > 0x1D)
+              if(done_cnt_rd > 0x1DU)
               {
                 //overflow
-                done_cnt_rd = 0xFE; //!! was wr before but does not make sense
+                done_cnt_rd = 0xFEU; //!! was wr before but does not make sense
               }
 
-              mdmactl |= ((done_cnt_rd & 0xFF) << 16);
+              mdmactl |= ((done_cnt_rd & 0xFFU) << 16);
             }
             else
             {
-              mdmactl &= (~(0xFFUL << 24));
+              mdmactl &= (~(0xFFU << 24));
               //increment done_cnt_wr in mdmactl
               uint32 done_cnt_wr = (mdmactl >> 24);
               done_cnt_wr++;
 
-              if(done_cnt_wr > 0x1D)
+              if(done_cnt_wr > 0x1DU)
               {
                 //overflow
-                done_cnt_wr = 0xFE;
+                done_cnt_wr = 0xFEU;
               }
 
               mdmactl |= (done_cnt_wr << 24);
@@ -616,39 +616,39 @@ do_mdmacmd: // for batch commands
           uint32 yptr = SwapBytes(dmacmd[3]);
           intaddr = SwapBytes(dmacmd[4]);
           DMABiLinear(*this,dmaflags,baseaddr,xptr,yptr,intaddr);
-          if(dmaflags & (1UL << 30)) // batch? -> repeat
+          if(dmaflags & (1U << 30)) // batch? -> repeat
           {
             mdmacptr += 16;
             goto do_mdmacmd;
           }
           else
           {
-            if(dmaflags & (1UL << 13))
+            if(dmaflags & (1U << 13))
             {
-              mdmactl &= (~(0xFFUL << 16));
+              mdmactl &= (~(0xFFU << 16));
               //increment done_rd_cnt in mdmactl
-              uint32 done_cnt_rd = (mdmactl >> 16) & 0xFF;
+              uint32 done_cnt_rd = (mdmactl >> 16) & 0xFFU;
               done_cnt_rd++;
 
-              if(done_cnt_rd > 0x1D)
+              if(done_cnt_rd > 0x1DU)
               {
                 //overflow
-                done_cnt_rd = 0xFE; //!! was wr before but does not make sense
+                done_cnt_rd = 0xFEU; //!! was wr before but does not make sense
               }
 
-              mdmactl |= ((done_cnt_rd & 0xFF) << 16);
+              mdmactl |= ((done_cnt_rd & 0xFFU) << 16);
             }
             else
             {
-              mdmactl &= (~(0xFFUL << 24));
+              mdmactl &= (~(0xFFU << 24));
               //increment done_cnt_wr in mdmactl
               uint32 done_cnt_wr = (mdmactl >> 24);
               done_cnt_wr++;
 
-              if(done_cnt_wr > 0x1D)
+              if(done_cnt_wr > 0x1DU)
               {
                 //overflow
-                done_cnt_wr = 0xFE;
+                done_cnt_wr = 0xFEU;
               }
 
               mdmactl |= (done_cnt_wr << 24);
@@ -664,17 +664,17 @@ do_mdmacmd: // for batch commands
     }
     case 0x7E:
       //comminfo: only lower 8 bits are writable // matches with doc
-      comminfo &= (~0xFFUL);
-      comminfo |= (data & 0xFFUL);
+      comminfo &= (~0xFFU);
+      comminfo |= (data & 0xFFU);
       return;
     case 0x7F:
       //commctl:
-      commctl &= ~((1UL << 30) | (0x30FFUL)); // matches with doc now //!! was 0x3FFFUL, though only here!
-      commctl |= (data & ((1UL << 30) | 0x30FFUL));
+      commctl &= ~((1U << 30) | (0x30FFU)); // matches with doc now //!! was 0x3FFFU, though only here!
+      commctl |= (data & ((1U << 30) | 0x30FFU));
       return;
     case 0x80:
     {
-      if((address & 0x0F)==0x0C)
+      if((address & 0x0FU)==0x0CU)
       {
         //commxmit3: also triggers comm bus xmit request
         commctl &= ~(COMM_XMIT_FAILED_BIT);
@@ -682,7 +682,7 @@ do_mdmacmd: // for batch commands
         nuonEnv.pendingCommRequests++;
       }
       //commxmit: scalar write
-      commxmit[(address & 0x0F)>>2] = data;
+      commxmit[(address & 0x0FU)>>2] = data;
       return;
     }
     case 0x81:
@@ -690,7 +690,7 @@ do_mdmacmd: // for batch commands
       return;
     case 0xFF:
     {
-      switch(address & 0x0F)
+      switch(address & 0x0FU)
       {
         case 0x00:
           //configa: treat as syscall

@@ -323,9 +323,9 @@ void PropagateConstants_LoadScalarControlRegisterAbsolute(SuperBlockConstants &c
     case 0x4D:
     case 0x4E:
     case 0x4F:
-      bIsConstant = (constants.IsScalarRegisterConstant(regIndex - 0x30UL) && ALLOW_MEM_PROPAGATION);
+      bIsConstant = (constants.IsScalarRegisterConstant(regIndex - 0x30U) && ALLOW_MEM_PROPAGATION);
       if(bIsConstant)
-        regValue = constants.GetScalarRegisterConstant(regIndex - 0x30UL);
+        regValue = constants.GetScalarRegisterConstant(regIndex - 0x30U);
       break;
     default:
       bIsConstant = false;
@@ -377,7 +377,7 @@ void PropagateConstants_LoadScalarLinear(SuperBlockConstants &constants)
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
-    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFFCUL;
+    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFFCU;
     constants.bConstantPropagated = true;
 
     if((address < MPE_CTRL_BASE) || (address >= MPE_RESV_BASE))
@@ -476,7 +476,7 @@ void PropagateConstants_LoadWordLinear(SuperBlockConstants &constants)
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
-    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFFEUL;
+    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFFEU;
 
     constants.nuance->fields[FIELD_MEM_HANDLER] = Handler_LoadWordAbsolute;
     constants.nuance->fields[FIELD_MEM_FROM] = address;
@@ -534,7 +534,7 @@ void PropagateConstants_LoadShortVectorLinear(SuperBlockConstants &constants)
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
-    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFF8UL;
+    const uint32 address = constants.GetScalarRegisterConstant(srcIndex) & 0xFFFFFFF8U;
 
     constants.nuance->fields[FIELD_MEM_HANDLER] = Handler_LoadShortVectorAbsolute;
     constants.nuance->fields[FIELD_MEM_FROM] = address;
@@ -707,7 +707,7 @@ void PropagateConstants_StoreScalarControlRegisterImmediate(SuperBlockConstants 
       destIndex = CONSTANT_REG_DISCARD;
       flagMask = CC_ALLFLAGS;
       //Force CP0 and CP1 to zero
-      flagValues = destValue & 0x1FFUL;
+      flagValues = destValue & 0x1FFU;
       bLockInstruction = true;
       break;
     case 0x8:
@@ -791,7 +791,7 @@ void PropagateConstants_StoreScalarControlRegisterImmediate(SuperBlockConstants 
     case 0x4D:
     case 0x4E:
     case 0x4F:
-      destIndex = destIndex - 0x30UL;
+      destIndex = destIndex - 0x30U;
       bScalarReg = true;
       break;
     default:
@@ -934,7 +934,7 @@ void PropagateConstants_StoreScalarControlRegisterAbsolute(SuperBlockConstants &
       case 0x4D:
       case 0x4E:
       case 0x4F:
-        constants.ClearScalarRegisterConstant(destIndex - 0x30UL);
+        constants.ClearScalarRegisterConstant(destIndex - 0x30U);
         break;
       default:
         constants.SetInstructionFlags(SUPERBLOCKINFO_LOCKED);

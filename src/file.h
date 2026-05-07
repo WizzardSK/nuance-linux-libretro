@@ -1,9 +1,9 @@
 #ifndef fileH
 #define fileH
 
-#define NUON_FD_STDIN (0UL)
-#define NUON_FD_STDOUT (1UL)
-#define NUON_FD_STDERR (2UL)
+#define NUON_FD_STDIN (0U)
+#define NUON_FD_STDOUT (1U)
+#define NUON_FD_STDERR (2U)
 
 class MPE;
 

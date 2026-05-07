@@ -77,7 +77,7 @@ void Syscall_ClearWaitForInterrupt(const MPE &mpe)
 void ExecuteSyscall(MPE &mpe, const uint32 syscall)
 {
   const uint32 category = syscall >> 24;
-  const uint32 function = syscall & 0xFFFFFFUL;
+  const uint32 function = syscall & 0xFFFFFFU;
 
   //Category 0: Compiler hints
     //1: Set invariant region

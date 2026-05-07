@@ -6,7 +6,7 @@ bool MPE::TestConditionCode(const uint32 whichCondition) const
   //handler for 16/48 bit ECU instructions converts the extracted condition
   //to this sequence.  VMLabs must die.  Mission accomplished!
 
-  switch(whichCondition & 0x1FUL)
+  switch(whichCondition & 0x1FU)
   {
     case 0:
       //ne

@@ -152,7 +152,7 @@ uint32 MemoryManager::Allocate(uint32 requestedBytes, uint32 requestedAlignment)
   }
 
   //pad requested byte count to the nearest vector
-  requestedBytes = (requestedBytes + 15) & 0xFFFFFFF0UL;
+  requestedBytes = (requestedBytes + 15) & 0xFFFFFFF0U;
 
   const uint32 vectorSize = (uint32)freeBlockVector.size();
 

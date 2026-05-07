@@ -114,25 +114,25 @@ uint32 Print_BRAConditional_NOP(char *buffer, size_t bufSize,  const Nuance &nua
 
 uint32 Print_JMPAlwaysIndirect(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jmp (r%lu)%s",nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jmp (r%u)%s",nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JMPAlwaysIndirect_NOP(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jmp (r%lu), nop%s",nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jmp (r%u), nop%s",nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JMPConditionalIndirect(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jmp %s, (r%lu)%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jmp %s, (r%u)%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JMPConditionalIndirect_NOP(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jmp %s, (r%lu), nop%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jmp %s, (r%u), nop%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS], bNewline ? "\n" : "");
   return length;
 }
 
@@ -162,25 +162,25 @@ uint32 Print_JSRConditional_NOP(char *buffer, size_t bufSize,  const Nuance &nua
 
 uint32 Print_JSRAlwaysIndirect(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jsr (r%lu) [$%8.8lX,$%8.8lX]%s",nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jsr (r%u) [$%8.8lX,$%8.8lX]%s",nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JSRAlwaysIndirect_NOP(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jsr (r%lu), nop [$%8.8lX,$%8.8lX]%s",nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jsr (r%u), nop [$%8.8lX,$%8.8lX]%s",nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JSRConditionalIndirect(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jsr %s, (r%lu) [$%8.8lX,$%8.8lX]%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jsr %s, (r%u) [$%8.8lX,$%8.8lX]%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
   return length;
 }
 
 uint32 Print_JSRConditionalIndirect_NOP(char *buffer, size_t bufSize,  const Nuance &nuance, const bool bNewline)
 {
-  const uint32 length = sprintf_s(buffer, bufSize,"jsr %s, (r%lu), nop [$%8.8lX,$%8.8lX]%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
+  const uint32 length = sprintf_s(buffer, bufSize,"jsr %s, (r%u), nop [$%8.8lX,$%8.8lX]%s",GetConditionCode(nuance.fields[FIELD_ECU_CONDITION]),nuance.fields[FIELD_ECU_ADDRESS],nuance.fields[FIELD_ECU_PCROUTE],nuance.fields[FIELD_ECU_PCFETCHNEXT], bNewline ? "\n" : "");
   return length;
 }
 

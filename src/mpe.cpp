@@ -771,7 +771,7 @@ void MPE::Init(const uint32 index, uint8* mainBusPtr, uint8* systemBusPtr, uint8
   assert(index < 4);
   mpeIndex = index;
   InitMPELocalMemory();
-  //nativeCodeCache = new NativeCodeCache(5UL*1024UL*1024UL/*, numTLBEntries[mpeIndex]*/);
+  //nativeCodeCache = new NativeCodeCache(5U*1024U*1024U/*, numTLBEntries[mpeIndex]*/);
   instructionCache = new InstructionCache(numCacheEntries[mpeIndex]);
   overlayManager.SetOverlayBufferAndLength((uint32*)(&dtrom[MPE_IRAM_OFFSET]), overlayLengths[mpeIndex]);
   bInvalidateInstructionCaches = false;
@@ -861,7 +861,7 @@ void MPE::Reset()
   invalidateRegionStart = MPE_IRAM_BASE;
   invalidateRegionEnd = MPE_IRAM_BASE + MPE::overlayLengths[mpeIndex] - 1;
   interpreterInvalidateRegionStart = 0;
-  interpreterInvalidateRegionEnd = 0xFFFFFFFFUL;
+  interpreterInvalidateRegionEnd = 0xFFFFFFFFU;
 
   //Interpretation of Nuances require the use of the cc composite flags register
   ecuSkipCounter = 0;
@@ -885,9 +885,9 @@ void MPE::Reset()
   //set level 2 selector to software
   inten2sel = 1;
   //enable other bus dma, no commands pending, no other bus activity
-  odmactl = 1UL << 5;
+  odmactl = 1U << 5;
   //set bus priority for MDMA transfers to 3 and clear all other bits
-  mdmactl = 3UL << 5;
+  mdmactl = 3U << 5;
   commxmit[0] = 0;
   commxmit[1] = 0;
   commxmit[2] = 0;
@@ -904,7 +904,7 @@ void MPE::Reset()
   cc = (CC_COUNTER0_ZERO | CC_COUNTER1_ZERO);
   cycleCounter = 0;
   //Nuon = aries 2, MPE release = aries 2, mpe identifier, halted on reset
-  configa = (3UL << 24) | (3UL << 16) | (mpeIndex << 8) | 0;
+  configa = (3U << 24) | (3U << 16) | (mpeIndex << 8) | 0;
   configb = 0;
 }
 
@@ -1854,30 +1854,30 @@ bool MPE::FetchDecodeExecute()
     //uint32 blockExecuteCount = 100;
 
     /* Force 16 bit alignment of pcexec */
-    pcexec &= ~0x01UL;
+    pcexec &= ~0x01U;
 
     /* Check for interrupts and update pcexec, rzi1 and rzi2 if an interrupt is to be serviced */
 
     if(intsrc && (ecuSkipCounter == 0))
     {
       //Test imaskHw2 bit
-      if((intctl & (1UL << 5)) == 0)
+      if((intctl & (1U << 5)) == 0)
       {
         //imaskHw2 not set
         //Test to see if the level 2 interrupt has occurred
-        if(intsrc & (1UL << inten2sel))
+        if(intsrc & (1U << inten2sel))
         {
           //Test imaskSw2 mask
-          if((intctl & (1UL << 7)) == 0)
+          if((intctl & (1U << 7)) == 0)
           {
             //imaskSw2 not set so jump to the level 2 interrupt vector
             rzi2 = pcexec;
             pcexec = intvec2;
             //set imaskHw2 flag
-            intctl |= (1UL << 5);
+            intctl |= (1U << 5);
           }
         }
-        else if((intctl & ((1UL << 3) | (1UL << 1))) == 0)
+        else if((intctl & ((1U << 3) | (1U << 1))) == 0)
         {
           //imaskHw2 not set
           //neither imaskSw1 nor imaskHw1 set
@@ -1888,7 +1888,7 @@ bool MPE::FetchDecodeExecute()
             rzi1 = pcexec;
             pcexec = intvec1;
             //set imaskHw1 flag
-            intctl |= (1UL << 1);
+            intctl |= (1U << 1);
           }
         }
       }
@@ -1945,8 +1945,8 @@ bool MPE::FetchDecodeExecute()
         nativeCodeCache.FlushRegion(MPE_IRAM_BASE + MPE::overlayLengths[mpeIndex], invalidateRegionEnd);
 
         //Reset/Invalidate the IRAM invalidation indicators
-        invalidateRegionStart = 0xFFFFFFFFUL;
-        invalidateRegionEnd = 0x00000000UL;
+        invalidateRegionStart = 0xFFFFFFFFU;
+        invalidateRegionEnd = 0x00000000U;
       }
 
       //Modify the pcexec lookup value.  If pcexec is not within MPE IRAM, the lookup value will remain equal to
@@ -1988,7 +1988,7 @@ bool MPE::FetchDecodeExecute()
         numInterpreterCacheFlushes++;
         instructionCache->InvalidateRegion(interpreterInvalidateRegionStart, interpreterInvalidateRegionEnd);
         bInvalidateInterpreterCache = false;
-        interpreterInvalidateRegionStart = 0xFFFFFFFFUL;
+        interpreterInvalidateRegionStart = 0xFFFFFFFFU;
         interpreterInvalidateRegionEnd = 0x00000000;
       }
     }

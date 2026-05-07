@@ -209,7 +209,7 @@ void UnimplementedCommHandler(MPE &mpe)
 void NullBiosHandler(MPE &mpe)
 {
   //char msg[512];
-  //sprintf(msg,"This BIOS Handler does nothing: %ld",(mpe->pcexec >> 1) & 0xFFUL);
+  //sprintf(msg,"This BIOS Handler does nothing: %ld",(mpe->pcexec >> 1) & 0xFFU);
   //::MessageBox(NULL,msg,"Unimplemented BIOS Routine",MB_OK);
 }
 
@@ -220,7 +220,7 @@ void AssemblyBiosHandler(MPE &mpe)
 void WillNotImplement(MPE &mpe)
 {
   //char msg[512];
-  //sprintf(msg,"This BIOS Handler does nothing: %ld",(mpe->pcexec >> 1) & 0xFFUL);
+  //sprintf(msg,"This BIOS Handler does nothing: %ld",(mpe->pcexec >> 1) & 0xFFU);
   //::MessageBox(NULL,msg,"Unimplemented BIOS Routine",MB_OK);
 }
 
@@ -327,14 +327,14 @@ void IntSetVector(MPE &mpe)
       if(!newvec)
       {
         //disable the interrupt
-        mpe.inten1 &= (~(1UL << which));
+        mpe.inten1 &= (~(1U << which));
       }
       else
       {
         //Not needed in this implementation, but needed if this IntSetVector is moved to aries assembly
-        mpe.intsrc &= (~(1UL << which));
+        mpe.intsrc &= (~(1U << which));
         //Enable the interrupt in case it was previously disabled
-        mpe.inten1 |= (1UL << which);
+        mpe.inten1 |= (1U << which);
       }
 
       InterruptVectors[which] = SwapBytes(newvec);
@@ -358,8 +358,8 @@ uint32 PatchJumptable(const uint32 vectorAddress, uint32 newEntry)
   newEntry >>= 1;
 
   //create 64 bit JMP <newEntry>, nop instruction
-  inst = 0x9220BA00UL | ((newEntry & 0x1FUL) << 16) | ((newEntry & 0x1FE0UL) >> 5);
-  immExt = 0x88000000UL | ((newEntry & 0x7FFFE000UL) >> 4);
+  inst = 0x9220BA00U | ((newEntry & 0x1FU) << 16) | ((newEntry & 0x1FE0U) >> 5);
+  immExt = 0x88000000U | ((newEntry & 0x7FFFE000U) >> 4);
   //get the old entry stored in the BIOS vector address
   oldEntryImmExt = *((uint32 *)(&(nuonEnv.systemBusDRAM[vectorAddress - SYSTEM_BUS_BASE + 0])));
   oldEntryInst = *((uint32 *)(&(nuonEnv.systemBusDRAM[vectorAddress - SYSTEM_BUS_BASE + 4])));
@@ -372,7 +372,7 @@ uint32 PatchJumptable(const uint32 vectorAddress, uint32 newEntry)
   *((uint32 *)(&(nuonEnv.systemBusDRAM[vectorAddress - SYSTEM_BUS_BASE + 4]))) = inst;
 
   //extract the old BIOS function address from the previous entry's JMP instruction
-  const uint32 oldAddress = (((oldEntryImmExt & 0x7FFFE00UL) << 4) | ((oldEntryInst & 0xFFUL) << 5) | ((oldEntryInst & 0x1F0000) >> 16)) << 1;
+  const uint32 oldAddress = (((oldEntryImmExt & 0x7FFFE00U) << 4) | ((oldEntryInst & 0xFFU) << 5) | ((oldEntryInst & 0x1F0000U) >> 16)) << 1;
 
   return oldAddress;
 }
@@ -589,40 +589,40 @@ void InitBios(MPE &mpe)
 
   for(uint32 i = 0; i < 4; i++)
   {
-    nuonEnv.mpe[i].WriteControlRegister(0xB0UL, INTVEC1_HANDLER_ADDRESS);
-    nuonEnv.mpe[i].WriteControlRegister(0xC0UL, INTVEC2_HANDLER_ADDRESS);
+    nuonEnv.mpe[i].WriteControlRegister(0xB0U, INTVEC1_HANDLER_ADDRESS);
+    nuonEnv.mpe[i].WriteControlRegister(0xC0U, INTVEC2_HANDLER_ADDRESS);
 
     if(i == 3)
     {
-      nuonEnv.mpe[i].WriteControlRegister(0x110UL, 0);
+      nuonEnv.mpe[i].WriteControlRegister(0x110U, 0);
       //Commrecv needs to be enabled immediately as level2 because some programs use CommRecv and and CommRecvQuery to obtain comm packets
       //rather than installing a user comm ISR
-      nuonEnv.mpe[i].WriteControlRegister(0x130UL, kIntrCommRecv);
+      nuonEnv.mpe[i].WriteControlRegister(0x130U, kIntrCommRecv);
     }
     else if(i == 0)
     {
       //Don't need to set anything for level1... InitMediaMPE will enable commrecv when minibios is loaded
       //nuonEnv.mpe[i].WriteControlRegister(0x110UL, INT_COMMRECV);
-      nuonEnv.mpe[i].WriteControlRegister(0x130UL, kIntrHost);
+      nuonEnv.mpe[i].WriteControlRegister(0x130U, kIntrHost);
     }
     else
     {
-      nuonEnv.mpe[i].WriteControlRegister(0x110UL, 0);
-      nuonEnv.mpe[i].WriteControlRegister(0x130UL, kIntrHost);
+      nuonEnv.mpe[i].WriteControlRegister(0x110U, 0);
+      nuonEnv.mpe[i].WriteControlRegister(0x130U, kIntrHost);
     }
   }
 
   //Patch the jump table for the first 151 entries
-  for(uint32 i = 0; i < ((0x4B0UL >> 3) + 1); i++)
+  for(uint32 i = 0; i < ((0x4B0U >> 3) + 1); i++)
   {
     if(BiosJumpTable[i] != AssemblyBiosHandler)
     {
-      PatchJumptable(SYSTEM_BUS_BASE + (i << 3UL), ROM_BIOS_BASE + (i << 1));
+      PatchJumptable(SYSTEM_BUS_BASE + (i << 3), ROM_BIOS_BASE + (i << 1));
     }
   }
 
   //Fill Bios Handler entries from 151 to 255 to NullBiosHandler
-  for(uint32 i = ((0x4B0UL >> 3) + 1); i <= 255; i++)
+  for(uint32 i = ((0x4B0U >> 3) + 1); i <= 255; i++)
   {
     BiosJumpTable[i] = NullBiosHandler;
   }

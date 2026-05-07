@@ -60,7 +60,7 @@ uint32 Print_ADDRImmediate(char *buffer, size_t bufSize, const Nuance &nuance, c
 
 uint32 Print_ADDRScalar(char *buffer, size_t bufSize, const Nuance &nuance, const bool bNewline)
 {
-  const uint32 bufinc = sprintf_s(buffer, bufSize, "addr r%lu, %s\n",nuance.fields[FIELD_RCU_SRC],GetIndexRegister(nuance.fields[FIELD_RCU_DEST]));
+  const uint32 bufinc = sprintf_s(buffer, bufSize, "addr r%u, %s\n",nuance.fields[FIELD_RCU_SRC],GetIndexRegister(nuance.fields[FIELD_RCU_DEST]));
 
   buffer += bufinc;
   bufSize -= bufinc;
@@ -78,7 +78,7 @@ uint32 Print_MVRImmediate(char *buffer, size_t bufSize, const Nuance &nuance, co
 
 uint32 Print_MVRScalar(char *buffer, size_t bufSize, const Nuance &nuance, const bool bNewline)
 {
-  const uint32 bufinc = sprintf_s(buffer, bufSize, "mvr r%lu, %s\n",nuance.fields[FIELD_RCU_SRC],GetIndexRegister(nuance.fields[FIELD_RCU_DEST]));
+  const uint32 bufinc = sprintf_s(buffer, bufSize, "mvr r%u, %s\n",nuance.fields[FIELD_RCU_SRC],GetIndexRegister(nuance.fields[FIELD_RCU_DEST]));
 
   buffer += bufinc;
   bufSize -= bufinc;

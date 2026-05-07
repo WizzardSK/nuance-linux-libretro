@@ -31,7 +31,7 @@ void InstructionCache::Invalidate()
 
 void InstructionCache::InvalidateRegion(const uint32 start, const uint32 end)
 {
-  uint32 mask = 0x80000000UL;
+  uint32 mask = 0x80000000U;
   uint32 validBitmapIndex = 0;
 
   for(uint32 i = 0; i < numEntries; i++)
@@ -44,7 +44,7 @@ void InstructionCache::InvalidateRegion(const uint32 start, const uint32 end)
     if(mask == 0x01)
     {
       validBitmapIndex++;
-      mask = 0x80000000UL;
+      mask = 0x80000000U;
     }
     else
     {

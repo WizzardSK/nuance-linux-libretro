@@ -15,7 +15,7 @@ public:
   {
     numOverlays = 0;
 
-    //#define QUOTIENT (0x04C11DB7UL)
+    //#define QUOTIENT (0x04C11DB7U)
     /*for (uint32 i = 0; i < 256; i++)
     {
       uint32 crc = i << 24;

@@ -65,9 +65,9 @@ void NuonMemoryManager::Init()
   //Insert the 64K block of System Bus kernel memory into the allocated block list
   otherBusMemoryManager.AddAllocatedBlock(SYSTEM_BUS_BASE, BIOS_LOWMEM_SIZE);
 
-  if(SYSTEM_BUS_SIZE > (8UL*1024UL*1024UL))
+  if(SYSTEM_BUS_SIZE > (8U*1024U*1024U))
   {
     //Main Bus DRAM is greater than 8 megs
-    otherBusMemoryManager.Add(BIOS_FUNCTIONS_BASE + BIOS_FUNCTIONS_SIZE, SYSTEM_BUS_SIZE - (8UL*1024UL*1024UL));
+    otherBusMemoryManager.Add(BIOS_FUNCTIONS_BASE + BIOS_FUNCTIONS_SIZE, SYSTEM_BUS_SIZE - (8U*1024U*1024U));
   }
 }

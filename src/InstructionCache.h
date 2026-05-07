@@ -3,9 +3,9 @@
 
 #include "basetypes.h"
 
-#define MAX_INSTRUCTIONS_PER_PACKET (5UL)
-#define FIELDS_PER_NUANCE (5UL)
-#define DEFAULT_NUM_CACHE_ENTRIES (8192UL)
+#define MAX_INSTRUCTIONS_PER_PACKET (5U)
+#define FIELDS_PER_NUANCE (5U)
+#define DEFAULT_NUM_CACHE_ENTRIES (8192U)
 #define FIXED_FIELD(slot,field) (((slot) * FIELDS_PER_NUANCE) + (field))
 
 #define SLOT_ECU (0)
@@ -51,65 +51,65 @@
 #define FIELD_CONSTANT_FLAGMASK (3)
 #define FIELD_CONSTANT_FLAGVALUES (4)
 
-#define MEM_INFO_LINEAR_ABSOLUTE (0x00000001UL)
-#define MEM_INFO_LINEAR_INDIRECT (0x00000002UL)
-#define MEM_INFO_BILINEAR_XY (0x00000004UL)
-#define MEM_INFO_BILINEAR_UV (0x00000008UL)
+#define MEM_INFO_LINEAR_ABSOLUTE (0x00000001U)
+#define MEM_INFO_LINEAR_INDIRECT (0x00000002U)
+#define MEM_INFO_BILINEAR_XY (0x00000004U)
+#define MEM_INFO_BILINEAR_UV (0x00000008U)
 
 //This flag indicates a packet is compiled
-#define PACKETINFO_COMPILED (0x80000000UL)
+#define PACKETINFO_COMPILED (0x80000000U)
 //This flag indicates a given packet block should never be compiled 
-#define PACKETINFO_NEVERCOMPILE (0x40000000UL)
+#define PACKETINFO_NEVERCOMPILE (0x40000000U)
 //This flag indicates the packet may trigger an exception
-#define PACKETINFO_EXCEPTION (0x20000000UL)
+#define PACKETINFO_EXCEPTION (0x20000000U)
 //This flag indicates that the packet contains an instruction requiring pcfetchnext
-#define PACKETINFO_NEEDS_PCFETCHNEXT (0x10000000UL)
+#define PACKETINFO_NEEDS_PCFETCHNEXT (0x10000000U)
 //This flag indicates that the packet contains a branch that is always taken
-#define PACKETINFO_BRANCH_ALWAYS (0x08000000UL)
+#define PACKETINFO_BRANCH_ALWAYS (0x08000000U)
 //This flag indicates that the packet contains a branch that may or may not be taken
-#define PACKETINFO_BRANCH_CONDITIONAL (0x04000000UL)
+#define PACKETINFO_BRANCH_CONDITIONAL (0x04000000U)
 //This flag indicates that the packet contains a non-delayed branch
-#define PACKETINFO_BRANCH_NOP (0x02000000UL)
+#define PACKETINFO_BRANCH_NOP (0x02000000U)
 //This flag indicates a packet that contains an indirect load or store
-#define PACKETINFO_MEMORY_INDIRECT (0x01000000UL)
+#define PACKETINFO_MEMORY_INDIRECT (0x01000000U)
 //This flag indicates a packet containing a direct load or store to a control register
-#define PACKETINFO_MEMORY_IO (0x00800000UL)
+#define PACKETINFO_MEMORY_IO (0x00800000U)
 //This flag indicates a packet where the ECU unit is known to be inhibited
-#define SUPERBLOCKINFO_INHIBIT_ECU (0x00400000UL)
+#define SUPERBLOCKINFO_INHIBIT_ECU (0x00400000U)
 //This flag indicates packets where the ECU inhibit state cannot be predetermined
-#define SUPERBLOCKINFO_CHECK_ECU_INHIBIT (0x00200000UL)
+#define SUPERBLOCKINFO_CHECK_ECU_INHIBIT (0x00200000U)
 //This flag indicates packets where the ECU skip counter must be checked
-#define SUPERBLOCKINFO_CHECK_ECUSKIPCOUNTER (0x00100000UL)
+#define SUPERBLOCKINFO_CHECK_ECUSKIPCOUNTER (0x00100000U)
 //This flag denotes packets that require register/flag states be consistent w/ interpretation
-#define SUPERBLOCKINFO_SYNC (0x00080000UL)
+#define SUPERBLOCKINFO_SYNC (0x00080000U)
 //This flag indicates an instruction marks the start of a packet
-#define SUPERBLOCKINFO_PACKETSTART (0x00040000UL)
+#define SUPERBLOCKINFO_PACKETSTART (0x00040000U)
 //This flag indicates an instruction marks the end of a packet
-#define SUPERBLOCKINFO_PACKETEND (0x00020000UL)
+#define SUPERBLOCKINFO_PACKETEND (0x00020000U)
 //This flag indicates an instruction must be emitted as-is to maintain proper state
-#define SUPERBLOCKINFO_LOCKED (0x00010000UL)
+#define SUPERBLOCKINFO_LOCKED (0x00010000U)
 //This flag indicates an instruction that is considered dead code
-#define SUPERBLOCKINFO_DEAD (0x00008000UL)
+#define SUPERBLOCKINFO_DEAD (0x00008000U)
 //This flag indicates a packet that cannot be compiled natively
-#define SUPERBLOCKINFO_NONATIVECOMPILE (0x00004000UL)
+#define SUPERBLOCKINFO_NONATIVECOMPILE (0x00004000U)
 
 
 //This flag indicates a packet that contains an operand dependency requiring operand copy
-#define PACKETINFO_DEPENDENCY_PRESENT (0x00000080UL)
+#define PACKETINFO_DEPENDENCY_PRESENT (0x00000080U)
 //This flag indicates an ALU instruction is present in the packet
-#define PACKETINFO_ALU (0x00000040UL)
+#define PACKETINFO_ALU (0x00000040U)
 //This flag indicates an MUL instruction is present in the packet
-#define PACKETINFO_MUL (0x00000020UL)
+#define PACKETINFO_MUL (0x00000020U)
 //This flag indicates an MEM instruction is present in the packet
-#define PACKETINFO_MEM (0x00000010UL)
+#define PACKETINFO_MEM (0x00000010U)
 //This flag indicates an RCU instruction is present in the packet
-#define PACKETINFO_RCU (0x00000008UL)
+#define PACKETINFO_RCU (0x00000008U)
 //This flag indicates an ECU instruction is present in the packet
-#define PACKETINFO_ECU (0x00000004UL)
+#define PACKETINFO_ECU (0x00000004U)
 //This flag indicates the packet contains a breakpoint
-#define PACKETINFO_BREAKPOINT (0x00000002UL)
+#define PACKETINFO_BREAKPOINT (0x00000002U)
 //This flag indicates that the packet is a NOP or BREAK,NOP
-#define PACKETINFO_NOP (0x00000001UL)
+#define PACKETINFO_NOP (0x00000001U)
 #define GETPACKETEXECUTIONUNITS(x) (((x) & (PACKETINFO_ALU|PACKETINFO_MUL|PACKETINFO_MEM|PACKETINFO_RCU|PACKETINFO_ECU)) >> 2)
 
 struct Nuance
@@ -188,14 +188,14 @@ public:
   InstructionCacheEntry *FindInstructionCacheEntry(const uint32 addressKey, bool &bValid) const
   {
     const uint32 cacheEntryIndex = (addressKey >> 1) & (numEntries - 1);
-    bValid = (validBitmap[cacheEntryIndex >> 5] & (0x80000000UL >> (cacheEntryIndex & 0x1FUL)));
+    bValid = (validBitmap[cacheEntryIndex >> 5] & (0x80000000U >> (cacheEntryIndex & 0x1FU)));
     return &cacheEntries[cacheEntryIndex];
   }
 
   void SetEntryValid(const uint32 addressKey)
   {
     const uint32 cacheEntryIndex = (addressKey >> 1) & (numEntries - 1);
-    validBitmap[cacheEntryIndex >> 5] |= (0x80000000UL >> (cacheEntryIndex & 0x1FUL));
+    validBitmap[cacheEntryIndex >> 5] |= (0x80000000U >> (cacheEntryIndex & 0x1FU));
   }
 
   void ClearCompiledStates()

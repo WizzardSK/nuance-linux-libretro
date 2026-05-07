@@ -31,7 +31,7 @@ PageMap::~PageMap()
 NativeCodeCacheEntry *PageMap::AllocatePage(const uint32 address)
 {
   const uint32 rootIndex = address >> 23;
-  const uint32 l1Index = (address >> 10) & 0x1FFFUL;
+  const uint32 l1Index = (address >> 10) & 0x1FFFU;
 
   Level1PageNode* pL1Node = root.entries[rootIndex];
 
@@ -64,12 +64,12 @@ void PageMap::InvalidateEntry(const uint32 address)
 
   if(pL1Node)
   {
-    const uint32 l1Index = (address >> 10) & 0x1FFFUL;
+    const uint32 l1Index = (address >> 10) & 0x1FFFU;
     NativeCodeCacheEntry * const pL2Node = pL1Node->entries[l1Index];
     {
       if(pL2Node)
       {
-        const uint32 l2Index = address & 0x3FFUL;
+        const uint32 l2Index = address & 0x3FFU;
         pL2Node[l2Index].virtualAddress = 1;
       }
     }

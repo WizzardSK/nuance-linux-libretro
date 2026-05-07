@@ -615,11 +615,11 @@ void UnimplementedBilinearDMAHandler(MPE& mpe, const uint32 flags, const uint32 
 
 void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32 intaddr)
 {
-  const bool bRemote = flags & (1UL << 28);
-  const bool bDirect = flags & (1UL << 27);
-  const bool bDup = (flags & (3UL << 26)); //bDup = dup | direct
-        uint32 length = (flags >> 16) & 0xFF; //Only 1-127 is valid according to docs but field is 8 bits
-  const bool bRead = flags & (1UL << 13);
+  const bool bRemote = flags & (1U << 28);
+  const bool bDirect = flags & (1U << 27);
+  const bool bDup = (flags & (3U << 26)); //bDup = dup | direct
+        uint32 length = (flags >> 16) & 0xFFU; //Only 1-127 is valid according to docs but field is 8 bits
+  const bool bRead = flags & (1U << 13);
 
   void *baseMemory;
   if(baseaddr < 0xF0000000)
@@ -824,13 +824,13 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
 
         //QueryPerformanceFrequency(&timeFreq);
         //QueryPerformanceCounter(&timeStart);
-        //nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].InvalidateICacheRegion((intaddr & 0xF07FFFFF), (intaddr & 0xF07FFFFF) + (length << 2) - 1);
-        //nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].InvalidateICache();
-        //nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].nativeCodeCache->FlushRegion(intaddr & 0xF07FFFFF, (intaddr & 0xF07FFFFF) + (length << 2) - 1);
+        //nuonEnv.mpe[(intaddr >> 23) & 0x1FU].InvalidateICacheRegion((intaddr & 0xF07FFFFF), (intaddr & 0xF07FFFFF) + (length << 2) - 1);
+        //nuonEnv.mpe[(intaddr >> 23) & 0x1FU].InvalidateICache();
+        //nuonEnv.mpe[(intaddr >> 23) & 0x1FU].nativeCodeCache->FlushRegion(intaddr & 0xF07FFFFF, (intaddr & 0xF07FFFFF) + (length << 2) - 1);
 
-        nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].UpdateInvalidateRegion(intaddr & MPE_LOCAL_MEMORY_MASK, length*2*wordSize);
-        //nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].UpdateInvalidateRegion(MPE_IRAM_BASE, MPE::overlayLengths[(intaddr >> 23) & 0x1FUL]);
-        //nuonEnv.mpe[(intaddr >> 23) & 0x1FUL].nativeCodeCache->FlushRegion(0x20300000, (intaddr & 0xF07FFFFF) + ((length - 1) << 2));
+        nuonEnv.mpe[(intaddr >> 23) & 0x1FU].UpdateInvalidateRegion(intaddr & MPE_LOCAL_MEMORY_MASK, length*2*wordSize);
+        //nuonEnv.mpe[(intaddr >> 23) & 0x1FU].UpdateInvalidateRegion(MPE_IRAM_BASE, MPE::overlayLengths[(intaddr >> 23) & 0x1FU]);
+        //nuonEnv.mpe[(intaddr >> 23) & 0x1FU].nativeCodeCache->FlushRegion(0x20300000, (intaddr & 0xF07FFFFF) + ((length - 1) << 2));
         //QueryPerformanceCounter(&timeEnd);
         //char tempBuf[128];
         //sprintf(tempBuf,"DMA caused cache invalidations: %lf seconds wasted.",((double)(timeEnd.QuadPart - timeStart.QuadPart - timeOverhead.QuadPart)) / ((double)timeFreq.QuadPart));
@@ -986,20 +986,20 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
   // T3K special cases to optimize perf for these tiny batches (usually overall just ~16-64 values to write)
   // Note that these could be removed again, as also handled with the 'standard' pipeline, its just a much simpler codepath/early-out
   // Note that these obviously also work for all other apps that trigger these
-  const uint32 flags_mxsize = (flags & (~(0x7F8UL << 13))); // mask out xsize
+  const uint32 flags_mxsize = (flags & (~(0x7F8U << 13))); // mask out xsize
   if (flags_mxsize == 67160128 || flags_mxsize == 51264 || flags_mxsize == 59456)
   {
-    const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
+    const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
     //internal address is local to MPE
     void* const intMemory = nuonEnv.GetPointerToMemory(mpe.mpeIndex, mpeBase, false);
-    const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
+    const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
     void* const baseMemory = nuonEnv.GetPointerToMemory((sdramBase >> 23) & 0x1Fu, sdramBase, false);
 
-    const uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-    const uint32 xpos = xinfo & 0x7FFUL;
-          uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-    const uint32 ypos = yinfo & 0x7FFUL;
-    const uint32 xsize = (flags >> 13) & 0x7F8UL;
+    const uint32 xlen = (xinfo >> 16) & 0x3FFU;
+    const uint32 xpos = xinfo & 0x7FFU;
+          uint32 ylen = (yinfo >> 16) & 0x3FFU;
+    const uint32 ypos = yinfo & 0x7FFU;
+    const uint32 xsize = (flags >> 13) & 0x7F8U;
 
     uint32* const pTmp = (uint32*)baseMemory + (ypos * xsize + xpos);
 
@@ -1068,7 +1068,7 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
       //return;
       break;
     case 4:
-      switch(whichRoutine & 0x0FUL)
+      switch(whichRoutine & 0x0FU)
       {
         case 0:
         case 8:
@@ -1079,7 +1079,7 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
       }
       break;
     case 5:
-      switch(whichRoutine & 0x0FUL)
+      switch(whichRoutine & 0x0FU)
       {
         case 0:
         case 8:
@@ -1127,8 +1127,8 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
       break;
   }
 
-  //const bool bBatch = flags & (1UL << 30);
-  const bool bChain = flags & (1UL << 29);
+  //const bool bBatch = flags & (1U << 30);
+  const bool bChain = flags & (1U << 29);
 
   if(bChain)
   {
@@ -1138,23 +1138,23 @@ void DMABiLinear(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint
     return;
   }
 
-  const bool bRemote = flags & (1UL << 28);
-  const bool bDirect = flags & (1UL << 27);
-  const bool bDup = flags & (3UL << 26); //bDup = dup | direct
-  //const bool bTrigger = flags & (1UL << 25);
-  const bool bRead = flags & (1UL << 13);
-        int32 xsize = (flags >> 13) & 0x7F8UL;
-  //const uint32 type = (flags >> 14) & 0x03UL;
-  //const uint32 mode = flags & 0xFFFUL;
-  const uint32 zcompare = (flags >> 1) & 0x07UL;
-  const uint32 pixtype = (flags >> 4) & 0x0FUL;
-  const uint32 bva = ((flags >> 7) & 0x06UL) | (flags & 0x01UL);
-  const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
-  const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
-        uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-        uint32 xpos = xinfo & 0x7FFUL;
-  const uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-  const uint32 ypos = yinfo & 0x7FFUL;
+  const bool bRemote = flags & (1U << 28);
+  const bool bDirect = flags & (1U << 27);
+  const bool bDup = flags & (3U << 26); //bDup = dup | direct
+  //const bool bTrigger = flags & (1U << 25);
+  const bool bRead = flags & (1U << 13);
+        int32 xsize = (flags >> 13) & 0x7F8U;
+  //const uint32 type = (flags >> 14) & 0x03U;
+  //const uint32 mode = flags & 0xFFFU;
+  const uint32 zcompare = (flags >> 1) & 0x07U;
+  const uint32 pixtype = (flags >> 4) & 0x0FU;
+  const uint32 bva = ((flags >> 7) & 0x06U) | (flags & 0x01U);
+  const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
+  const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
+        uint32 xlen = (xinfo >> 16) & 0x3FFU;
+        uint32 xpos = xinfo & 0x7FFU;
+  const uint32 ylen = (yinfo >> 16) & 0x3FFU;
+  const uint32 ypos = yinfo & 0x7FFU;
         bool bCompareZ = false;
         bool bUpdateZ = false;
 
@@ -1701,7 +1701,7 @@ void DMABiLinear(MPE &mpe)
 
   //For the BIOS call, simulate the latency of the call assuming
   //25 cycles of setup time plus 1 cycle per pixel transferred (xlen * ylen)
-  nuonEnv.cycleCounter += (25 + (((xinfo >> 16) & 0x3FFUL) * ((yinfo >> 16) & 0x3FFUL)));
+  nuonEnv.cycleCounter += (25 + (((xinfo >> 16) & 0x3FFU) * ((yinfo >> 16) & 0x3FFU)));
 
   DMABiLinear(mpe,flags,baseaddr,xinfo,yinfo,intaddr);
 }
@@ -1709,14 +1709,14 @@ void DMABiLinear(MPE &mpe)
 void DMADo(MPE &mpe)
 {
   const uint32 ctrl = mpe.regs[0];
-  const uint32 cmdBlock = mpe.regs[1] & 0x3FFFFFF0UL;
+  const uint32 cmdBlock = mpe.regs[1] & 0x3FFFFFF0U;
   //const uint32 waitFlag = mpe.regs[2];
 
-  if(ctrl == 0x20500500)
+  if(ctrl == 0x20500500U)
   {
     mpe.odmacptr = cmdBlock;
 
-    if(mpe.odmactl & 0x60UL)
+    if(mpe.odmactl & 0x60U)
     {
       //other bus DMA is enabled so do it!
       const uint32* const cmdptr = (uint32 *)nuonEnv.GetPointerToMemory(mpe.mpeIndex,cmdBlock);
@@ -1724,7 +1724,7 @@ void DMADo(MPE &mpe)
       const uint32 baseaddr = SwapBytes(cmdptr[1]);
       const uint32 intaddr = SwapBytes(cmdptr[2]);
       //clear all bits except bits 13, 16 - 23, and 28
-      dmaflags &= ((1UL << 13) | (0xFFUL << 16) | (1UL << 28));
+      dmaflags &= ((1U << 13) | (0xFFU << 16) | (1U << 28));
       DMALinear(mpe,dmaflags,baseaddr,intaddr);
     }
   }
@@ -1739,7 +1739,7 @@ void DMADo(MPE &mpe)
     const uint32 baseaddr = SwapBytes(cmdptr[1]);
           uint32 intaddr = SwapBytes(cmdptr[2]);
 
-    switch((dmaflags >> 14) & 0x03UL)
+    switch((dmaflags >> 14) & 0x03U)
     {
       case 0:
         //linear DMA
@@ -1756,12 +1756,12 @@ void DMADo(MPE &mpe)
       }
       default:
 #ifdef ENABLE_EMULATION_MESSAGEBOXES
-        MessageBox(NULL, "(dmaflags >> 14) & 0x03UL not found", "DMADo Error", MB_OK);
+        MessageBox(NULL, "(dmaflags >> 14) & 0x03U not found", "DMADo Error", MB_OK);
 #endif
         return;
     }
 
-    if(dmaflags & (1UL << 30)) // batch? -> repeat the loop
+    if(dmaflags & (1U << 30)) // batch? -> repeat the loop
       mpe.mdmacptr += 16;
     else
       return;

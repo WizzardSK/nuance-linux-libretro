@@ -260,7 +260,7 @@ void PropagateConstants_MULImmediateShiftAcshift(SuperBlockConstants &constants)
 {
   if(constants.IsMiscRegisterConstant(CONSTANT_REG_ACSHIFT) && ALLOW_MUL_PROPAGATION)
   {
-    const uint32 shiftVal = constants.GetMiscRegisterConstant(CONSTANT_REG_ACSHIFT) & 0x7FUL;
+    const uint32 shiftVal = constants.GetMiscRegisterConstant(CONSTANT_REG_ACSHIFT) & 0x7FU;
     if(shiftVal & 0x40)
     {
       constants.nuance->fields[FIELD_MUL_HANDLER] = Handler_MULImmediateShiftLeftImmediate;
@@ -341,7 +341,7 @@ void PropagateConstants_MULImmediateShiftScalar(SuperBlockConstants &constants)
   if(constants.IsScalarRegisterConstant(shiftIndex) && ALLOW_MUL_PROPAGATION)
   {
     const uint32 src2Index = constants.nuance->fields[FIELD_MUL_SRC2];
-    const uint32 shiftVal = constants.GetScalarRegisterConstant(shiftIndex) & 0x7FUL;
+    const uint32 shiftVal = constants.GetScalarRegisterConstant(shiftIndex) & 0x7FU;
     if(shiftVal & 0x40)
     {
       constants.nuance->fields[FIELD_MUL_HANDLER] = Handler_MULImmediateShiftLeftImmediate;

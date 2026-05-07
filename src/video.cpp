@@ -981,7 +981,7 @@ void VidConfig(MPE &mpe)
     memcpy(&structMainChannelPrev,&structMainChannel,sizeof(VidChannel));
     memcpy(&structMainChannel,&mainchannel,sizeof(VidChannel));
 
-    map = (structMainChannel.dmaflags >> 4) & 0x0FUL;
+    map = (structMainChannel.dmaflags >> 4) & 0x0FU;
 
     //Handle 16_16Z double and triple buffer frame buffers
     if((map >= 9) || (map == 5))
@@ -1006,7 +1006,7 @@ void VidConfig(MPE &mpe)
       //computed using (map * src_width * src_height * bytes_per_pixel) where bytes_per_pixel is always two.
       structMainChannel.base = structMainChannel.base + (map * structMainChannel.src_width * structMainChannel.src_height * 2);
       //change the pixel type to 16-bit, no-Z
-      structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FUL) | (0x02 << 4);
+      structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FU) | (0x02 << 4);
 
       //It is safe to specify a pixel type of 12 or 15 but this will display Z-data and look really funky.
     }
@@ -1060,7 +1060,7 @@ void VidConfig(MPE &mpe)
     memcpy(&structOverlayChannelPrev,&structOverlayChannel,sizeof(VidChannel));
     memcpy(&structOverlayChannel,&osdchannel,sizeof(VidChannel));
 
-    map = (structOverlayChannel.dmaflags >> 4) & 0x0FUL;
+    map = (structOverlayChannel.dmaflags >> 4) & 0x0FU;
 
     //Handle 16_16Z double and triple buffer frame buffers
     if((map >= 9) || (map == 5))
@@ -1085,7 +1085,7 @@ void VidConfig(MPE &mpe)
       //computed using (map * src_width * src_height * bytes_per_pixel) where bytes_per_pixel is always two.
       structOverlayChannel.base = structOverlayChannel.base + (map * structOverlayChannel.src_width * structOverlayChannel.src_height * 2);
       //change the pixel type to 16-bit, no-Z
-      structOverlayChannel.dmaflags = (structOverlayChannel.dmaflags & 0xFFFFFF0FUL) | (0x02 << 4);
+      structOverlayChannel.dmaflags = (structOverlayChannel.dmaflags & 0xFFFFFF0FU) | (0x02 << 4);
 
       //It is safe to specify a pixel type of 12 or 15 but this will display Z-data and look really funky.
     }
@@ -1201,7 +1201,7 @@ void VidSetup(MPE &mpe)
   //B,V,A and Z are ignored for video DMA transfers
 
   //Get pixel type
-  uint32 map = (dmaFlags >> 4) & 0x0FUL;
+  uint32 map = (dmaFlags >> 4) & 0x0FU;
 
   //For pixel types 0 through 8, map 0 contains color data and map 1 contains Z data.  Because Z data is ignored
   //by the video DMA controller, transfers will always occur from map 0 so the main channel base address does not
@@ -1230,7 +1230,7 @@ void VidSetup(MPE &mpe)
     //computed using (map * src_width * src_height * bytes_per_pixel) where bytes_per_pixel is always two.
     structMainChannel.base = structMainChannel.base + (map * structMainChannel.src_width * structMainChannel.src_height * 2);
     //change the pixel type to 16-bit, no-Z
-    structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FUL) | (0x02UL << 4);
+    structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FU) | (0x02U << 4);
      //It is safe to specify a pixel type of 12 or 15 but this will display Z-data and look really funky.
   }
 
@@ -1298,7 +1298,7 @@ void VidSync(MPE& mpe) // should wait (as seen by the app) for mpe.regs[0] field
 void VidChangeBase(MPE &mpe)
 {
   const int32 which = mpe.regs[0];
-  const int32 dmaflags = mpe.regs[1] | (1UL << 13); // always set read bit
+  const int32 dmaflags = mpe.regs[1] | (1U << 13); // always set read bit
   const int32 base = mpe.regs[2];
 
   mpe.regs[0] = 1;
@@ -1309,7 +1309,7 @@ void VidChangeBase(MPE &mpe)
 #endif
 
   {
-    uint32 map = (dmaflags >> 4) & 0x0FUL;
+    uint32 map = (dmaflags >> 4) & 0x0FU;
 
     switch(which)
     {
@@ -1340,7 +1340,7 @@ void VidChangeBase(MPE &mpe)
           //computed using (map * src_width * src_height * bytes_per_pixel) where bytes_per_pixel is always two.
           structMainChannel.base = structMainChannel.base + (map * structMainChannel.src_width * structMainChannel.src_height * 2);
           //change the pixel type to 16-bit, no-Z
-          structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FUL) | (0x02UL << 4);
+          structMainChannel.dmaflags = (structMainChannel.dmaflags & 0xFFFFFF0FU) | (0x02U << 4);
 
           //It is safe to specify a pixel type of 12 or 15 but this will display Z-data and look really funky.
         }
@@ -1374,7 +1374,7 @@ void VidChangeBase(MPE &mpe)
           //computed using (map * src_width * src_height * bytes_per_pixel) where bytes_per_pixel is always two.
           structOverlayChannel.base = structOverlayChannel.base + (map * structOverlayChannel.src_width * structOverlayChannel.src_height * 2);
           //change the pixel type to 16-bit, no-Z
-          structOverlayChannel.dmaflags = (structOverlayChannel.dmaflags & 0xFFFFFF0FUL) | (0x02UL << 4);
+          structOverlayChannel.dmaflags = (structOverlayChannel.dmaflags & 0xFFFFFF0FU) | (0x02U << 4);
 
           //It is safe to specify a pixel type of 12 or 15 but this will display Z-data and look really funky.
         }

@@ -309,21 +309,21 @@ void InitDVDJumpTable()
 {
   for(uint32 i = 0; i < 1024; i++)
   {
-    PatchJumptable(DVD_JUMPTABLE_START + (i << 3UL), ROM_PE_BASE + (i << 3));
+    PatchJumptable(DVD_JUMPTABLE_START + (i << 3U), ROM_PE_BASE + (i << 3));
   }
 }
 
 void CallPEHandler(MPE &mpe, const uint32 address)
 {
-  if(((address & 0x8FFFFFFFUL) < SVC_API_JUMPTABLE_START) || ((address & 0x8FFFFFFFUL) >= PTR_API_JUMPTABLE_START))
+  if(((address & 0x8FFFFFFFU) < SVC_API_JUMPTABLE_START) || ((address & 0x8FFFFFFFU) >= PTR_API_JUMPTABLE_START))
   {
     return;
   }
   else
   {
-    const uint32 offset = (address >> 3) & 0x7F;
+    const uint32 offset = (address >> 3) & 0x7FU;
     NuonBiosHandler* table;
-    switch((address >> 10) & 0x7)
+    switch((address >> 10) & 0x7U)
     {
       case 0:
         table = SVC_API_Table;

@@ -49,7 +49,7 @@ public:
   NativeCodeCacheEntry *AllocatePage(const uint32 address);
   void UpdateEntry(const NativeCodeCacheEntry &entry)
   {
-    AllocatePage(entry.virtualAddress)[entry.virtualAddress & 0x3FFUL] = entry;
+    AllocatePage(entry.virtualAddress)[entry.virtualAddress & 0x3FFU] = entry;
   }
   void Invalidate();
   void InvalidateEntry(const uint32 address);
@@ -72,13 +72,13 @@ public:
     if(!pL1Node)
       return 0;
  
-    const uint32 l1Index = (address >> 10) & 0x1FFFUL;
+    const uint32 l1Index = (address >> 10) & 0x1FFFU;
     NativeCodeCacheEntry* const pL2Node = pL1Node->entries[l1Index];
   
     if(!pL2Node)
       return 0;
 
-    const uint32 l2Index = address & 0x3FFUL;
+    const uint32 l2Index = address & 0x3FFU;
     return pL2Node+l2Index;
   }
 

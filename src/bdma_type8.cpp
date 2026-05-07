@@ -8,23 +8,23 @@ extern NuonEnvironment nuonEnv;
 // 32bit -> 16bit RGB conversion
 void BDMA_Type8_Write_0(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32 xinfo, const uint32 yinfo, const uint32 intaddr)
 {
-  const bool bRemote = flags & (1UL << 28);
-  const bool bDirect = flags & (1UL << 27);
-  const bool bDup = flags & (3UL << 26); //bDup = dup | direct
-  //const bool bTrigger = flags & (1UL << 25);
-  //const bool bRead = flags & (1UL << 13);
-  const int32 xsize = (flags >> 13) & 0x7F8UL;
-  //const uint32 type = (flags >> 14) & 0x03UL;
-  //const uint32 mode = flags & 0xFFFUL;
-  //const uint32 zcompare = (flags >> 1) & 0x07UL;
-  //const uint32 pixtype = (flags >> 4) & 0x0FUL;
-  //const uint32 bva = ((flags >> 7) & 0x06UL) | (flags & 0x01UL);
-  const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
-  const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
-  const uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-  const uint32 xpos = xinfo & 0x7FFUL;
-        uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-  const uint32 ypos = yinfo & 0x7FFUL;
+  const bool bRemote = flags & (1U << 28);
+  const bool bDirect = flags & (1U << 27);
+  const bool bDup = flags & (3U << 26); //bDup = dup | direct
+  //const bool bTrigger = flags & (1U << 25);
+  //const bool bRead = flags & (1U << 13);
+  const int32 xsize = (flags >> 13) & 0x7F8U;
+  //const uint32 type = (flags >> 14) & 0x03U;
+  //const uint32 mode = flags & 0xFFFU;
+  //const uint32 zcompare = (flags >> 1) & 0x07U;
+  //const uint32 pixtype = (flags >> 4) & 0x0FU;
+  //const uint32 bva = ((flags >> 7) & 0x06U) | (flags & 0x01U);
+  const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
+  const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
+  const uint32 xlen = (xinfo >> 16) & 0x3FFU;
+  const uint32 xpos = xinfo & 0x7FFU;
+        uint32 ylen = (yinfo >> 16) & 0x3FFU;
+  const uint32 ypos = yinfo & 0x7FFU;
 
   if(bRemote)
     assert(((mpeBase >> 23) & 0x1Fu) < 4);
@@ -90,7 +90,7 @@ void BDMA_Type8_Write_0(MPE& mpe, const uint32 flags, const uint32 baseaddr, con
     for(uint32 destA = 0; destA < xlen; ++destA) // as destAStep==1
     {
       const uint32 pix32 = SwapBytes(pSrc32[srcA]);
-      pDest16[destA] = SwapBytes((uint16)(((pix32 >> 16) & 0xFC00UL) | ((pix32 >> 14) & 0x03E0UL) | ((pix32 >> 11) & 0x001FUL)));
+      pDest16[destA] = SwapBytes((uint16)(((pix32 >> 16) & 0xFC00U) | ((pix32 >> 14) & 0x03E0U) | ((pix32 >> 11) & 0x001FU)));
 
       srcA += srcAStep;
     }
@@ -154,32 +154,32 @@ void BDMA_Type8_Read_0(MPE& mpe, const uint32 flags, const uint32 baseaddr, cons
 {
   //SI: Rem 0 Dir 0 Dup 0 Read 1 xs 256 zc 7 pix 8 bva 0
 
-  const bool bRemote = flags & (1UL << 28);
-  //const bool bDirect = flags & (1UL << 27);
-  //const bool bDup = flags & (3UL << 26); //bDup = dup | direct
-  //const bool bTrigger = flags & (1UL << 25);
-  //const bool bRead = flags & (1UL << 13);
-  const int32 xsize = (flags >> 13) & 0x7F8UL;
-  //const uint32 type = (flags >> 14) & 0x03UL;
-  //const uint32 mode = flags & 0xFFFUL;
-  //const uint32 zcompare = (flags >> 1) & 0x07UL;
-  //const uint32 pixtype = (flags >> 4) & 0x0FUL;
-  //const uint32 bva = ((flags >> 7) & 0x06UL) | (flags & 0x01UL);
-  const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
-  const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
-  const uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-  const uint32 xpos = xinfo & 0x7FFUL;
-        uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-  const uint32 ypos = yinfo & 0x7FFUL;
+  const bool bRemote = flags & (1U << 28);
+  //const bool bDirect = flags & (1U << 27);
+  //const bool bDup = flags & (3U << 26); //bDup = dup | direct
+  //const bool bTrigger = flags & (1U << 25);
+  //const bool bRead = flags & (1U << 13);
+  const int32 xsize = (flags >> 13) & 0x7F8U;
+  //const uint32 type = (flags >> 14) & 0x03U;
+  //const uint32 mode = flags & 0xFFFU;
+  //const uint32 zcompare = (flags >> 1) & 0x07U;
+  //const uint32 pixtype = (flags >> 4) & 0x0FU;
+  //const uint32 bva = ((flags >> 7) & 0x06U) | (flags & 0x01U);
+  const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
+  const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
+  const uint32 xlen = (xinfo >> 16) & 0x3FFU;
+  const uint32 xpos = xinfo & 0x7FFU;
+        uint32 ylen = (yinfo >> 16) & 0x3FFU;
+  const uint32 ypos = yinfo & 0x7FFU;
 
   if(bRemote)
-    assert(((mpeBase >> 23) & 0x1Fu) < 4);
+    assert(((mpeBase >> 23) & 0x1FU) < 4);
   //internal address is: bRemote ? system address (but still in MPE memory) : local to MPE
-  void* const intMemory = nuonEnv.GetPointerToMemory(bRemote ? (mpeBase >> 23) & 0x1Fu : mpe.mpeIndex, mpeBase & 0x207FFFFF, false);
+  void* const intMemory = nuonEnv.GetPointerToMemory(bRemote ? (mpeBase >> 23) & 0x1FU : mpe.mpeIndex, mpeBase & 0x207FFFFF, false);
 
   //base address is always a system address (absolute)
-  assert(((sdramBase >> 23) & 0x1FUL) < 4);
-  void* const baseMemory = nuonEnv.GetPointerToMemory((sdramBase >> 23) & 0x1Fu, sdramBase, false);
+  assert(((sdramBase >> 23) & 0x1FU) < 4);
+  void* const baseMemory = nuonEnv.GetPointerToMemory((sdramBase >> 23) & 0x1FU, sdramBase, false);
 
   constexpr int32 srcAStep = 1;
   const int32 srcBStep = xsize;

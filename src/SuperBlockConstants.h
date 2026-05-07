@@ -34,8 +34,8 @@
 #define CONSTANT_REG_CP0 (24)
 #define CONSTANT_REG_CP1 (25)
 #define CONSTANT_REG_DISCARD (32)
-#define CONSTANT_REG_ALLFLAGS (0xFFFFFFFFUL)
-#define CONSTANT_REG_ONLYFLAGS (0xFFFF8000UL)
+#define CONSTANT_REG_ALLFLAGS (0xFFFFFFFFU)
+#define CONSTANT_REG_ONLYFLAGS (0xFFFF8000U)
 
 void PropagateConstants_PacketEnd(SuperBlockConstants &constants);
 void PropagateConstants_PacketStart(SuperBlockConstants &constants);
@@ -90,19 +90,19 @@ public:
   }
   void ClearScalarInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies &= ~(1UL << index);
+    pCurrentInstructionEntry->scalarInputDependencies &= ~(1U << index);
   }
   void ClearPixelInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies &= ~(0x7UL << index);
+    pCurrentInstructionEntry->scalarInputDependencies &= ~(0x7U << index);
   }
   void ClearShortVectorInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies &= ~(0xFUL << index);
+    pCurrentInstructionEntry->scalarInputDependencies &= ~(0xFU << index);
   }
   void ClearVectorInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies &= ~(0xFUL << index);
+    pCurrentInstructionEntry->scalarInputDependencies &= ~(0xFU << index);
   }
   void ClearAllMiscOutputDependencies()
   {
@@ -114,49 +114,49 @@ public:
   }
   void ClearMiscInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->miscInputDependencies &= ~(1UL << index);
+    pCurrentInstructionEntry->miscInputDependencies &= ~(1U << index);
   }
   void SetScalarInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies |= (1UL << index);
+    pCurrentInstructionEntry->scalarInputDependencies |= (1U << index);
   }
   void SetPixelInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies |= (0x7UL << index);
+    pCurrentInstructionEntry->scalarInputDependencies |= (0x7U << index);
   }
   void SetShortVectorInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies |= (0xFUL << index);
+    pCurrentInstructionEntry->scalarInputDependencies |= (0xFU << index);
   }
   void SetVectorInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->scalarInputDependencies |= (0xFUL << index);
+    pCurrentInstructionEntry->scalarInputDependencies |= (0xFU << index);
   }
   void SetMiscInputDependency(const uint32 index)
   {
-    pCurrentInstructionEntry->miscInputDependencies |= (1UL << index);
+    pCurrentInstructionEntry->miscInputDependencies |= (1U << index);
   }
   void ClearScalarRegisterConstant(const uint32 index)
   {
-    tempScalarRegisterConstantsStatus &= ~(0x1UL << index);
+    tempScalarRegisterConstantsStatus &= ~(0x1U << index);
   }
   void ClearPixelRegisterConstant(const uint32 index)
   {
-    tempScalarRegisterConstantsStatus &= ~(0x7UL << index);
+    tempScalarRegisterConstantsStatus &= ~(0x7U << index);
   }
   void ClearShortVectorRegisterConstant(const uint32 index)
   {
-    tempScalarRegisterConstantsStatus &= ~(0xFUL << index);
+    tempScalarRegisterConstantsStatus &= ~(0xFU << index);
   }
   void ClearVectorRegisterConstant(const uint32 index)
   {
-    tempScalarRegisterConstantsStatus &= ~(0xFUL << index);
+    tempScalarRegisterConstantsStatus &= ~(0xFU << index);
   }
   void ClearMiscRegisterConstant(const uint32 index)
   {
     if(index != CONSTANT_REG_ALLFLAGS)
     {
-      tempMiscRegisterConstantsStatus &= ~(1UL << index);
+      tempMiscRegisterConstantsStatus &= ~(1U << index);
     }
     else
     {
@@ -165,12 +165,12 @@ public:
   }
   void SetScalarRegisterConstant(const uint32 index, const uint32 value)
   {
-    tempScalarRegisterConstantsStatus |= (1UL << index);
+    tempScalarRegisterConstantsStatus |= (1U << index);
     tempScalarRegisterConstants[index] = value;
   }
   void SetMiscRegisterConstant(const uint32 index, const uint32 value)
   {
-    tempMiscRegisterConstantsStatus |= (1UL << index);
+    tempMiscRegisterConstantsStatus |= (1U << index);
     tempMiscRegisterConstants[index] = value;
   }
   void ClearConstants()
@@ -195,11 +195,11 @@ public:
   }
   bool IsScalarRegisterConstant(const uint32 index) const
   {
-    return (scalarRegisterConstantsStatus & (1UL << index)) != 0;
+    return (scalarRegisterConstantsStatus & (1U << index)) != 0;
   }
   bool IsMiscRegisterConstant(const uint32 index) const
   {
-    return (miscRegisterConstantsStatus & (1UL << index)) != 0;
+    return (miscRegisterConstantsStatus & (1U << index)) != 0;
   }
   uint32 GetScalarRegisterConstant(const uint32 index) const
   {

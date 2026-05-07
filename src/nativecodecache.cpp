@@ -9,7 +9,7 @@
 
 
 NativeCodeCache::NativeCodeCache()
-    : numBytes(5UL*1024UL*1024UL)
+    : numBytes(5U*1024U*1024U)
 {
   Init();
 }

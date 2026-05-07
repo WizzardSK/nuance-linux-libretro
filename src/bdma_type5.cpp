@@ -11,23 +11,23 @@ extern NuonEnvironment nuonEnv;
 
 void BDMA_Type5_Write_0(MPE &mpe, const uint32 flags, const uint32 baseaddr, const uint32 xinfo, const uint32 yinfo, const uint32 intaddr)
 {
-  const bool bRemote = flags & (1UL << 28);
-  const bool bDirect = flags & (1UL << 27);
-  const bool bDup = flags & (3UL << 26); //bDup = dup | direct
-  //const bool bTrigger = flags & (1UL << 25);
-  //const bool bRead = flags & (1UL << 13);
-  const int32 xsize = (flags >> 13) & 0x7F8UL;
-  //const uint32 type = (flags >> 14) & 0x03UL;
-  //const uint32 mode = flags & 0xFFFUL;
-  const uint32 zcompare = (flags >> 1) & 0x07UL;
-  const uint32 pixtype = (flags >> 4) & 0x0FUL;
-  //const uint32 bva = ((flags >> 7) & 0x06UL) | (flags & 0x01UL);
-  const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
-  const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
-  const uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-  const uint32 xpos = xinfo & 0x7FFUL;
-        uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-  const uint32 ypos = yinfo & 0x7FFUL;
+  const bool bRemote = flags & (1U << 28);
+  const bool bDirect = flags & (1U << 27);
+  const bool bDup = flags & (3U << 26); //bDup = dup | direct
+  //const bool bTrigger = flags & (1U << 25);
+  //const bool bRead = flags & (1U << 13);
+  const int32 xsize = (flags >> 13) & 0x7F8U;
+  //const uint32 type = (flags >> 14) & 0x03U;
+  //const uint32 mode = flags & 0xFFFU;
+  const uint32 zcompare = (flags >> 1) & 0x07U;
+  const uint32 pixtype = (flags >> 4) & 0x0FU;
+  //const uint32 bva = ((flags >> 7) & 0x06U) | (flags & 0x01U);
+  const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
+  const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
+  const uint32 xlen = (xinfo >> 16) & 0x3FFU;
+  const uint32 xpos = xinfo & 0x7FFU;
+        uint32 ylen = (yinfo >> 16) & 0x3FFU;
+  const uint32 ypos = yinfo & 0x7FFU;
 
   uint32 map = 0;
   uint32 zmap = 1;
@@ -86,7 +86,7 @@ void BDMA_Type5_Write_0(MPE &mpe, const uint32 flags, const uint32 baseaddr, con
     {
       //Direct and Dup: intaddr is data.
       directColor = SwapBytes((uint16)(intaddr >> 16));
-      directZ = SwapBytes((uint16)(intaddr & 0xFFFFUL));
+      directZ = SwapBytes((uint16)(intaddr & 0xFFFFU));
     }
     else
     {
@@ -247,8 +247,8 @@ void BDMA_Type5_Write_7(MPE& mpe, const uint32 flags, const uint32 baseaddr, con
 
 void BDMA_Type5_Read_0(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32 xinfo, const uint32 yinfo, const uint32 intaddr)
 {
-  //const bool bBatch = flags & (1UL << 30);
-  const bool bChain = flags & (1UL << 29);
+  //const bool bBatch = flags & (1U << 30);
+  const bool bChain = flags & (1U << 29);
 
   if (bChain)
   {
@@ -258,22 +258,22 @@ void BDMA_Type5_Read_0(MPE& mpe, const uint32 flags, const uint32 baseaddr, cons
     return;
   }
 
-  const bool bRemote = flags & (1UL << 28);
-  //const bool bDirect = flags & (1UL << 27);
-  //const bool bDup = flags & (3UL << 26); //bDup = dup | direct
-  //const bool bTrigger = flags & (1UL << 25);
-  const int32 xsize = (flags >> 13) & 0x7F8UL;
-  //const uint32 type = (flags >> 14) & 0x03UL;
-  //const uint32 mode = flags & 0xFFFUL;
-  const uint32 zcompare = (flags >> 1) & 0x07UL;
-  const uint32 pixtype = (flags >> 4) & 0x0FUL;
-  //const uint32 bva = ((flags >> 7) & 0x06UL) | (flags & 0x01UL);
-  const uint32 sdramBase = baseaddr & 0x7FFFFFFEUL;
-  const uint32 mpeBase = intaddr & 0x7FFFFFFCUL;
-  const uint32 xlen = (xinfo >> 16) & 0x3FFUL;
-  const uint32 xpos = xinfo & 0x7FFUL;
-        uint32 ylen = (yinfo >> 16) & 0x3FFUL;
-  const uint32 ypos = yinfo & 0x7FFUL;
+  const bool bRemote = flags & (1U << 28);
+  //const bool bDirect = flags & (1U << 27);
+  //const bool bDup = flags & (3U << 26); //bDup = dup | direct
+  //const bool bTrigger = flags & (1U << 25);
+  const int32 xsize = (flags >> 13) & 0x7F8U;
+  //const uint32 type = (flags >> 14) & 0x03U;
+  //const uint32 mode = flags & 0xFFFU;
+  const uint32 zcompare = (flags >> 1) & 0x07U;
+  const uint32 pixtype = (flags >> 4) & 0x0FU;
+  //const uint32 bva = ((flags >> 7) & 0x06U) | (flags & 0x01U);
+  const uint32 sdramBase = baseaddr & 0x7FFFFFFEU;
+  const uint32 mpeBase = intaddr & 0x7FFFFFFCU;
+  const uint32 xlen = (xinfo >> 16) & 0x3FFU;
+  const uint32 xpos = xinfo & 0x7FFU;
+        uint32 ylen = (yinfo >> 16) & 0x3FFU;
+  const uint32 ypos = yinfo & 0x7FFU;
 
   uint32 map = 0;
   uint32 zmap = 1;
