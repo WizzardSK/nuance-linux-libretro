@@ -8,9 +8,9 @@
 #define DEFAULT_NUM_SECTORS (39)
 
 ///Device ID = AT49BV162A/163A
-#define EEPROM_DEVICE_ID (0xC0L)
+#define EEPROM_DEVICE_ID (0xC0)
 ///Manufacturer = Atmel
-#define EEPROM_MANUFACTURER_CODE (0x1FL)
+#define EEPROM_MANUFACTURER_CODE (0x1F)
 
 #define EEPROM_STATE_READ (1)
 #define EEPROM_STATE_BUS_CYCLE_2 (2)

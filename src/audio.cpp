@@ -12,7 +12,7 @@ extern NuonEnvironment nuonEnv;
 //((float)(nuonAudioBufferSize >> (nuonAudioStreamModeShift + nuonAudioInterruptRateShift)))/nuonPlaybackRate
 
 void AudioMute(MPE &mpe)
-{  
+{
   //Mute audio
   nuonEnv.MuteAudio(mpe.regs[0]);
 }
@@ -100,7 +100,7 @@ void AudioSetChannelMode(MPE &mpe)
 void AudioSetDMABuffer(MPE &mpe)
 {
   const uint32 pAudioBuffer = mpe.regs[0];
-  
+
   //if(!pAudioBuffer)
   //{
   //  pAudioBuffer = pAudioBuffer;

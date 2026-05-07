@@ -74,7 +74,7 @@ void GenerateMirrorLookupTable()
 
 inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const bool bChnorm)
 {
-  const uint32 YLookup[4] = {(Y >> (16 + 13 - 7)) & 0xFFUL,0xFFUL,0xFFUL,0xFFUL}; //!! was X,FF,0,0 before
+  const uint32 YLookup[4] = {(Y >> (16 + 13 - 7)) & 0xFFU,0xFFU,0xFFU,0xFFU}; //!! was X,FF,0,0 before
   Y = YLookup[Y >> (16 + 14)];
 
   switch(Cr >> (16+14))
@@ -84,7 +84,7 @@ inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const 
       if(bChnorm && ((Cr>>16) > 0x1FFFu))
         Cr = 0x7F;
       else
-        Cr = (Cr >> (16 + 13 - 7)) & 0xFFUL;
+        Cr = (Cr >> (16 + 13 - 7)) & 0xFFU;
       break;
     case 1:
       //clamp to 0x7F or 0xFF
@@ -101,7 +101,7 @@ inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const 
       else
       {
         if(bChnorm)
-          Cr = (Cr >> (16 + 13 - 7)) & 0xFFUL;
+          Cr = (Cr >> (16 + 13 - 7)) & 0xFFU;
         else
           Cr = 0x00;
       }
@@ -115,7 +115,7 @@ inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const 
       if(bChnorm && ((Cb>>16) > 0x1FFFu))
         Cb = 0x7F;
       else
-        Cb = (Cb >> (16 + 13 - 7)) & 0xFFUL;
+        Cb = (Cb >> (16 + 13 - 7)) & 0xFFU;
       break;
     case 1:
       //clamp to 0x7F or 0xFF
@@ -132,7 +132,7 @@ inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const 
       else
       {
         if(bChnorm)
-          Cb = (Cb >> (16 + 13 - 7)) & 0xFFUL;
+          Cb = (Cb >> (16 + 13 - 7)) & 0xFFU;
         else
           Cb = 0x00;
       }
@@ -141,8 +141,8 @@ inline void SaturateColorComponentsOrg(uint32 &Y, uint32 &Cr, uint32 &Cb, const 
 
   if(bChnorm)
   {
-    Cr = (Cr + 0x80) & 0xFFUL;
-    Cb = (Cb + 0x80) & 0xFFUL;
+    Cr = (Cr + 0x80) & 0xFFU;
+    Cb = (Cb + 0x80) & 0xFFU;
   }
 }
 
@@ -506,8 +506,8 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
       //This means that for even values of X, the pixel bits to be extracted are always [7:4]
       //and for odd values of X, the pixel bits to be extracted are [3:0]
       const uint32 pixelData8 = *((uint8 *)memPtr);
-      const uint32 pixelData32 = (mpe->ba_mipped_xoffset&0x80000000u) ? (pixelData8 & 0x0FUL) : (pixelData8 >> 4);
-      regs[0] = (mpe->clutbase & 0xFFFFFFC0UL) | (pixelData32 << 2);
+      const uint32 pixelData32 = (mpe->ba_mipped_xoffset&0x80000000u) ? (pixelData8 & 0x0FU) : (pixelData8 >> 4);
+      regs[0] = (mpe->clutbase & 0xFFFFFFC0U) | (pixelData32 << 2);
       regs[1] = 0;
       regs[2] = 0;
       return;
@@ -517,14 +517,14 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
     {
       //16+16Z
       const uint16 pixelData16 = SwapBytes(*((uint16*)memPtr));
-      regs[0] = ((uint32)pixelData16 << 14) & (0xFCUL << 22);
-      regs[1] = ((uint32)pixelData16 << 20) & (0xF8UL << 22);
-      regs[2] = ((uint32)pixelData16 << 25) & (0xF8UL << 22);
+      regs[0] = ((uint32)pixelData16 << 14) & (0xFCU << 22);
+      regs[1] = ((uint32)pixelData16 << 20) & (0xF8U << 22);
+      regs[2] = ((uint32)pixelData16 << 25) & (0xF8U << 22);
 
       if(bChnorm)
       {
-        regs[1] = (regs[1] - 0x20000000UL) & 0xFE000000UL;
-        regs[2] = (regs[2] - 0x20000000UL) & 0xFE000000UL;
+        regs[1] = (regs[1] - 0x20000000U) & 0xFE000000U;
+        regs[2] = (regs[2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -533,7 +533,7 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
     {
       //8 bit
       const uint32 pixelData32 = *((uint8 *)memPtr);
-      regs[0] = (mpe->clutbase & 0xFFFFFC00UL) | (pixelData32 << 2);
+      regs[0] = (mpe->clutbase & 0xFFFFFC00U) | (pixelData32 << 2);
       regs[1] = 0;
       regs[2] = 0;
       return;
@@ -548,8 +548,8 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
       tmp0 = _mm_srli_epi32(tmp0, 2);
       if (bChnorm)
       {
-        tmp0 = _mm_sub_epi32(tmp0, _mm_set_epi32(0, 0x20000000UL, 0x20000000UL, 0));
-        tmp0 = _mm_and_si128(tmp0, _mm_set_epi32(0xFFFFFFFFUL, 0xFFC00000UL, 0xFFC00000UL, 0xFFFFFFFFUL));
+        tmp0 = _mm_sub_epi32(tmp0, _mm_set_epi32(0, 0x20000000U, 0x20000000U, 0));
+        tmp0 = _mm_and_si128(tmp0, _mm_set_epi32(0xFFFFFFFFU, 0xFFC00000U, 0xFFC00000U, 0xFFFFFFFFU));
       }
 
       const unsigned int regs3 = regs[3]; //!! meh
@@ -557,19 +557,19 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
       regs[3] = regs3;
 #else
 #ifdef NUANCE_LITTLE_ENDIAN
-      regs[0] = (pixelData32 << 22) & (0xFFUL << 22);
-      regs[1] = (pixelData32 << 14) & (0xFFUL << 22);
-      regs[2] = (pixelData32 <<  6) & (0xFFUL << 22);
+      regs[0] = (pixelData32 << 22) & (0xFFU << 22);
+      regs[1] = (pixelData32 << 14) & (0xFFU << 22);
+      regs[2] = (pixelData32 <<  6) & (0xFFU << 22);
 #else
-      regs[0] = (pixelData32 >>  2) & (0xFFUL << 22);
-      regs[1] = (pixelData32 <<  6) & (0xFFUL << 22);
-      regs[2] = (pixelData32 << 14) & (0xFFUL << 22);
+      regs[0] = (pixelData32 >>  2) & (0xFFU << 22);
+      regs[1] = (pixelData32 <<  6) & (0xFFU << 22);
+      regs[2] = (pixelData32 << 14) & (0xFFU << 22);
 #endif
 
       if(bChnorm)
       {
-        regs[1] = (regs[1] - 0x20000000UL) & 0xFFC00000UL;
-        regs[2] = (regs[2] - 0x20000000UL) & 0xFFC00000UL;
+        regs[1] = (regs[1] - 0x20000000U) & 0xFFC00000U;
+        regs[2] = (regs[2] - 0x20000000U) & 0xFFC00000U;
       }
 #endif
       return;
@@ -612,8 +612,8 @@ void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &n
       //This means that for even values of X, the pixel bits to be extracted are always [7:4]
       //and for odd values of X, the pixel bits to be extracted are [3:0]
       const uint32 pixelData8 = *((uint8 *)memPtr);
-      const uint32 pixelData32 = (mpe.ba_mipped_xoffset&1u) ? (pixelData8 & 0x0FUL) : (pixelData8 >> 4);
-      mpe.regs[dest  ] = (mpe.clutbase & 0xFFFFFFC0UL) | (pixelData32 << 2);
+      const uint32 pixelData32 = (mpe.ba_mipped_xoffset&1u) ? (pixelData8 & 0x0FU) : (pixelData8 >> 4);
+      mpe.regs[dest  ] = (mpe.clutbase & 0xFFFFFFC0U) | (pixelData32 << 2);
       mpe.regs[dest+1] = 0;
       mpe.regs[dest+2] = 0;
       return;
@@ -623,14 +623,14 @@ void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &n
     {
       //16+16Z
       const uint16 pixelData16 = SwapBytes(*((uint16*)memPtr));
-      mpe.regs[dest  ] = ((uint32)pixelData16 << 14) & (0xFCUL << 22);
-      mpe.regs[dest+1] = ((uint32)pixelData16 << 20) & (0xF8UL << 22);
-      mpe.regs[dest+2] = ((uint32)pixelData16 << 25) & (0xF8UL << 22);
+      mpe.regs[dest  ] = ((uint32)pixelData16 << 14) & (0xFCU << 22);
+      mpe.regs[dest+1] = ((uint32)pixelData16 << 20) & (0xF8U << 22);
+      mpe.regs[dest+2] = ((uint32)pixelData16 << 25) & (0xF8U << 22);
 
       if(bChnorm)
       {
-        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000UL) & 0xFE000000UL;
-        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000UL) & 0xFE000000UL;
+        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000U) & 0xFE000000U;
+        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -639,7 +639,7 @@ void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &n
     {
       //8 bit
       const uint32 pixelData32 = *((uint8 *)memPtr);
-      mpe.regs[dest  ] = (mpe.clutbase & 0xFFFFFC00UL) | (pixelData32 << 2);
+      mpe.regs[dest  ] = (mpe.clutbase & 0xFFFFFC00U) | (pixelData32 << 2);
       mpe.regs[dest+1] = 0;
       mpe.regs[dest+2] = 0;
       return;
@@ -650,19 +650,19 @@ void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &n
       //32 bit or 32+32Z (both behave the same for LD_P)
       const uint32 pixelData32 = *((uint32*)memPtr);
 #ifdef NUANCE_LITTLE_ENDIAN
-      mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFUL << 22);
-      mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFUL << 22);
-      mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFUL << 22);
+      mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFU << 22);
+      mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFU << 22);
+      mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFU << 22);
 #else
-      mpe.regs[dest  ] = (pixelData32 >>  2) & (0xFFUL << 22);
-      mpe.regs[dest+1] = (pixelData32 <<  6) & (0xFFUL << 22);
-      mpe.regs[dest+2] = (pixelData32 << 14) & (0xFFUL << 22);
+      mpe.regs[dest  ] = (pixelData32 >>  2) & (0xFFU << 22);
+      mpe.regs[dest+1] = (pixelData32 <<  6) & (0xFFU << 22);
+      mpe.regs[dest+2] = (pixelData32 << 14) & (0xFFU << 22);
 #endif
 
       if(bChnorm)
       {
-        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000UL) & 0xFFC00000UL;
-        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000UL) & 0xFFC00000UL;
+        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000U) & 0xFFC00000U;
+        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000U) & 0xFFC00000U;
       }
 
       return;
@@ -690,14 +690,14 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
     {
       //16
       const uint16 pixelData16 = SwapBytes(*((uint16*)memPtr));
-      regs[0] = ((uint32)pixelData16 << 14) & (0xFCUL << 22);
-      regs[1] = ((uint32)pixelData16 << 20) & (0xF8UL << 22);
-      regs[2] = ((uint32)pixelData16 << 25) & (0xF8UL << 22);
+      regs[0] = ((uint32)pixelData16 << 14) & (0xFCU << 22);
+      regs[1] = ((uint32)pixelData16 << 20) & (0xF8U << 22);
+      regs[2] = ((uint32)pixelData16 << 25) & (0xF8U << 22);
 
       if(bChnorm)
       {
-        regs[1] = (regs[1] - 0x20000000UL) & 0xFE000000UL;
-        regs[2] = (regs[2] - 0x20000000UL) & 0xFE000000UL;
+        regs[1] = (regs[1] - 0x20000000U) & 0xFE000000U;
+        regs[2] = (regs[2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -706,15 +706,15 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
     {
       //16+16Z
       const uint32 pixelData32 = SwapBytes(*((uint32*)memPtr));
-      regs[0] = (pixelData32 >> 2) & (0xFCUL << 22);
-      regs[1] = (pixelData32 << 4) & (0xF8UL << 22);
-      regs[2] = (pixelData32 << 9) & (0xF8UL << 22);
+      regs[0] = (pixelData32 >> 2) & (0xFCU << 22);
+      regs[1] = (pixelData32 << 4) & (0xF8U << 22);
+      regs[2] = (pixelData32 << 9) & (0xF8U << 22);
       regs[3] = (pixelData32 << 16);
 
       if(bChnorm)
       {
-        regs[1] = (regs[1] - 0x20000000UL) & 0xFE000000UL;
-        regs[2] = (regs[2] - 0x20000000UL) & 0xFE000000UL;
+        regs[1] = (regs[1] - 0x20000000U) & 0xFE000000U;
+        regs[2] = (regs[2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -732,26 +732,26 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
       tmp0 = _mm_srli_epi32(tmp0, 2);
       if (bChnorm)
       {
-        tmp0 = _mm_sub_epi32(tmp0, _mm_set_epi32(0, 0x20000000UL, 0x20000000UL, 0));
-        tmp0 = _mm_and_si128(tmp0, _mm_set_epi32(0xFFFFFFFFUL, 0xFFC00000UL, 0xFFC00000UL, 0xFFFFFFFFUL));
+        tmp0 = _mm_sub_epi32(tmp0, _mm_set_epi32(0, 0x20000000U, 0x20000000U, 0));
+        tmp0 = _mm_and_si128(tmp0, _mm_set_epi32(0xFFFFFFFFU, 0xFFC00000U, 0xFFC00000U, 0xFFFFFFFFU));
       }
 
       _mm_store_si128((__m128i*)regs, tmp0); //!! is this always aligned?
 #else
 #ifdef NUANCE_LITTLE_ENDIAN
-      regs[0] = (pixelData32 << 22) & (0xFFUL << 22);
-      regs[1] = (pixelData32 << 14) & (0xFFUL << 22);
-      regs[2] = (pixelData32 <<  6) & (0xFFUL << 22);
+      regs[0] = (pixelData32 << 22) & (0xFFU << 22);
+      regs[1] = (pixelData32 << 14) & (0xFFU << 22);
+      regs[2] = (pixelData32 <<  6) & (0xFFU << 22);
 #else
-      regs[0] = (pixelData32 >>  2) & (0xFFUL << 22);
-      regs[1] = (pixelData32 <<  6) & (0xFFUL << 22);
-      regs[2] = (pixelData32 << 14) & (0xFFUL << 22);
+      regs[0] = (pixelData32 >>  2) & (0xFFU << 22);
+      regs[1] = (pixelData32 <<  6) & (0xFFU << 22);
+      regs[2] = (pixelData32 << 14) & (0xFFU << 22);
 #endif
 
       if(bChnorm)
       {
-        regs[1] = (regs[1] - 0x20000000UL) & 0xFFC00000UL;
-        regs[2] = (regs[2] - 0x20000000UL) & 0xFFC00000UL;
+        regs[1] = (regs[1] - 0x20000000U) & 0xFFC00000U;
+        regs[2] = (regs[2] - 0x20000000U) & 0xFFC00000U;
       }
 #endif
       if(pixType == 0x4)
@@ -803,14 +803,14 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
     {
       //16
       const uint16 pixelData16 = SwapBytes(*((uint16*)memPtr));
-      mpe.regs[dest  ] = ((uint32)pixelData16 << 14) & (0xFCUL << 22);
-      mpe.regs[dest+1] = ((uint32)pixelData16 << 20) & (0xF8UL << 22);
-      mpe.regs[dest+2] = ((uint32)pixelData16 << 25) & (0xF8UL << 22);
+      mpe.regs[dest  ] = ((uint32)pixelData16 << 14) & (0xFCU << 22);
+      mpe.regs[dest+1] = ((uint32)pixelData16 << 20) & (0xF8U << 22);
+      mpe.regs[dest+2] = ((uint32)pixelData16 << 25) & (0xF8U << 22);
 
       if(bChnorm)
       {
-        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000UL) & 0xFE000000UL;
-        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000UL) & 0xFE000000UL;
+        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000U) & 0xFE000000U;
+        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -819,15 +819,15 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
     {
       //16+16Z
       const uint32 pixelData32 = SwapBytes(*((uint32*)memPtr));
-      mpe.regs[dest  ] = (pixelData32 >> 2) & (0xFCUL << 22);
-      mpe.regs[dest+1] = (pixelData32 << 4) & (0xF8UL << 22);
-      mpe.regs[dest+2] = (pixelData32 << 9) & (0xF8UL << 22);
+      mpe.regs[dest  ] = (pixelData32 >> 2) & (0xFCU << 22);
+      mpe.regs[dest+1] = (pixelData32 << 4) & (0xF8U << 22);
+      mpe.regs[dest+2] = (pixelData32 << 9) & (0xF8U << 22);
       mpe.regs[dest+3] = (pixelData32 << 16);
 
       if(bChnorm)
       {
-        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000UL) & 0xFE000000UL;
-        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000UL) & 0xFE000000UL;
+        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000U) & 0xFE000000U;
+        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000U) & 0xFE000000U;
       }
 
       return;
@@ -841,13 +841,13 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
       //32 bit
       const uint32 pixelData32 = ((uint32*)memPtr)[0];
 #ifdef NUANCE_LITTLE_ENDIAN
-      mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFUL << 22);
-      mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFUL << 22);
-      mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFUL << 22);
+      mpe.regs[dest  ] = (pixelData32 << 22) & (0xFFU << 22);
+      mpe.regs[dest+1] = (pixelData32 << 14) & (0xFFU << 22);
+      mpe.regs[dest+2] = (pixelData32 <<  6) & (0xFFU << 22);
 #else
-      mpe.regs[dest  ] = (pixelData32 >>  2) & (0xFFUL << 22);
-      mpe.regs[dest+1] = (pixelData32 <<  6) & (0xFFUL << 22);
-      mpe.regs[dest+2] = (pixelData32 << 14) & (0xFFUL << 22);
+      mpe.regs[dest  ] = (pixelData32 >>  2) & (0xFFU << 22);
+      mpe.regs[dest+1] = (pixelData32 <<  6) & (0xFFU << 22);
+      mpe.regs[dest+2] = (pixelData32 << 14) & (0xFFU << 22);
 #endif
       if(pixType == 0x4)
 #ifdef NUANCE_LITTLE_ENDIAN
@@ -860,8 +860,8 @@ void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
 
       if(bChnorm)
       {
-        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000UL) & 0xFFC00000UL;
-        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000UL) & 0xFFC00000UL;
+        mpe.regs[dest+1] = (mpe.regs[dest+1] - 0x20000000U) & 0xFFC00000U;
+        mpe.regs[dest+2] = (mpe.regs[dest+2] - 0x20000000U) & 0xFFC00000U;
       }
 
       return;
@@ -1458,10 +1458,10 @@ void Execute_StoreShortVectorAbsolute(MPE &mpe, const uint32 pRegs[48], const Nu
   const int32* const srcPtr = (int32 *)&pRegs[nuance.fields[FIELD_MEM_FROM]];
   int16 * const destPtr = (int16 *)nuance.fields[FIELD_MEM_POINTER];
 
-  destPtr[0] = srcPtr[0] >> 16UL;
-  destPtr[1] = srcPtr[1] >> 16UL;
-  destPtr[2] = srcPtr[2] >> 16UL;
-  destPtr[3] = srcPtr[3] >> 16UL;
+  destPtr[0] = srcPtr[0] >> 16U;
+  destPtr[1] = srcPtr[1] >> 16U;
+  destPtr[2] = srcPtr[2] >> 16U;
+  destPtr[3] = srcPtr[3] >> 16U;
   SwapShortVectorBytes((uint16 *)destPtr);
 }
 
@@ -1470,10 +1470,10 @@ void Execute_StoreShortVectorLinear(MPE &mpe, const uint32 pRegs[48], const Nuan
   const uint32* const srcPtr = &pRegs[nuance.fields[FIELD_MEM_FROM]];
   uint16* const destPtr = (uint16 *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,pRegs[nuance.fields[FIELD_MEM_TO]] & 0xFFFFFFF8));
 
-  destPtr[0] = srcPtr[0] >> 16UL; //!! why is this unsigned and above signed
-  destPtr[1] = srcPtr[1] >> 16UL;
-  destPtr[2] = srcPtr[2] >> 16UL;
-  destPtr[3] = srcPtr[3] >> 16UL;
+  destPtr[0] = srcPtr[0] >> 16U; //!! why is this unsigned and above signed
+  destPtr[1] = srcPtr[1] >> 16U;
+  destPtr[2] = srcPtr[2] >> 16U;
+  destPtr[3] = srcPtr[3] >> 16U;
   SwapShortVectorBytes(destPtr);
 }
 

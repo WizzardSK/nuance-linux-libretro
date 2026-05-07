@@ -83,7 +83,7 @@ static HWND reStatus;
 static OPENFILENAME ofn;
 static char openFileName[512];
 
-static unsigned long disassemblyMPE = 3;
+static unsigned int disassemblyMPE = 3;
 static char whichStatus = -1;
 
 
@@ -105,7 +105,7 @@ static void UpdateStatusWindowDisplay()
   char buf[1024];
   if(whichStatus == 0)
   {
-    sprintf_s(buf, sizeof(buf),"Pending Comm Requests = %lu\n",nuonEnv.pendingCommRequests);
+    sprintf_s(buf, sizeof(buf),"Pending Comm Requests = %u\n",nuonEnv.pendingCommRequests);
     SendMessage(reStatus,WM_SETTEXT,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
     sprintf_s(buf, sizeof(buf),"MPE0 commctl = $%8.8lx, commxmit0 = $%8.8lx, commrecv0 = $%8.8lx, comminfo = $%8.8lx\n",nuonEnv.mpe[0].commctl,nuonEnv.mpe[0].commxmit[0],nuonEnv.mpe[0].commrecv[0],nuonEnv.mpe[0].comminfo);
@@ -140,34 +140,34 @@ static void UpdateStatusWindowDisplay()
       videoTexInfo.osdTexCoords[6],videoTexInfo.osdTexCoords[7]);
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Main Channel pixel type = %lu, Overlay Channel pixel type = %lu\n",(structMainChannel.dmaflags >> 4) & 0xF,(structOverlayChannel.dmaflags >> 4) & 0xF);
+    sprintf_s(buf, sizeof(buf),"Main Channel pixel type = %u, Overlay Channel pixel type = %u\n",(structMainChannel.dmaflags >> 4) & 0xF,(structOverlayChannel.dmaflags >> 4) & 0xF);
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
     sprintf_s(buf, sizeof(buf),"Main Channel base = $%8.8lx, Overlay Channel base = $%8.8lx\n",(structMainChannel.base),(structOverlayChannel.base));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Main Channel src_width = %lu, Main Channel src_height = %lu\n",(structMainChannel.src_width),(structMainChannel.src_height));
+    sprintf_s(buf, sizeof(buf),"Main Channel src_width = %u, Main Channel src_height = %u\n",(structMainChannel.src_width),(structMainChannel.src_height));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Main Channel dest_width = %lu, Main Channel dest_height = %lu\n",(structMainChannel.dest_width),(structMainChannel.dest_height));
+    sprintf_s(buf, sizeof(buf),"Main Channel dest_width = %u, Main Channel dest_height = %u\n",(structMainChannel.dest_width),(structMainChannel.dest_height));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Main Channel src_xoff = %lu, Main Channel src_yoff = %lu\n",(structMainChannel.src_xoff),(structMainChannel.src_yoff));
+    sprintf_s(buf, sizeof(buf),"Main Channel src_xoff = %u, Main Channel src_yoff = %u\n",(structMainChannel.src_xoff),(structMainChannel.src_yoff));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Main Channel dest_xoff = %lu, Main Channel dest_yoff = %lu\n",(structMainChannel.dest_xoff),(structMainChannel.dest_yoff));
+    sprintf_s(buf, sizeof(buf),"Main Channel dest_xoff = %u, Main Channel dest_yoff = %u\n",(structMainChannel.dest_xoff),(structMainChannel.dest_yoff));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Overlay Channel src_width = %lu, Overlay Channel src_height = %lu\n",(structOverlayChannel.src_width),(structOverlayChannel.src_height));
+    sprintf_s(buf, sizeof(buf),"Overlay Channel src_width = %u, Overlay Channel src_height = %u\n",(structOverlayChannel.src_width),(structOverlayChannel.src_height));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Overlay Channel dest_width = %lu, Overlay Channel dest_height = %lu\n",(structOverlayChannel.dest_width),(structOverlayChannel.dest_height));
+    sprintf_s(buf, sizeof(buf),"Overlay Channel dest_width = %u, Overlay Channel dest_height = %u\n",(structOverlayChannel.dest_width),(structOverlayChannel.dest_height));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Overlay Channel src_xoff = %lu, Overlay Channel src_yoff = %lu\n",(structOverlayChannel.src_xoff),(structOverlayChannel.src_yoff));
+    sprintf_s(buf, sizeof(buf),"Overlay Channel src_xoff = %u, Overlay Channel src_yoff = %u\n",(structOverlayChannel.src_xoff),(structOverlayChannel.src_yoff));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
-    sprintf_s(buf, sizeof(buf),"Overlay Channel dest_xoff = %lu, Overlay Channel dest_yoff = %lu\n",(structOverlayChannel.dest_xoff),(structOverlayChannel.dest_yoff));
+    sprintf_s(buf, sizeof(buf),"Overlay Channel dest_xoff = %u, Overlay Channel dest_yoff = %u\n",(structOverlayChannel.dest_xoff),(structOverlayChannel.dest_yoff));
     SendMessage(reStatus,EM_REPLACESEL,NULL,LPARAM(buf));
     SendMessage(reStatus,EM_SETSEL,WPARAM(-1),LPARAM(-1));
   }
@@ -318,7 +318,7 @@ static void UpdateControlPanelDisplay()
   }
 
   char buf[1024];
-  sprintf_s(buf, sizeof(buf),"mpe%lu: $%8.8X\n{\n", disassemblyMPE, GetMPERunStatus(disassemblyMPE) ? nuonEnv.mpe[disassemblyMPE].pcexec : 0);
+  sprintf_s(buf, sizeof(buf),"mpe%u: $%8.8X\n{\n", disassemblyMPE, GetMPERunStatus(disassemblyMPE) ? nuonEnv.mpe[disassemblyMPE].pcexec : 0);
 
   SendMessage(reTermDisplay,WM_SETTEXT,NULL,LPARAM(buf));
   SendMessage(reTermDisplay,EM_SETSEL,WPARAM(-1),LPARAM(-1));
@@ -1047,10 +1047,10 @@ static void ApplyControllerState(const unsigned int controllerIdx, const uint16 
 bool CheckForInvalidCommStatus(const MPE &mpe)
 {
   bool bInvalid = (mpe.intsrc & INT_COMMRECV) && 
-   (!(mpe.commctl & (1UL << 31)));  //&& (!(mpe.intctl & (1UL << 5)) || (mpe.pcexec >= 0x807604D2))) ||
-   //((mpe.commctl & (1UL << 31)) && (mpe.pcexec >= 0x807604C8) && (mpe.pcexec < 0x807604D2)));
-  bool bInvalid2 = (!(mpe.intsrc & INT_COMMRECV) && (mpe.commctl & (1UL << 31)) &&
-    ((mpe.pcexec <= 0x807604C0) || (mpe.pcexec >= 0x807604D2)));
+   (!(mpe.commctl & (1U << 31)));  //&& (!(mpe.intctl & (1U << 5)) || (mpe.pcexec >= 0x807604D2))) ||
+   //((mpe.commctl & (1U << 31)) && (mpe.pcexec >= 0x807604C8) && (mpe.pcexec < 0x807604D2)));
+  bool bInvalid2 = (!(mpe.intsrc & INT_COMMRECV) && (mpe.commctl & (1U << 31)) &&
+    ((mpe.pcexec <= 0x807604C0U) || (mpe.pcexec >= 0x807604D2U)));
   if(bInvalid || bInvalid2)
   {
     bInvalid = false;

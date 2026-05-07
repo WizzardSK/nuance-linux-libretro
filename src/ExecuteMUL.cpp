@@ -35,7 +35,7 @@ void Execute_MULScalarShiftAcshift(MPE &mpe, const uint32 pRegs[48], const Nuanc
 {
   const int64 mulop1 = pRegs[nuance.fields[FIELD_MUL_SRC1]];
   const int64 mulop2 = pRegs[nuance.fields[FIELD_MUL_SRC2]];
-  const uint32 mul_shift = pRegs[ACS_REG] & 0x7FUL;
+  const uint32 mul_shift = pRegs[ACS_REG] & 0x7FU;
 
   int64 result = ((mulop1 << 32) >> 32) * ((mulop2 << 32) >> 32);
 
@@ -123,7 +123,7 @@ void Execute_MULImmediateShiftAcshift(MPE &mpe, const uint32 pRegs[48], const Nu
 {
   const int64 mulop1 = nuance.fields[FIELD_MUL_SRC1];
   const int64 mulop2 = pRegs[nuance.fields[FIELD_MUL_SRC2]];
-  const uint32 mul_shift = pRegs[ACS_REG] & 0x7FUL;
+  const uint32 mul_shift = pRegs[ACS_REG] & 0x7FU;
 
   int64 result = ((mulop1 << 32) >> 32) * ((mulop2 << 32) >> 32);
 
@@ -161,7 +161,7 @@ void Execute_MULScalarShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nuance
 {
   const int64 mulop1 = pRegs[nuance.fields[FIELD_MUL_SRC1]];
   const int64 mulop2 = pRegs[nuance.fields[FIELD_MUL_SRC2]];
-  const uint32 mul_shift = pRegs[nuance.fields[FIELD_MUL_INFO]] & 0x7FUL;
+  const uint32 mul_shift = pRegs[nuance.fields[FIELD_MUL_INFO]] & 0x7FU;
 
   int64 result = (((mulop1 << 32) >> 32) * ((mulop2 << 32) >> 32));
 
@@ -199,7 +199,7 @@ void Execute_MULImmediateShiftScalar(MPE &mpe, const uint32 pRegs[48], const Nua
 {
   const int64 mulop1 = nuance.fields[FIELD_MUL_SRC1];
   const int64 mulop2 = pRegs[nuance.fields[FIELD_MUL_SRC2]];
-  const uint32 mul_shift = pRegs[nuance.fields[FIELD_MUL_INFO]] & 0x7FUL;
+  const uint32 mul_shift = pRegs[nuance.fields[FIELD_MUL_INFO]] & 0x7FU;
 
   int64 result = (((mulop1 << 32) >> 32) * ((mulop2 << 32) >> 32));
 
@@ -326,7 +326,7 @@ void Execute_MUL_SVScalarShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nu
   const int32 scalar = ((int32)(pRegs[nuance.fields[FIELD_MUL_SRC1]])) >> 16;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -342,8 +342,8 @@ void Execute_MUL_SVScalarShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nu
 
 void Execute_MUL_SVRuShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  //? scalar = (int32)(pRegs[INDEX_REG+REG_U] >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL; //!!
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  //? scalar = (int32)(pRegs[INDEX_REG+REG_U] >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU; //!!
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
   const int32 shift = shiftTable[nuance.fields[FIELD_MUL_INFO]];
@@ -362,10 +362,10 @@ void Execute_MUL_SVRuShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuan
 
 void Execute_MUL_SVRuShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -381,7 +381,7 @@ void Execute_MUL_SVRuShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance
 
 void Execute_MUL_SVRvShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
   const int32 shift = shiftTable[nuance.fields[FIELD_MUL_INFO]];
@@ -400,10 +400,10 @@ void Execute_MUL_SVRvShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuan
 
 void Execute_MUL_SVRvShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -440,7 +440,7 @@ void Execute_MUL_SVVectorShiftImmediate(MPE &mpe, const uint32 pRegs[48], const 
 
 void Execute_MUL_SVVectorShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03UL];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
   const uint32 src1 = nuance.fields[FIELD_MUL_SRC1];
   const uint32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const uint32 dest = nuance.fields[FIELD_MUL_DEST];
@@ -499,7 +499,7 @@ void Execute_MUL_PScalarShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nua
   const int32 scalar = ((int32)(pRegs[nuance.fields[FIELD_MUL_SRC1]])) >> 16;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -513,7 +513,7 @@ void Execute_MUL_PScalarShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nua
 
 void Execute_MUL_PRuShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
   const int32 shift = shiftTable[nuance.fields[FIELD_MUL_INFO]];
@@ -530,10 +530,10 @@ void Execute_MUL_PRuShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuanc
 
 void Execute_MUL_PRuShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_U])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -547,7 +547,7 @@ void Execute_MUL_PRuShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance 
 
 void Execute_MUL_PRvShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
   const int32 shift = shiftTable[nuance.fields[FIELD_MUL_INFO]];
@@ -562,10 +562,10 @@ void Execute_MUL_PRvShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuanc
 
 void Execute_MUL_PRvShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFUL;
+  const int32 scalar = (((int32)(pRegs[INDEX_REG+REG_V])) >> (2 + BilinearInfo_XYMipmap(pRegs[UVC_REG]))) & 0x3FFFU;
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];
-  const int32 shift = shiftTable[pRegs[SVS_REG]];
+  const int32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
 
 //Execute
 
@@ -604,7 +604,7 @@ void Execute_MUL_PVectorShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nua
   const uint32 src1 = nuance.fields[FIELD_MUL_SRC1];
   const uint32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const uint32 dest = nuance.fields[FIELD_MUL_DEST];
-  const uint32 shift = shiftTable[pRegs[SVS_REG]];
+  const uint32 shift = shiftTable[pRegs[SVS_REG] & 0x03U];
   int32 src1_vector[3];
 
   src1_vector[0] = ((int32)(pRegs[src1    ])) >> 16;
@@ -646,7 +646,7 @@ void Execute_DOTPScalarShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuan
    (((int32)(pRegs[src2 + 3])) >> 16) * scalar};
 
   mpe.regs[nuance.fields[FIELD_MUL_DEST]] =
-    (products[0] + products[1] + products[2] + products[3]) << shiftTable[pRegs[SVS_REG]];
+    (products[0] + products[1] + products[2] + products[3]) << shiftTable[pRegs[SVS_REG] & 0x03U];
 }
 
 void Execute_DOTPVectorShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -673,7 +673,7 @@ void Execute_DOTPVectorShiftImmediate(MPE &mpe, const uint32 pRegs[48], const Nu
 
 void Execute_DOTPVectorShiftSvshift(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 shiftVal = pRegs[SVS_REG];
+  const uint32 shiftVal = pRegs[SVS_REG] & 0x03U;
   const int32 src1 = nuance.fields[FIELD_MUL_SRC1];
   const int32 src2 = nuance.fields[FIELD_MUL_SRC2];
   const int32 dest = nuance.fields[FIELD_MUL_DEST];

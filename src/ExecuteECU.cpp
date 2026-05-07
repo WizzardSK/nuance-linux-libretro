@@ -16,7 +16,7 @@ void Execute_Halt(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
       mpe.invalidateRegionEnd = MPE_IRAM_BASE + MPE::overlayLengths[mpe.mpeIndex] - 1;
 
     //If the halt enable bit for the halt exception is not set
-    if(!(mpe.excephalten & (1UL << 0)))
+    if(!(mpe.excephalten & (1U << 0)))
     {
       //set exception bit in interrupt source register
       mpe.intsrc |= 0x01;
@@ -252,7 +252,7 @@ void Execute_RTI1Conditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nua
   {
     if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
     {
-      mpe.intctl &= ~(1UL << 1);
+      mpe.intctl &= ~(1U << 1);
       mpe.pcfetchnext = pRegs[RZ_REG+1];
       mpe.ecuSkipCounter = 3;
     }
@@ -265,7 +265,7 @@ void Execute_RTI1Conditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance 
   {
     if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
     {
-      mpe.intctl &= ~(1UL << 1);
+      mpe.intctl &= ~(1U << 1);
       mpe.pcfetchnext = pRegs[RZ_REG+1];
       mpe.ecuSkipCounter = 1;
     }
@@ -278,7 +278,7 @@ void Execute_RTI2Conditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nua
   {
     if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
     {
-      mpe.intctl &= ~(1UL << 5);
+      mpe.intctl &= ~(1U << 5);
       mpe.pcfetchnext = pRegs[RZ_REG+2];
       mpe.ecuSkipCounter = 3;
     }
@@ -291,7 +291,7 @@ void Execute_RTI2Conditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance 
   {
     if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
     {
-      mpe.intctl &= ~(1UL << 5);
+      mpe.intctl &= ~(1U << 5);
       mpe.pcfetchnext = pRegs[RZ_REG+2];
       mpe.ecuSkipCounter = 1;
     }

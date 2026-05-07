@@ -23,7 +23,7 @@ void DoCommBusController(void)
   {
     for(uint32 i = 0; i < 4; i++)
     {
-      const uint32 idx = (currentTransmitID + i) & 0x03UL;
+      const uint32 idx = (currentTransmitID + i) & 0x03U;
       if(nuonEnv.mpe[idx].commctl & COMM_XMIT_BUFFER_FULL_BIT)
       {
         currentTransmitID = idx;
@@ -52,7 +52,7 @@ void DoCommBusController(void)
       nuonEnv.mpe[target].commrecv[1] = nuonEnv.mpe[currentTransmitID].commxmit[1];
       nuonEnv.mpe[target].commrecv[2] = nuonEnv.mpe[currentTransmitID].commxmit[2];
       nuonEnv.mpe[target].commrecv[3] = nuonEnv.mpe[currentTransmitID].commxmit[3];
-      nuonEnv.mpe[target].comminfo &= 0xFFUL;
+      nuonEnv.mpe[target].comminfo &= 0xFFU;
       nuonEnv.mpe[target].comminfo |= (nuonEnv.mpe[currentTransmitID].comminfo << 16);
       nuonEnv.mpe[target].commctl &= ~(COMM_SOURCE_ID_BITS);
       nuonEnv.mpe[target].commctl |= (COMM_RECV_BUFFER_FULL_BIT | (currentTransmitID << 16));
@@ -158,6 +158,6 @@ void DoCommBusController(void)
 
   if(!bLocked)
   {
-    currentTransmitID = ((currentTransmitID + 1) & 0x03UL);
+    currentTransmitID = ((currentTransmitID + 1) & 0x03U);
   }
 }

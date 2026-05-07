@@ -188,12 +188,12 @@ void MPE::DecodeInstruction_MEM16(const uint8 * const iPtr, InstructionCacheEntr
         entry->packetInfo |= moveVectorFlags;
         entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_HANDLER)] = Handler_MV_V;
         //src is 0x1C
-        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = field_1F & 0x1CUL;
+        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = field_1F & 0x1CU;
         //dest is 0x380
-        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = field_3E0 & 0x1CUL;
+        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = field_3E0 & 0x1CU;
 
-        entry->scalarInputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CUL);
-        entry->scalarOutputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_3E0 & 0x1CUL);
+        entry->scalarInputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CU);
+        entry->scalarOutputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_3E0 & 0x1CU);
       }
       else
       {
@@ -210,18 +210,18 @@ void MPE::DecodeInstruction_MEM16(const uint8 * const iPtr, InstructionCacheEntr
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = field_1F;
           if((*iPtr & 0x02) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] &= 0x1CUL;
+            entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] &= 0x1CU;
           }
 
           switch(*iPtr & 0x03)
           {
             case 0:
               //push Vk
-              entry->scalarInputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CUL);
+              entry->scalarInputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CU);
               break;
             case 1:
               //push Vk, rz
-              entry->scalarInputDependencies[SLOT_MEM] = SHORT_VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CUL);
+              entry->scalarInputDependencies[SLOT_MEM] = SHORT_VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CU);
               entry->miscInputDependencies[SLOT_MEM] = DEPENDENCY_MASK_RZ;
               break;
             case 2:
@@ -244,18 +244,18 @@ void MPE::DecodeInstruction_MEM16(const uint8 * const iPtr, InstructionCacheEntr
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = field_1F;
           if((*iPtr & 0x02) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] &= 0x1CUL;
+            entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] &= 0x1CU;
           }
 
           switch(*iPtr & 0x03)
           {
             case 0:
               //pop Vk
-              entry->scalarOutputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CUL);
+              entry->scalarOutputDependencies[SLOT_MEM] = VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CU);
               break;
             case 1:
               //pop Vk, rz
-              entry->scalarOutputDependencies[SLOT_MEM] = SHORT_VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CUL);
+              entry->scalarOutputDependencies[SLOT_MEM] = SHORT_VECTOR_REG_DEPENDENCY_MASK(field_1F & 0x1CU);
               entry->miscOutputDependencies[SLOT_MEM] = DEPENDENCY_MASK_RZ;
               break;
             case 2:
@@ -965,7 +965,7 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
     case 0xF:
     {
       //st_s #nn, <label C>
-      entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = ((*immExt & 0x7FFFFE0UL) << 5) | ((field_3F & 0x1F) << 5) | field_1F0000;
+      entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = ((*immExt & 0x7FFFFE0U) << 5) | ((field_3F & 0x1FU) << 5) | field_1F0000;
       if(*immExt == 0)
       {
         entry->packetInfo |= PACKETINFO_MEMORY_IO;
@@ -983,8 +983,8 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
       else
       {
         //st_s #nnnn, <label D>
-        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = (((*immExt & 0x04UL) << 9) | (field_1E0 << 7) | (field_3E00000 << 2) | (*immExt & 0x03UL)) << 2;
-        switch((*immExt & 0x18UL) >> 3)
+        entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = (((*immExt & 0x04U) << 9) | (field_1E0 << 7) | (field_3E00000 << 2) | (*immExt & 0x03U)) << 2;
+        switch((*immExt & 0x18U) >> 3)
         {
           case 0:
             entry->packetInfo |= storeControlRegisterFlags;

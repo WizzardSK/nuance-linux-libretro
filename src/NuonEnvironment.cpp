@@ -203,16 +203,26 @@ bool NuonEnvironment::TryPushAudioPeriod()
   const uint32 ringSize    = audioRingSize;
   const uint32 w           = audioRingWritePos.load(std::memory_order_relaxed);
   const uint32 r           = audioRingReadPos.load(std::memory_order_acquire);
-  if((w - r) + periodBytes > ringSize) // ring is full — back-pressure
+  if((w - r) + periodBytes > ringSize) // ring is full - back-pressure
     return false;
 
+  // Compute which half of the Nuon DMA buffer to consume from the CURRENT
+  // channel-mode bits at push time. NISE writes the *enable* bits to name
+  // the boundary it's currently armed for: ENABLE_HALF_INT set means "armed
+  // for the half-buffer interrupt = waiting for first-half-played event",
+  // so the host must simulate that by pushing the first half. ENABLE_WRAP_INT
+  // set means "armed for wrap = waiting for second-half-played event", push
+  // second half. The previous formulation stored this for the *next* push,
+  // which was off by one cycle in T3K's HALF<->WRAP ping-pong pattern and
+  // thus played the inverted half at every push.
+  const uint32 offsetThisPush = (nuonAudioChannelMode & ENABLE_HALF_INT) ? 0 : (nuonAudioBufferSize >> 1); //!! check if Tetris would sound better with ENABLE_WRAP_INT here! (as previously the inversion was better for Tetris)
+
   // Copy + byte-swap one Nuon period into the ring slot.
-  ConvertNuonAudioData(pNuonAudioBuffer + audio_buffer_offset,
+  ConvertNuonAudioData(pNuonAudioBuffer + offsetThisPush,
                        audioRing + (w % ringSize),
                        periodBytes);
   audioRingWritePos.store(w + periodBytes, std::memory_order_release);
 
-  audio_buffer_offset = (nuonAudioChannelMode & ENABLE_HALF_INT) ? 0 : (nuonAudioBufferSize >> 1); //!! ENABLE_HALF_INT leads to better sound in Tetris, although one would assume it should be ENABLE_WRAP_INT here
   oldNuonAudioChannelMode = nuonAudioChannelMode;
   TriggerAudioInterrupt();
   return true;
@@ -401,7 +411,6 @@ void NuonEnvironment::Init()
   InitializeTimingMethod();
 
   pNuonAudioBuffer = nullptr;
-  audio_buffer_offset = 0;
   oldNuonAudioChannelMode = nuonAudioChannelMode = 0;
   nuonAudioPlaybackRate = 0; //!! was 32000
   nuonAudioBufferSize = 0; //!! was 1024
@@ -474,20 +483,19 @@ void NuonEnvironment::Init()
 
 uint32 NuonEnvironment::GetBufferSize(uint32 channelMode)
 {
-  if (channelMode & BUFFER_SIZE_1K) {
-    return 1024;
-  } else if (channelMode & BUFFER_SIZE_2K) {
-    return 2048;
-  } else if (channelMode & BUFFER_SIZE_4K) {
-    return 4096;
-  } else if (channelMode & BUFFER_SIZE_8K) {
-    return 8192;
-  } else if (channelMode & BUFFER_SIZE_16K) {
-    return 16384;
-  } else if (channelMode & BUFFER_SIZE_32K) {
-    return 32768;
-  } else if (channelMode & BUFFER_SIZE_64K) {
-    return 65536;
+  // was very initially (unconfirmed if it matches HW, most likely not):
+  //return ((channelMode & BUFFER_SIZE_64K) == 0) ? 8192 : 512U << (((channelMode & BUFFER_SIZE_64K) >> 5) & 0x7U);
+
+  // BUFFER_SIZE_* is a 3-bit field at 5-7
+  switch (channelMode & 0xE0)
+  {
+    case BUFFER_SIZE_1K:  return 1024;
+    case BUFFER_SIZE_2K:  return 2048;
+    case BUFFER_SIZE_4K:  return 4096;
+    case BUFFER_SIZE_8K:  return 8192;
+    case BUFFER_SIZE_16K: return 16384;
+    case BUFFER_SIZE_32K: return 32768;
+    case BUFFER_SIZE_64K: return 65536;
   }
   return 0;
 }

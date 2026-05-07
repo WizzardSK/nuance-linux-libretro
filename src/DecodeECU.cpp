@@ -101,11 +101,11 @@ static constexpr uint32 flagDependencies[32] = {
 
 void MPE::DecodeInstruction_ECU16(const uint8 * const iPtr, InstructionCacheEntry * const entry, const uint32 * const immExt)
 {
-  const uint32 field_300 = *iPtr & 0x03UL;
-  const uint32 field_380 = ((*iPtr & 0x03) << 1) | (*(iPtr + 1) >> 7);
-  const uint32 field_3E0 = ((*iPtr & 0x03) << 3) | (*(iPtr + 1) >> 5);
-  const uint32 field_7F = *(iPtr + 1) & 0x7FUL;
-  const uint32 field_FF = *(iPtr + 1) & 0xFFUL;
+  const uint32 field_300 = *iPtr & 0x03U;
+  const uint32 field_380 = ((*iPtr & 0x03U) << 1) | (*(iPtr + 1) >> 7);
+  const uint32 field_3E0 = ((*iPtr & 0x03U) << 3) | (*(iPtr + 1) >> 5);
+  const uint32 field_7F = *(iPtr + 1) & 0x7FU;
+  const uint32 field_FF = *(iPtr + 1) & 0xFFU;
 
   entry->packetInfo |= PACKETINFO_ECU;
 
@@ -129,13 +129,13 @@ void MPE::DecodeInstruction_ECU16(const uint8 * const iPtr, InstructionCacheEntr
       else
       {
         //BRA 48 (LBRA)
-        entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_CONDITION)] = (field_380 << 2) | (*immExt & 0x03UL);
-        entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_ADDRESS)] = (((*immExt & 0x07FFFFF8UL) << 4)| field_7F) << 1;
+        entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_CONDITION)] = (field_380 << 2) | (*immExt & 0x03U);
+        entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_ADDRESS)] = (((*immExt & 0x07FFFFF8U) << 4)| field_7F) << 1;
       }
 
       if(entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_CONDITION)] == ECU_CONDITION_T)
       {
-        if((*immExt & 0x04UL) >> 2)
+        if((*immExt & 0x04U) >> 2)
         {
           //BRA T, NOP
           entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_HANDLER)] = Handler_BRAAlways_NOP;
@@ -152,7 +152,7 @@ void MPE::DecodeInstruction_ECU16(const uint8 * const iPtr, InstructionCacheEntr
       }
       else
       {
-        if((*immExt & 0x04UL) >> 2)
+        if((*immExt & 0x04U) >> 2)
         {
           //BRA CC, NOP
           entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_HANDLER)] = Handler_BRAConditional_NOP;
@@ -280,18 +280,18 @@ void MPE::DecodeInstruction_ECU16(const uint8 * const iPtr, InstructionCacheEntr
 
 void MPE::DecodeInstruction_ECU32(const uint8 * const iPtr, InstructionCacheEntry *const entry, const uint32 * const immExt)
 {
-  const uint32 field_3E00000 = ((*iPtr & 0x03) << 3) | (*(iPtr + 1) >> 5);
-  const uint32 field_1F0000 = *(iPtr + 1) & 0x1FUL;
-  const uint32 field_100 = *(iPtr + 2) & 0x01UL;
-  const uint32 field_FF = *(iPtr + 3) & 0xFFUL;
-  const bool bImplicitNOP = (((*(iPtr + 2) & 0x08) >> 3) != 0);
+  const uint32 field_3E00000 = ((*iPtr & 0x03U) << 3) | (*(iPtr + 1) >> 5);
+  const uint32 field_1F0000 = *(iPtr + 1) & 0x1FU;
+  const uint32 field_100 = *(iPtr + 2) & 0x01U;
+  const uint32 field_FF = *(iPtr + 3) & 0xFFU;
+  const bool bImplicitNOP = (((*(iPtr + 2) & 0x08U) >> 3) != 0);
 
   entry->packetInfo |= PACKETINFO_ECU;
 
   entry->nuances[FIXED_FIELD(SLOT_ECU,FIELD_ECU_CONDITION)] = field_3E00000;
   entry->miscInputDependencies[SLOT_ECU] = flagDependencies[field_3E00000];
 
-  if((*(iPtr + 2) & 0x06) == 0)
+  if((*(iPtr + 2) & 0x06U) == 0)
   {
     //bra 32 (lbra)
 

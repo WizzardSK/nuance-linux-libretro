@@ -196,8 +196,6 @@ public:
   uint32 nuonAudioBufferSize;
   //PC pointer to Nuon audio buffer in main bus or system bus DRAM
   uint8 * volatile pNuonAudioBuffer;
-  //Current half of the Nuon DMA buffer to push into the audio ring next
-  uint32 audio_buffer_offset;
   //Bitflag value passed back as return value in _AudioQuerySampleRates
   //The constructor initializes this variable.  Supported rates are
   //16000/22050/24000/32000/44100/48000/64000/88200/96000

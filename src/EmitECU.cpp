@@ -760,7 +760,7 @@ void Emit_RTI1Conditional(EmitterVariables * const vars, const Nuance &nuance)
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
-  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1UL << 1), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
+  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1U << 1), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
   vars->mpe->nativeCodeCache.patchMgr.ApplyPatches();
 }
@@ -790,7 +790,7 @@ void Emit_RTI1Conditional_NOP(EmitterVariables * const vars, const Nuance &nuanc
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
-  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1UL << 1), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
+  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1U << 1), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
   Emit_ExitBlock(vars);
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
@@ -822,7 +822,7 @@ void Emit_RTI2Conditional(EmitterVariables * const vars, const Nuance &nuance)
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi2RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi2RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
-  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1UL << 5), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
+  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1U << 5), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
   vars->mpe->nativeCodeCache.patchMgr.ApplyPatches();
@@ -853,7 +853,7 @@ void Emit_RTI2Conditional_NOP(EmitterVariables * const vars, const Nuance &nuanc
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi2RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi2RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
-  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1UL << 5), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
+  vars->mpe->nativeCodeCache.X86Emit_ANDIM(~(1U << 5), x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->intctl));
   Emit_ExitBlock(vars);
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
