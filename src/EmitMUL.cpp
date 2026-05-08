@@ -1717,8 +1717,8 @@ void Emit_MUL_PImmediateShiftImmediate(EmitterVariables * const vars, const Nuan
   vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 16);
   vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ecx, 16);
   vars->mpe->nativeCodeCache.X86Emit_IMULIRR(x86Reg::x86Reg_eax, scalar, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_IMULIRR(x86Reg::x86Reg_ebx, scalar, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_IMULIRR(x86Reg::x86Reg_ecx, scalar, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_IMULIRR(x86Reg::x86Reg_ebx, scalar, x86Reg::x86Reg_ebx);
+  vars->mpe->nativeCodeCache.X86Emit_IMULIRR(x86Reg::x86Reg_ecx, scalar, x86Reg::x86Reg_ecx);
   if(shift > 0)
   {
     vars->mpe->nativeCodeCache.X86Emit_SHLIR(x86Reg::x86Reg_eax, shift);

@@ -3347,7 +3347,7 @@ TestFlags noflags
 TestResult $FFFFFFFA
 
 ;DOTP scalar form: dotp Si, Vj, >>#m, Sk
-;Si's upper 16 bits get repeated 4× to form a small vector.
+;Si's upper 16 bits get repeated 4Ã— to form a small vector.
 ;Si = r4 with upper-16 = 2, so vector = [2,2,2,2].  Vj = v2 = [5,-6,7,8].
 ;= 2*5 + 2*-6 + 2*7 + 2*8 = 10-12+14+16 = 28 = 0x1C
 SetTestNumber 131
@@ -3663,6 +3663,969 @@ nop
 StoreResult r8
 TestFlags allflags               ; ld_w preserves flags
 TestResult $A1B20000
+
+;==================================================================
+; MUL_SV - Small Vector Integer Multiplication
+;
+; Form: mul_sv Vi,Vj,>>#m,Vk        (vector * vector  -> vector)
+;       mul_sv Si,Vj,>>#m,Vk        (Si.upper16 broadcast * vector)
+;
+; Each operand contributes 16-bit values from the upper half of each
+; lane.  Four 16x16 signed multiplies, four 32-bit products land in Vk.
+; Legal #m values per spec: {16,24,32,30}.  Encoding meaning:
+;   16 -> shift product LEFT by 16
+;   24 -> shift LEFT by 8
+;   32 -> NO shift  (the form used by the existing dotp tests)
+;   30 -> shift LEFT by 2
+; CC unchanged.
+;==================================================================
+
+`test_mul_sv:
+
+;mul_sv v1,v2,>>#32,v3 with v1=[2,3,4,5], v2=[6,7,8,9]
+;-> v3 = [12,21,32,45]
+SetTestNumber 148
+LoadTestReg $00020000, r4   ; v1[0]=2
+LoadTestReg $00030000, r5   ; v1[1]=3
+LoadTestReg $00040000, r6   ; v1[2]=4
+LoadTestReg $00050000, r7   ; v1[3]=5
+LoadTestReg $00060000, r8   ; v2[0]=6
+LoadTestReg $00070000, r9   ; v2[1]=7
+LoadTestReg $00080000, r10  ; v2[2]=8
+LoadTestReg $00090000, r11  ; v2[3]=9
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags allflags          ; mul_sv must NOT touch any flag
+mul_sv v1, v2, >>#32, v3
+nop
+StoreResult r12
+TestFlags allflags
+TestResult 12
+StoreResult r13
+TestResult 21
+StoreResult r14
+TestResult 32
+StoreResult r15
+TestResult 45
+
+;mul_sv with shift-left-by-16: same inputs, result vector << 16
+SetTestNumber 149
+LoadTestReg $00020000, r4
+LoadTestReg $00030000, r5
+LoadTestReg $00040000, r6
+LoadTestReg $00050000, r7
+LoadTestReg $00060000, r8
+LoadTestReg $00070000, r9
+LoadTestReg $00080000, r10
+LoadTestReg $00090000, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags noflags
+mul_sv v1, v2, >>#16, v3
+nop
+StoreResult r12
+TestFlags noflags
+TestResult $000C0000        ; 12<<16
+StoreResult r13
+TestResult $00150000        ; 21<<16
+StoreResult r14
+TestResult $00200000        ; 32<<16
+StoreResult r15
+TestResult $002D0000        ; 45<<16
+
+;mul_sv Si,Vj,>>#32,Vk : scalar broadcast.  Si.upper16=3, v2=[6,7,8,9]
+;-> v3 = [18,21,24,27]
+SetTestNumber 150
+LoadTestReg $00030000, r4   ; Si.upper16=3 (lower ignored)
+LoadTestReg $00060000, r8
+LoadTestReg $00070000, r9
+LoadTestReg $00080000, r10
+LoadTestReg $00090000, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags noflags
+mul_sv r4, v2, >>#32, v3
+nop
+StoreResult r12
+TestFlags noflags
+TestResult 18
+StoreResult r13
+TestResult 21
+StoreResult r14
+TestResult 24
+StoreResult r15
+TestResult 27
+
+;mul_sv with negatives: v1=[-2,3,-4,5] dot v2=[6,-7,8,-9], no shift
+;= [-12, -21, -32, -45] = [$FFFFFFF4, $FFFFFFEB, $FFFFFFE0, $FFFFFFD3]
+SetTestNumber 151
+LoadTestReg $FFFE0000, r4
+LoadTestReg $00030000, r5
+LoadTestReg $FFFC0000, r6
+LoadTestReg $00050000, r7
+LoadTestReg $00060000, r8
+LoadTestReg $FFF90000, r9
+LoadTestReg $00080000, r10
+LoadTestReg $FFF70000, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags noflags
+mul_sv v1, v2, >>#32, v3
+nop
+StoreResult r12
+TestFlags noflags
+TestResult $FFFFFFF4
+StoreResult r13
+TestResult $FFFFFFEB
+StoreResult r14
+TestResult $FFFFFFE0
+StoreResult r15
+TestResult $FFFFFFD3
+
+;==================================================================
+; MUL_P - Pixel Integer Multiplication
+;
+; Same as mul_sv but only updates 3 of 4 lanes (lane 3 unchanged).
+; Useful as a sanity check that lane 3 really is preserved.
+;==================================================================
+
+`test_mul_p:
+
+;mul_p v1,v2,>>#32,v3 with v1=[2,3,4,?], v2=[6,7,8,?].  Pre-load v3[3]=$DEADBEEF
+;and verify that lane survives (pixel only writes lanes 0..2).
+SetTestNumber 152
+LoadTestReg $00020000, r4
+LoadTestReg $00030000, r5
+LoadTestReg $00040000, r6
+LoadTestReg $0000DEAD, r7   ; v1[3] - mul_p ignores this lane on read
+LoadTestReg $00060000, r8
+LoadTestReg $00070000, r9
+LoadTestReg $00080000, r10
+LoadTestReg $0000BEEF, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg $DEADBEEF, r15  ; v3[3] sentinel - must remain
+LoadFlags noflags
+mul_p v1, v2, >>#32, v3
+nop
+StoreResult r12
+TestFlags noflags
+TestResult 12
+StoreResult r13
+TestResult 21
+StoreResult r14
+TestResult 32
+StoreResult r15
+TestResult $DEADBEEF
+
+;mul_p Si,Vj,>>#32,Vk : scalar broadcast pixel form.  Si.upper16=5, v2=[2,3,4,?]
+;-> v3 = [10,15,20, unchanged]
+SetTestNumber 153
+LoadTestReg $00050000, r4
+LoadTestReg $00020000, r8
+LoadTestReg $00030000, r9
+LoadTestReg $00040000, r10
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg $CAFEBABE, r15
+LoadFlags noflags
+mul_p r4, v2, >>#32, v3
+nop
+StoreResult r12
+TestFlags noflags
+TestResult 10
+StoreResult r13
+TestResult 15
+StoreResult r14
+TestResult 20
+StoreResult r15
+TestResult $CAFEBABE
+
+;==================================================================
+; DOTP additional shift modes
+;
+; Existing tests cover #32 (no shift) and #16 (shl-16) and the scalar
+; broadcast.  Add coverage for #24 (shl-8), #30 (shl-2), and the
+; svshift-register form.
+;==================================================================
+
+`test_dotp_more:
+
+;dotp v1,v2,>>#24,r12 with v1=[1,2,3,4], v2=[2,3,4,5]
+;sum-of-products = 2+6+12+20 = 40, then shl-8 -> 40<<8 = $2800
+SetTestNumber 154
+LoadTestReg $00010000, r4
+LoadTestReg $00020000, r5
+LoadTestReg $00030000, r6
+LoadTestReg $00040000, r7
+LoadTestReg $00020000, r8
+LoadTestReg $00030000, r9
+LoadTestReg $00040000, r10
+LoadTestReg $00050000, r11
+LoadTestReg 0, r12
+LoadFlags noflags
+dotp v1, v2, >>#24, r12
+nop
+StoreResult r12
+TestFlags noflags
+TestResult $00002800
+
+;dotp v1,v2,>>#30,r12 same inputs.  shl-2 -> 40<<2 = 160 = $A0
+SetTestNumber 155
+LoadTestReg $00010000, r4
+LoadTestReg $00020000, r5
+LoadTestReg $00030000, r6
+LoadTestReg $00040000, r7
+LoadTestReg $00020000, r8
+LoadTestReg $00030000, r9
+LoadTestReg $00040000, r10
+LoadTestReg $00050000, r11
+LoadTestReg 0, r12
+LoadFlags noflags
+dotp v1, v2, >>#30, r12
+nop
+StoreResult r12
+TestFlags noflags
+TestResult $000000A0
+
+;dotp >>svshift,r12 : svshift register holds shift mode.
+;svshift=2 means "no shift" (matches the >>#32 immediate form).
+;v1=[1,2,3,4] dot v2=[5,6,7,8] = 70.
+SetTestNumber 156
+LoadControlReg 2, svshift   ; encoding 2 = no shift
+LoadTestReg $00010000, r4
+LoadTestReg $00020000, r5
+LoadTestReg $00030000, r6
+LoadTestReg $00040000, r7
+LoadTestReg $00050000, r8
+LoadTestReg $00060000, r9
+LoadTestReg $00070000, r10
+LoadTestReg $00080000, r11
+LoadTestReg 0, r12
+LoadFlags noflags
+dotp v1, v2, >>svshift, r12
+nop
+StoreResult r12
+TestFlags noflags
+TestResult 70
+
+;==================================================================
+; ADDM / SUBM - MUL-unit add and subtract.
+;
+; These run on the MUL pipe (2-cycle latency), not the ALU.  No flags.
+; Used by code that wants to issue an ALU op in parallel in the same
+; packet.
+;==================================================================
+
+`test_addm_subm:
+
+;addm Si,Sj,Sk : Si+Sj on MUL unit, no flag effect
+SetTestNumber 157
+LoadTestReg 100, r4
+LoadTestReg 23, r5
+LoadTestReg 0, r6
+LoadFlags allflags
+addm r4, r5, r6
+nop                          ; MUL-unit 2-cycle latency
+StoreResult r6
+TestFlags allflags           ; addm preserves all flags
+TestResult 123
+
+;subm Si,Sj,Sk : Sj - Si on MUL unit.  Per spec only the 3-register form
+;exists - no immediate form.  r5 - r4 = 25 - 7 = 18
+SetTestNumber 158
+LoadTestReg 7, r4
+LoadTestReg 25, r5
+LoadTestReg 0, r6
+LoadFlags allflags
+subm r4, r5, r6
+nop
+StoreResult r6
+TestFlags allflags
+TestResult 18
+
+;==================================================================
+; ADD_P / SUB_P - packed add/sub on pixel (3 lanes).
+; Lane 3 must be preserved.
+;==================================================================
+
+`test_add_sub_p:
+
+;add_p v1,v2,v3 - pixel ops use the UPPER 16 bits of each lane (lower 16
+;cleared in result).  Lane 3 unchanged (only first 3 lanes written).
+;v1 = [10,20,30,?] in upper-16 format, v2 = [1,2,3,?].
+;Result upper-16 = [11,22,33], lower16 zeroed.  v3[3] preserved.
+SetTestNumber 159
+LoadTestReg $000A0000, r4    ; v1[0] upper16 = 10
+LoadTestReg $00140000, r5    ; v1[1] upper16 = 20
+LoadTestReg $001E0000, r6    ; v1[2] upper16 = 30
+LoadTestReg $11111111, r7    ; v1[3] - ignored by add_p (lane not read)
+LoadTestReg $00010000, r8    ; v2[0] upper16 = 1
+LoadTestReg $00020000, r9    ; v2[1] upper16 = 2
+LoadTestReg $00030000, r10   ; v2[2] upper16 = 3
+LoadTestReg $22222222, r11   ; v2[3] - ignored
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg $DEADBEEF, r15
+LoadFlags noflags
+add_p v1, v2, v3
+StoreResult r12
+TestFlags noflags
+TestResult $000B0000          ; 11 in upper16, lower16 = 0
+StoreResult r13
+TestResult $00160000          ; 22
+StoreResult r14
+TestResult $00210000          ; 33
+StoreResult r15
+TestResult $DEADBEEF          ; lane 3 unchanged
+
+;sub_p : pixel sub, same upper-16 semantics, lane 3 unchanged.
+;Per scalar-sub convention (sub Si,Sj,Sk -> Sj-Si), sub_p v2,v1,v3
+;computes v3 = v1 - v2 (upper16 lane-wise).
+;v1 = [100,200,300,?] upper16, v2 = [10,20,30,?] upper16
+;Result upper16 = [90, 180, 270] = [$005A, $00B4, $010E]
+SetTestNumber 160
+LoadTestReg $00640000, r4    ; v1[0] = 100
+LoadTestReg $00C80000, r5    ; v1[1] = 200
+LoadTestReg $012C0000, r6    ; v1[2] = 300
+LoadTestReg $33333333, r7    ; ignored
+LoadTestReg $000A0000, r8    ; v2[0] = 10
+LoadTestReg $00140000, r9    ; v2[1] = 20
+LoadTestReg $001E0000, r10   ; v2[2] = 30
+LoadTestReg $44444444, r11   ; ignored
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg $CAFEBABE, r15
+LoadFlags noflags
+sub_p v2, v1, v3             ; v3 = v1 - v2 lane-wise (upper16)
+StoreResult r12
+TestFlags noflags
+TestResult $005A0000         ; 100-10 = 90
+StoreResult r13
+TestResult $00B40000         ; 200-20 = 180
+StoreResult r14
+TestResult $010E0000         ; 300-30 = 270
+StoreResult r15
+TestResult $CAFEBABE
+
+;==================================================================
+; ADD_SV / SUB_SV - small-vector add/sub (4 lanes, full 32-bit).
+;==================================================================
+
+`test_add_sub_sv:
+
+;add_sv : small-vector add, ALL 4 lanes, upper-16 semantics (lower16 zeroed).
+;v1 = [10,20,30,40] upper16, v2 = [1,2,3,4] upper16 -> [11,22,33,44]
+SetTestNumber 161
+LoadTestReg $000A0000, r4
+LoadTestReg $00140000, r5
+LoadTestReg $001E0000, r6
+LoadTestReg $00280000, r7
+LoadTestReg $00010000, r8
+LoadTestReg $00020000, r9
+LoadTestReg $00030000, r10
+LoadTestReg $00040000, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags noflags
+add_sv v1, v2, v3
+StoreResult r12
+TestFlags noflags
+TestResult $000B0000          ; 11
+StoreResult r13
+TestResult $00160000          ; 22
+StoreResult r14
+TestResult $00210000          ; 33
+StoreResult r15
+TestResult $002C0000          ; 44
+
+;sub_sv v2,v1,v3 : v3 = v1 - v2 lane-wise (upper16, all 4 lanes).
+;v1 = [100,200,300,400] upper16, v2 = [10,20,30,40] upper16
+;Result upper16 = [90,180,270,360] = [$005A, $00B4, $010E, $0168]
+SetTestNumber 162
+LoadTestReg $00640000, r4
+LoadTestReg $00C80000, r5
+LoadTestReg $012C0000, r6
+LoadTestReg $01900000, r7
+LoadTestReg $000A0000, r8
+LoadTestReg $00140000, r9
+LoadTestReg $001E0000, r10
+LoadTestReg $00280000, r11
+LoadTestReg 0, r12
+LoadTestReg 0, r13
+LoadTestReg 0, r14
+LoadTestReg 0, r15
+LoadFlags noflags
+sub_sv v2, v1, v3
+StoreResult r12
+TestFlags noflags
+TestResult $005A0000          ; 100-10 = 90
+StoreResult r13
+TestResult $00B40000          ; 200-20 = 180
+StoreResult r14
+TestResult $010E0000          ; 300-30 = 270
+StoreResult r15
+TestResult $01680000          ; 400-40 = 360
+
+;==================================================================
+; AND/OR/EOR with rotate-scalar - register-controlled rotation
+;
+; Form: and Si,<>Sj,Sk  rotates Si by signed-6-bit amount in Sj's low
+; bits, then ANDs with Sk.  Sj=positive -> right rotate, negative ->
+; left rotate.
+;==================================================================
+
+`test_and_or_eor_rotate_scalar:
+
+;and Si,<>Sj,Sk : rotate Si right by Sj.lower6 then AND with Sk
+;Si=$0000FFFF, Sj=4 (rotate right 4), Sk=$F000FFFF
+;_lrotr($0000FFFF, 4) = $F0000FFF, AND $F000FFFF = $F0000FFF
+SetTestNumber 163
+LoadTestReg $0000FFFF, r4    ; Si
+LoadTestReg 4, r5            ; Sj (rotate amount)
+LoadTestReg $F000FFFF, r6    ; Sk (AND mask AND destination)
+LoadFlags noflags
+and r4, <>r5, r6
+StoreResult r6
+TestFlags nf                 ; result bit31=1 -> N set; non-zero -> Z clear; V untouched
+TestResult $F0000FFF
+
+;or Si,<>Sj,Sk
+;Si=$00000001, Sj=-1 (rotate left 1 == rotate right 31), Sk=$80000000
+;_lrotr($00000001,-1) = _lrotl($00000001,1) = $00000002 (also = _lrotr 31)
+;OR with $80000000 -> $80000002
+SetTestNumber 164
+LoadTestReg $00000001, r4
+LoadTestReg $FFFFFFFF, r5    ; -1 in low 6 bits = $3F = -1 signed-6
+LoadTestReg $80000000, r6
+LoadFlags noflags
+or r4, <>r5, r6
+StoreResult r6
+TestFlags nf
+TestResult $80000002
+
+;eor Si,<>Sj,Sk
+;Si=$AAAAAAAA, Sj=0 (no rotate), Sk=$55555555 -> $AAAAAAAA XOR $55555555 = $FFFFFFFF
+SetTestNumber 165
+LoadTestReg $AAAAAAAA, r4
+LoadTestReg 0, r5
+LoadTestReg $55555555, r6
+LoadFlags noflags
+eor r4, <>r5, r6
+StoreResult r6
+TestFlags nf
+TestResult $FFFFFFFF
+
+;==================================================================
+; ROT register form - rot <>Sj,Si,Sk : rotate Si by signed-6-bit Sj
+; into Sk.  Sj positive=right, negative=left.  No flags except N/Z.
+;==================================================================
+
+`test_rot_register:
+
+;rot <>r5,r4,r6 with r5=8 (right rotate 8), r4=$11223344
+;_lrotr($11223344, 8) = $44112233
+SetTestNumber 166
+LoadTestReg $11223344, r4
+LoadTestReg 8, r5
+LoadTestReg 0, r6
+LoadFlags noflags
+rot <>r5, r4, r6
+StoreResult r6
+TestFlags noflags            ; bit31=0 -> no N, non-zero -> no Z
+TestResult $44112233
+
+;rot left by 4 (Sj = -4), r4=$11223344
+;low 6 bits of -4 = $3C, bit 5 set -> shift-left side, count=64-60=4
+;_lrotl($11223344, 4) = $12233441
+SetTestNumber 167
+LoadTestReg $11223344, r4
+LoadTestReg $FFFFFFFC, r5    ; -4
+LoadTestReg 0, r6
+LoadFlags noflags
+rot <>r5, r4, r6
+StoreResult r6
+TestFlags noflags
+TestResult $12233441
+
+;==================================================================
+; ABS corner: abs($80000000) is the documented signed-overflow case.
+; Per spec: result = $80000000 (unchanged), c set, n+v set.
+;==================================================================
+
+`test_abs_corner:
+
+;abs($80000000) : the MIN_INT corner - cannot negate, V flag should set.
+;Existing test 2 covers this for the 2-operand form; this test is for
+;the explicit verification with the Bk preserved-flags pattern.
+SetTestNumber 168
+LoadTestReg $80000000, r4
+LoadFlags noflags            ; clear all flags first to verify abs sets N+V+C
+abs r4
+StoreResult r4
+TestFlags nf+vf+cf           ; N (negative), V (overflow), C (was negative) all set
+TestResult $80000000
+
+;==================================================================
+; FTST scalar rotate scalar - bit-test the rotated result.
+;==================================================================
+
+`test_ftst_rotate:
+
+;ftst r4, <>r5, r6 : rotate r4 right by r5, AND with r6, set N/Z
+;r4=$FFFF0000, r5=16 (rot right 16) -> $0000FFFF, AND $00000FFF = $00000FFF
+;non-zero, bit31=0 -> Z=0, N=0.  Other flags untouched.
+SetTestNumber 169
+LoadTestReg $FFFF0000, r4
+LoadTestReg 16, r5
+LoadTestReg $00000FFF, r6
+LoadFlags allflags
+ftst r4, <>r5, r6
+StoreResult r6                ; r6 untouched by ftst
+TestFlags (allflags & ~(zf+vf+nf))  ; cf, mvf, c0zf, c1zf, modgef, modmif still set
+TestResult $00000FFF
+
+;==================================================================
+; Multi-slot packet: ALU + MUL in same packet.  Both should fire and
+; commit independently; the JIT must NOT reorder so that the MUL reads
+; the post-ALU value.  Both read the OLD registers at packet start.
+;==================================================================
+
+`test_packet_alu_mul:
+
+;Packet: { add r5,r4 ; mul r6,r7,>>acshift,r8 }
+;Pre: acshift=0 (no shift), r4=10, r5=3, r6=5, r7=4, r8=0
+;After packet: r4 = r4+r5 = 13 (ALU writes scalar dest);
+;              r8 = r6*r7 = 20 (MUL writes its dest)
+;Per spec, "mul Si,Sj,>>#m,Sk" requires Sj == Sk.  The 32-bit
+;form "mul Si,Sj,>>acshift,Sk" allows a separate destination, which is
+;what we need here so the MUL output doesn't collide with ALU input.
+SetTestNumber 170
+LoadControlReg 0, acshift
+LoadTestReg 10, r4
+LoadTestReg 3, r5
+LoadTestReg 5, r6
+LoadTestReg 4, r7
+LoadTestReg 0, r8
+LoadFlags noflags
+{
+add r5, r4
+mul r6, r7, >>acshift, r8
+}
+nop                          ; MUL 2-cycle latency before reading r8
+StoreResult r4
+TestFlags noflags            ; non-negative non-zero result, no flags
+TestResult 13
+StoreResult r8
+TestResult 20
+
+;==================================================================
+; MUL with register-controlled shift count.
+;
+; Forms covered here:
+;   mul Si,Sj,>>Sq,Sk         (shift count from a scalar register)
+;   mul Si,Sj,>>acshift,Sk    (shift count from acshift control register)
+;   mul #n,Sj,>>#m,Sk         (immediate Si)
+;   mul Si,#n,>>#m,Sk         (immediate Sj)
+;
+; Sq holds a 6-bit signed shift amount (positive=right, negative=left)
+; in its low 6 bits.  acshift is a control register doing the same.
+; T3K's audio decoder likely uses these heavily for per-frame gain.
+;==================================================================
+
+`test_mul_shift_variants:
+
+;mul Si,Sk,>>Sq,Sk : product right-shifted by Sq.  Per spec, the
+;register-shift form requires dest = src2.
+;r4=10 (Si), r5=8 (Sk = src2 AND dest), r6=2 (right shift 2)
+;r5 <- 10*8 >> 2 = 80 >> 2 = 20
+SetTestNumber 171
+LoadTestReg 10, r4
+LoadTestReg 8, r5
+LoadTestReg 2, r6
+LoadFlags noflags
+mul r4, r5, >>r6, r5
+nop                          ; MUL 2-cycle latency
+StoreResult r5
+TestFlags noflags
+TestResult 20
+
+;mul Si,Sk,>>Sq with negative Sq (left shift): 5*4=20, <<2 = 80
+;r6 = -2 = $FFFFFFFE, low 6 bits = $3E, bit5=1 => left shift, count=64-62=2
+;r5 <- r4 * r5 << 2 = 5*4 << 2 = 80
+SetTestNumber 172
+LoadTestReg 5, r4
+LoadTestReg 4, r5
+LoadTestReg $FFFFFFFE, r6
+LoadFlags noflags
+mul r4, r5, >>r6, r5
+nop
+StoreResult r5
+TestFlags noflags
+TestResult 80
+
+;mul Si,Sj,>>acshift,Sk : same idea, shift from control register
+;Set acshift=3 (right shift 3), 100*8=800, >>3 = 100
+SetTestNumber 173
+LoadControlReg 3, acshift
+LoadTestReg 100, r4
+LoadTestReg 8, r5
+LoadTestReg 0, r6
+LoadFlags noflags
+mul r4, r5, >>acshift, r6
+nop
+StoreResult r6
+TestFlags noflags
+TestResult 100
+
+;mul #n,Sk,>>#m,Sk : immediate Si form, no shift.  Per spec the
+;immediate-shift form requires dest = src2 (Sk).
+;r5 <- 5 * 7 = 35
+SetTestNumber 174
+LoadTestReg 7, r5
+LoadFlags noflags
+mul #5, r5, >>#0, r5
+nop
+StoreResult r5
+TestFlags noflags
+TestResult 35
+
+;==================================================================
+; AND/OR/EOR scalar-shift-scalar  (>>Sj form, NOT rotate <>)
+;
+; and Si,>>Sj,Sk : arithmetic-shift Si by Sj.lower6, then AND with Sk
+;==================================================================
+
+`test_and_or_shift_scalar:
+
+;and r4,>>r5,r6 with r4=$FFFF0000, r5=4 (right shift 4), r6=$0FFFFFFF
+;src1 = $FFFF0000 asr 4 = $FFFFF000, AND $0FFFFFFF = $0FFFF000
+SetTestNumber 175
+LoadTestReg $FFFF0000, r4
+LoadTestReg 4, r5
+LoadTestReg $0FFFFFFF, r6
+LoadFlags noflags
+and r4, >>r5, r6
+StoreResult r6
+TestFlags noflags            ; bit31=0 => N=0, non-zero => Z=0, V cleared
+TestResult $0FFFF000
+
+;or r4,>>r5,r6 with r4=$00000001, r5=-4 (left shift 4), r6=$00000080
+;_lsl-style left shift by 4: $00000010, OR $00000080 = $00000090
+SetTestNumber 176
+LoadTestReg $00000001, r4
+LoadTestReg $FFFFFFFC, r5    ; -4 -> low 6 = $3C, bit5=1, count=64-60=4
+LoadTestReg $00000080, r6
+LoadFlags noflags
+or r4, >>r5, r6
+StoreResult r6
+TestFlags noflags
+TestResult $00000090
+
+;eor r4,>>r5,r6 with r4=$F0F0F0F0, r5=4 (LOGICAL shift right by 4), r6=$0
+;Per Execute_ANDScalarShiftScalar/etc: the >> shift here is LOGICAL (zero-fill),
+;NOT arithmetic.  $F0F0F0F0 LSR 4 = $0F0F0F0F, XOR $0 = $0F0F0F0F.
+;bit31=0 -> N=0; non-zero -> Z=0.
+SetTestNumber 177
+LoadTestReg $F0F0F0F0, r4
+LoadTestReg 4, r5
+LoadTestReg 0, r6
+LoadFlags noflags
+eor r4, >>r5, r6
+StoreResult r6
+TestFlags noflags
+TestResult $0F0F0F0F
+
+;==================================================================
+; copy Si,Sk - per spec the 16-bit form of add #0,Si,Sk, but with
+; specific condition-code behavior:
+;   z : set if result is zero, cleared otherwise
+;   n : set if result is negative, cleared otherwise
+;   v : cleared
+;   c : UNCHANGED (different from add - copy preserves C!)
+; All other flags unchanged.
+;
+; For r4=$22222222 (positive non-zero):
+;   z=0, n=0, v=0 ; c stays whatever it was
+; Pre-set allflags so we can verify each bit's behavior:
+;   nf, vf, zf -> cleared by copy
+;   cf -> stays set (untouched)
+;   mvf, c0zf, c1zf, modgef, modmif -> stay set (untouched by copy)
+;==================================================================
+
+`test_copy_flags:
+
+SetTestNumber 178
+LoadTestReg $22222222, r4
+LoadTestReg 0, r5
+LoadFlags allflags           ; pre-set every flag bit
+copy r4, r5                  ; r5 <- r4
+StoreResult r5
+TestFlags (allflags & ~(nf+vf+zf))   ; NVZ cleared; C preserved + others preserved
+TestResult $22222222
+
+;==================================================================
+; Control-register read/write round-trips.
+;
+; Each test writes an immediate to a control register via st_s, then
+; reads it back via ld_s into a scalar register, and verifies the
+; round-trip.  This exercises the CtrlReg* paths for registers that
+; aren't routinely tested but show up in audio/graphics code.
+;
+; Important: every ld_s / st_s of a control register has a 2-cycle
+; latency and needs a nop before the value is observable.  The macros
+; LoadControlReg / LoadFlags / etc already include that nop.
+;==================================================================
+
+`test_ctrlreg_svshift:
+
+;svshift round-trip.  Encoding only uses bits 1-0 (4 modes).  Pick 3
+;to verify the upper bits aren't wrongly cleared/added.
+SetTestNumber 179
+LoadControlReg 3, svshift
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s svshift, r4
+nop                          ; ld of ctrl reg has latency
+StoreResult r4
+TestFlags allflags           ; ld_s preserves flags
+TestResult 3
+
+`test_ctrlreg_acshift:
+
+;acshift round-trip.  acshift is 8 bits (signed, -32..+31 range typical).
+;Use 5 (positive shift right by 5).
+SetTestNumber 180
+LoadControlReg 5, acshift
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s acshift, r4
+nop
+StoreResult r4
+TestFlags allflags
+TestResult 5
+
+`test_ctrlreg_xyctl:
+
+;xyctl round-trip.  Use a non-trivial bit pattern.
+SetTestNumber 181
+LoadControlReg $00010203, xyctl
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s xyctl, r4
+nop
+StoreResult r4
+TestFlags allflags
+TestResult $00010203
+
+`test_ctrlreg_xyrange:
+
+;xyrange round-trip.  Per spec only bits 25-16 (X range, 10 bits) and
+;9-0 (Y range, 10 bits) are defined; other 12 bits are reserved.
+;Pick a value that's 0 in every reserved position so the test is spec-
+;conformant regardless of how reserved bits behave on the implementation.
+;Value $01230321: X range = $123, Y range = $321, reserved = 0.
+SetTestNumber 182
+LoadControlReg $01230321, xyrange
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s xyrange, r4
+nop
+StoreResult r4
+TestFlags allflags
+TestResult $01230321
+
+`test_ctrlreg_uvctl:
+
+;uvctl round-trip.  Same bit-field layout as xyctl: defined bits are
+;30 (u_rev), 29 (v_rev), 28 (uv_chnorm), 26-24 (uv_mipmap), 23-20
+;(uv_type), 19-16 (u_tile), 15-12 (v_tile), 10-0 (uv_width).  Bits
+;31, 27, 11 are reserved.  Use $00020403 - all reserved bits clear.
+SetTestNumber 183
+LoadControlReg $00020403, uvctl
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s uvctl, r4
+nop
+StoreResult r4
+TestFlags allflags
+TestResult $00020403
+
+`test_ctrlreg_uvrange:
+
+;uvrange round-trip.  Same bit layout as xyrange: bits 25-16 (U range,
+;10 bits) and 9-0 (V range, 10 bits); other 12 bits reserved.
+;Value $01450267: U range = $145, V range = $267, reserved = 0.
+SetTestNumber 184
+LoadControlReg $01450267, uvrange
+LoadTestReg 0, r4
+LoadFlags allflags
+ld_s uvrange, r4
+nop
+StoreResult r4
+TestFlags allflags
+TestResult $01450267
+
+`test_ctrlreg_rc0:
+
+;rc0 round-trip via st_s + ld_s.  Loading a non-zero value must clear c0zf.
+;(LoadCounterRegs already exercises the multi-write path; this is the
+;single-register path.)
+SetTestNumber 185
+LoadFlags c0zf+c1zf          ; pre-set both counter-zero flags
+st_s #$1234, rc0
+nop                           ; observe via ld_s
+LoadTestReg 0, r4
+ld_s rc0, r4
+nop
+StoreResult r4
+;Writing rc0 = $1234 (non-zero) updates the c0z flag accordingly.
+;c1zf should be untouched.
+TestFlags c1zf
+TestResult $1234
+
+`test_ctrlreg_rc1:
+
+;rc1 round-trip.  Set rc1=0 and verify c1zf gets set, c0zf untouched.
+SetTestNumber 186
+LoadFlags noflags             ; clear all flags
+st_s #0, rc1
+nop
+LoadTestReg $DEADBEEF, r4
+ld_s rc1, r4
+nop
+StoreResult r4
+TestFlags c1zf                ; rc1=0 -> c1z set; c0z untouched at 0
+TestResult 0
+
+`test_ctrlreg_cc_read:
+
+;Read cc into a scalar.  We've been doing this implicitly via TestFlags;
+;this test makes the explicit value visible.
+;Load flags = nf+cf+vf, ld_s cc into r4 -> r4 = $0E (low 9 bits).
+SetTestNumber 187
+LoadFlags nf+cf+vf
+LoadTestReg 0, r4
+ld_s cc, r4
+nop
+StoreResult r4
+;The read leaves cc unchanged - all originally set bits still set.
+TestFlags nf+cf+vf
+;ld_s cc reads the full cc word; the upper bits beyond CC_ALLFLAGS
+;aren't part of any flag and might be 0 - test the 9-bit value.
+TestResult (nf+cf+vf)         ; = $0E
+
+;==================================================================
+; Cross-effect: change svshift between two dotp ops.  Verifies the
+; ctrl-register write actually feeds the next mul-unit op (not
+; cached/stale).
+;==================================================================
+
+`test_svshift_cross_effect:
+
+;First dotp: svshift=2 (no shift), v1=[1,2,3,4] dot v2=[5,6,7,8] = 70 = $46
+;Then change svshift=0 (shl-16), repeat: same dot product = 70<<16 = $00460000
+SetTestNumber 188
+LoadControlReg 2, svshift
+LoadTestReg $00010000, r4
+LoadTestReg $00020000, r5
+LoadTestReg $00030000, r6
+LoadTestReg $00040000, r7
+LoadTestReg $00050000, r8
+LoadTestReg $00060000, r9
+LoadTestReg $00070000, r10
+LoadTestReg $00080000, r11
+LoadTestReg 0, r12
+LoadFlags noflags
+dotp v1, v2, >>svshift, r12
+nop                           ; mul latency
+StoreResult r12
+TestFlags noflags
+TestResult 70                 ; first dotp result
+
+;Now change svshift to "shl-16" mode (encoding 0) and re-dot.
+;The previous TestResult issued a cmp which set Z=1 in cc; reset cc here
+;so the flag-state check below sees the actual post-dotp state (dotp
+;doesn't touch flags per spec, so cc must equal what we set here).
+LoadControlReg 0, svshift
+LoadTestReg 0, r12
+LoadFlags noflags
+dotp v1, v2, >>svshift, r12
+nop
+StoreResult r12
+TestFlags noflags
+TestResult $00460000           ; 70 << 16
+
+;==================================================================
+; Vector copy with all-distinct lanes.  mv_v Vi,Vk copies all 4 lanes
+; in one instruction.  Existing test 21 covers a basic mv_v; this one
+; uses 4 distinct sentinel values + verifies destination's prior
+; contents are entirely overwritten (no stale lane).
+;==================================================================
+
+`test_mv_v_distinct:
+
+SetTestNumber 189
+LoadTestReg $11111111, r4    ; v1[0]
+LoadTestReg $22222222, r5
+LoadTestReg $33333333, r6
+LoadTestReg $44444444, r7    ; v1[3]
+LoadTestReg $DEADBEEF, r12   ; v3 sentinels - all 4 lanes must be overwritten
+LoadTestReg $CAFEBABE, r13
+LoadTestReg $BAADF00D, r14
+LoadTestReg $F005BA11, r15
+LoadFlags allflags
+mv_v v1, v3
+StoreResult r12
+TestFlags allflags            ; mv_v preserves flags
+TestResult $11111111
+StoreResult r13
+TestResult $22222222
+StoreResult r14
+TestResult $33333333
+StoreResult r15
+TestResult $44444444
+
+;==================================================================
+; Modulo flag: addr with modulo addressing sets modge / modmi.  The
+; xyrange register controls the modulo wrap.  Test the modulo flag
+; behavior on an addr op.
+;
+; Note: modulo addressing uses (low half) and (high half) of xyrange to
+; bound the index register; modmi is set if the source operand was
+; below the low bound, modge if above the high bound.  We just verify
+; the read path of xyrange here - the modulo math itself is too
+; coupled to RX/RY semantics for a tight unit test without a deep
+; setup.  Keep it simple: write+read xyrange + read both modulo flags
+; (which should be UNCHANGED by a control-register R/W).
+;==================================================================
+
+`test_modulo_flags_unchanged:
+
+SetTestNumber 190
+LoadFlags modgef+modmif       ; pre-set both modulo flags
+LoadControlReg $00010002, xyrange   ; arbitrary range write
+LoadTestReg 0, r4
+ld_s xyrange, r4
+nop
+StoreResult r4
+;Writing/reading xyrange must not touch modge/modmi flags.
+TestFlags modgef+modmif
+TestResult $00010002
 
 allpass:
 
