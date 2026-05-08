@@ -3993,6 +3993,14 @@ void NativeCodeCache::X86Emit_SHRDRMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_MOVZXRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.movzx(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   uint8 opcode = 0xB6;
 
   if(regDest < x86Reg::x86Reg_eax)
