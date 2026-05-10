@@ -28,39 +28,60 @@ void ResetMPEFlags(MPE &mpe)
 
 void MPEAlloc(MPE &mpe)
 {
-  const uint32 requestedFlags = mpe.regs[0];
-  
-  mpe.regs[0] = 0xFFFFFFFF; //-1
+  const uint32 requestedUserFlags = mpe.regs[0] & MPE_USER_FLAGS;
+  uint32 allocated_mpe = 0xFFFFFFFF; //-1
 
   for(uint32 i = 0; i < 3; i++)
   {
     if(!(mpeFlags[i] & MPE_ALLOC_USER))
     {
+      const uint32 mpeUserFlags = mpeFlags[i] & MPE_USER_FLAGS;
+
       //The MPE is not allocated by the USER so it is available
-      if((mpeFlags[i] & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)) == (requestedFlags & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)))
+      if((mpeUserFlags & requestedUserFlags) == requestedUserFlags)
       {
-        //The MPE matched all requested flags
-        const bool bRequestedMiniBIOS = requestedFlags & MPE_HAS_MINI_BIOS;
-        if(!bRequestedMiniBIOS && (mpeFlags[i] & MPE_HAS_MINI_BIOS))
-        {          
-          //MINIBIOS was not explicitly requested and this MPE
-          //has MINIBIOS so don't allocate it
-          continue;
-        }
-
-        if(mpeFlags_init[i] != (requestedFlags & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)))
+        //The MPE supports all requested flags
+        if (mpeUserFlags & MPE_HAS_MINI_BIOS)
         {
-          //The requested flags don't match the initial flags so don't allocate it
-          //This is something the VMLabs BIOS checks but probably isnt necessary
+          const bool bRequestedMiniBIOS = requestedUserFlags & MPE_HAS_MINI_BIOS;
+          if(!bRequestedMiniBIOS)
+          {
+            //MINIBIOS was not explicitly requested and this MPE
+            //has MINIBIOS so don't allocate it
+            continue;
+          }
+
+          if (requestedUserFlags & (MPE_HAS_CACHES | MPE_IRAM_8K | MPE_DTRAM_8K)) {
+            //User requested 8K IRMA or DRAM, or Caches. None of these work with an
+            //MPE running the MINIBIOS.
+            continue;
+          }
+        }
+
+        //This MPE meets all the requirements
+        if(mpeFlags_init[i] != (requestedUserFlags & ~MPE_HAS_MINI_BIOS))
+        {
+          //The requested flags don't match the initial MPE flags exactly. Save
+          //this MPE as a possible solution, but keep checking in case there is
+          //another available MPE with fewer capabilities that matches all the
+          //requested capabilities, so we can preserve more capable MPEs for
+          //potential future requests.
+          if(allocated_mpe == 0xFFFFFFFF)
+            allocated_mpe = i;
           continue;
         }
 
-        mpeFlags[i] |= MPE_ALLOC_USER;
-        mpe.regs[0] = i;
-        return;
+        //This MPE is an exact match for the requested capabilities
+        allocated_mpe = i;
+        break;
       }
     }
   }
+
+  if (allocated_mpe != 0xFFFFFFFF) {
+    mpeFlags[allocated_mpe] |= MPE_ALLOC_USER;
+  }
+  mpe.regs[0] = allocated_mpe;
 }
 
 void MPEAllocSpecific(MPE &mpe)
