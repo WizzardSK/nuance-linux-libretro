@@ -12039,7 +12039,7 @@ LOOP:
 8078d36a	rts,nop
 
 ;START OF MPEALLOC ROUTINE
-;r0 = desired_flags & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)
+;r0 = desiredUserFlags = desired_flags & MPE_USER_FLAGS
 8078d36c	and #$00ffffff,r0,r0
 ;r8 = -1
 8078d374	mv_s #$ffffffff,r8
@@ -12049,75 +12049,80 @@ LOOP:
 ;check_next_mpe:
 8078d378	nop
 	mv_s #$807b8538,r6
-;r9 = i << 2
+;r9 = i = i << 2
 8078d380	asl #$fffffffe,r29,r9
+;r10 = &mpeFlags[i]
 8078d384	add r6,r9,r10
 ;r11 = mpeFlags[i]
 8078d388	ld_s (r10),r11
 8078d38a	nop
+;r10 = mpeFlags[i] & MPE_ALLOC_USER
 8078d38c	and #$01000000,r11,r10
 8078d394	cmp #$00000000,r10
-;if mpeFlags[i] has the MPE_ALLOC_USER flag set, branch to mpe_not_available:
-8078d396	bra ne,#$8078d3ea
-;r10 = mpeFlags[i] & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)
+;if mpeFlags[i] has the MPE_ALLOC_USER flag set, branch to check_next_mpe:
+8078d396	bra ne,#$8078d3ea ; check_next_mpe
+;r10 = mpeUserFlags = mpeFlags[i] & MPE_USER_FLAGS
 8078d398	and #$00ffffff,r11,r10
-;r10 = (mpeFlags[i] & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS)) & (desired_flags & ~(MPE_ALLOC_USER|MPE_ALLOC_BIOS))
+;r10 = mpeUserFlags & mpeDesiredFlags
 8078d3a0	and r0,r10
 8078d3a2	cmp r0,r10
-;if mpeFlags[i] does not match desired_flags, branch to not_available
+;if (mpeUserFlags & desiredUserFlags) != desiredUserFlags, branch to check_next_mpe
 8078d3a4	bra ne,#$8078d3ea
+; r10 = mpeUserFlags & MPE_HAS_MINI_BIOS
 8078d3a6	and #$00000010,r11,r10
 8078d3ae	cmp #$00000000,r10
 
 ;check_for_mini_bios_requirement:
-;if mpeFlags[i] does not have HAS_MINI_BIOS flag set, branch to found_free_mpe
+;if mpeFlagsUserFlags does not have HAS_MINI_BIOS flag set, branch to found_free_mpe
 8078d3b0	bra eq,#$8078d3ca
+; r10 = desiredUserFlags & MPE_HAS_MINI_BIOS
 8078d3b2	and #$00000010,r0,r10
 8078d3ba	cmp #$00000000,r10
 
 ;mini_bios_needed:
-;if desired_flags does not have the HAS_MINI_BIOS flag set, branch to mpe_not_available
+;if desired_flags does not have the HAS_MINI_BIOS flag set, branch to check_next_mpe
 8078d3bc	nop
 	bra eq,#$8078d3ea
-;check_specific_flags:
+; r10 = desiredUserFlags & (MPE_HAS_ICACHE | MPE_HAS_DCACHE | MPE_IRAM_8K | MPE_DTRAM_8K)
 8078d3c0	and #$0000000f,r0,r10
 8078d3c4	cmp #$00000000,r10
 
-;specific_flags_not_matched:
-;if the specific MPE capability flags did not match, branch to not_available
+;if caching or lage IRAM/DTRAM were requested with miniBIOS, branch to check_next_mpe.
 8078d3c6	lbra ne,#$8078d3ea,nop
 
 ;found_free_mpe:
+;r10 = &mpeFlags_init[i]
 8078d3ca	add #$807a585c,r9,r10
 ;r10 = mpeFlags_init[i]
 8078d3d2	ld_s (r10),r10
 8078d3d4	nop
 8078d3d6	cmp r10,r0
-;if mpeFlags_init[i] != (desired_flags & ~(MPE_ALLOC_USER||MPE_ALLOC_BIOS)), branch to desired_flags_dont_match_initial_flags
+;if mpeFlags_init[i] != desiredUserFlags, branch to desired_flags_dont_match_initial_flags
 8078d3d8	bra ne,#$8078d3e4
 8078d3da	nop
 8078d3dc	cmp #$00000000,r8
 
-;desired_flags_dont_match_initial_flags:
+;else, r8 = ret = r29 = i, branch to loop_ended
 8078d3de	bra #$8078d3f2
 8078d3e0	nop
 ;allocated_mpe = i
 8078d3e2	mv_s r29,r8
 
-;specific_flags_not_matched
-;if specific_flags_not_matched, branch to mpe_not_available
+;desired_flags_dont_match_initial_flags:
+;if r8  >= 0, then branch to check_next_mpe.
 8078d3e4	lbra ge,#$8078d3ea,nop
 
 ;allocated_mpe = i
 8078d3e8	mv_s r29,r8
 
-;mpe_not_available:
+;check_next_mpe:
 ;i = i + 1
 8078d3ea	add #$00000001,r29
 8078d3ec	cmp #$00000003,r29
 ;if i <= 3, branch back to check_next_mpe
 8078d3ee	lbra le,#$8078d378,nop
 
+;loop_ended:
 ;if allocated_mpe < 0, branch to exit
 8078d3f2	cmp #$00000000,r8
 8078d3f4	bra lt,#$8078d40a
@@ -12129,6 +12134,7 @@ LOOP:
 8078d400	or #$01000000,r29,r11
 ;mpeFlags[allocated_mpe] = mpeFlags[allocated_mpe] | MPE_ALLOC_USER
 8078d408	st_s r11,(r10)
+
 ;exit:
 ;r0 = allocated_mpe
 8078d40a	mv_s r8,r0
