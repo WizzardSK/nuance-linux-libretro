@@ -6,6 +6,9 @@
 #include "PageMap.h"
 #include "PatchManager.h"
 #include "X86EmitTypes.h"
+#ifdef USE_ASMJIT
+#include "asmjit_emit.h"
+#endif
 
 #define DEFAULT_CODE_BUFFER_BYTES (8U*1024U*1024U)
 //#define DEFAULT_NUM_TLB_ENTRIES (16384U)
@@ -86,6 +89,12 @@ public:
 
   void SetLabelPointer(const uint32 labelIndex)
   {
+#ifdef USE_ASMJIT
+    if (asmjitAs) {
+      AsmJit_BindLabel(labelIndex);
+      return;
+    }
+#endif
     patchMgr.SetLabelPointer(labelIndex,GetEmitPointer());
   }
 
@@ -101,6 +110,11 @@ public:
   void X86Emit_Group2RM(const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex);
   
   void X86Emit_ADDRR(const x86Reg regDest, const x86Reg regSrc);
+  // 64-bit pointer variants. On 64-bit asmjit, use full 64-bit registers
+  // to avoid truncating host pointers; on 32-bit they fall through to the
+  // existing 32-bit ops (where pointers fit in 32-bit registers anyway).
+  void X86Emit_ADDRR64(const x86Reg regDest, const x86Reg regSrc);
+  void X86Emit_MOVRR64(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_ADDRM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_ADDMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_ADDMR(const x86Reg regDest, const x86BaseReg base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0)
@@ -287,6 +301,9 @@ public:
     X86Emit_MOVRM(regSrc, (uintptr_t)base, index, scale, disp);
   }
   void X86Emit_MOVIR(const intptr_t imm, const x86Reg regDest);
+  // Load a host pointer into the destination register. On 64-bit emits a
+  // movabs r64, imm64; on 32-bit falls through to MOVIR (32-bit immediate).
+  void X86Emit_MOVIR_Ptr(const uintptr_t addr, const x86Reg regDest);
   void X86Emit_MOVSB();
   void X86Emit_MOVSW();
   void X86Emit_MOVSD();
@@ -465,6 +482,7 @@ public:
   void X86Emit_CMOVBRR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVBMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc);
+  void X86Emit_CMOVNBRR64(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVNBMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_CMOVZRR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVZMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
@@ -574,6 +592,25 @@ public:
   PatchManager patchMgr;
   PageMap pageMap;
   EmitterVariables emitVars;
+
+#ifdef USE_ASMJIT
+  // asmjit state for 64-bit JIT code generation
+  asmjit::JitRuntime asmjitRuntime;
+  asmjit::CodeHolder* asmjitCode = nullptr;
+  asmjit::x86::Assembler* asmjitAs = nullptr;
+  asmjit::Label asmjitLabels[MAX_ASMJIT_LABELS];
+  bool asmjitLabelBound[MAX_ASMJIT_LABELS] = {};
+  bool asmjitBlockActive = false;
+
+  // Begin a new asmjit code block — call before emitting instructions
+  void AsmJit_BeginBlock();
+  // End current block, copy code to buffer — returns code size in bytes
+  uint32 AsmJit_EndBlock();
+  // Bind a label at the current position (replaces SetLabelPointer for asmjit)
+  void AsmJit_BindLabel(uint32 labelIndex);
+  // Get or create a label for the given index
+  asmjit::Label& AsmJit_GetLabel(uint32 labelIndex);
+#endif
 
 private:
   uint8 *pEmitLoc;

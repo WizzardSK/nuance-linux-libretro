@@ -179,6 +179,25 @@ void NativeCodeCache::X86Emit_ModRegRM(const x86ModType modType, const x86ModReg
 
 void NativeCodeCache::X86Emit_Group1RR(const x86Reg regDest, const x86Reg regSrc, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    auto s = NuanceJit::toGp32(regSrc);
+    switch(groupIndex) {
+        case 0: a.add(d, s); break;
+        case 1: a.or_(d, s); break;
+        case 2: a.adc(d, s); break;
+        case 3: a.sbb(d, s); break;
+        case 4: a.and_(d, s); break;
+        case 5: a.sub(d, s); break;
+        case 6: a.xor_(d, s); break;
+        case 7: a.cmp(d, s); break;
+        case 17: a.mov(d, s); break;
+      }
+    return;
+  }
+  #endif
 
   //OP r8, reg8, OP r16, reg16 or OP r32, reg32
   
@@ -205,6 +224,26 @@ void NativeCodeCache::X86Emit_Group1RR(const x86Reg regDest, const x86Reg regSrc
 
 void NativeCodeCache::X86Emit_Group1RM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto s = NuanceJit::toGp32(regSrc);
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, NuanceJit::isReg8(regSrc) ? 1 : NuanceJit::isReg16(regSrc) ? 2 : 4);
+    switch(groupIndex) {
+        case 0: a.add(m, s); break;
+        case 1: a.or_(m, s); break;
+        case 2: a.adc(m, s); break;
+        case 3: a.sbb(m, s); break;
+        case 4: a.and_(m, s); break;
+        case 5: a.sub(m, s); break;
+        case 6: a.xor_(m, s); break;
+        case 7: a.cmp(m, s); break;
+        case 17: a.mov(m, s); break;
+      }
+    return;
+  }
+  #endif
+
   //OP m8, reg8, OP m16, reg16 or OP m32, reg32
 
   if(regSrc < x86Reg::x86Reg_ax)
@@ -230,6 +269,26 @@ void NativeCodeCache::X86Emit_Group1RM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_Group1MR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, NuanceJit::isReg8(regDest) ? 1 : NuanceJit::isReg16(regDest) ? 2 : 4);
+    switch(groupIndex) {
+        case 0: a.add(d, m); break;
+        case 1: a.or_(d, m); break;
+        case 2: a.adc(d, m); break;
+        case 3: a.sbb(d, m); break;
+        case 4: a.and_(d, m); break;
+        case 5: a.sub(d, m); break;
+        case 6: a.xor_(d, m); break;
+        case 7: a.cmp(d, m); break;
+        case 17: a.mov(d, m); break;
+      }
+    return;
+  }
+  #endif
+
   //OP reg8, m8, OP reg16, m16 or OP reg32, m32
   if(regDest < x86Reg::x86Reg_ax)
   {
@@ -254,6 +313,43 @@ void NativeCodeCache::X86Emit_Group1MR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_Group1IR(const intptr_t imm, const x86Reg regDest, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    // If imm doesn't fit in 32 bits, load into R15 and use reg-reg op
+    // This handles host pointer values (e.g. dtrom addr) on 64-bit
+    if ((uintptr_t)imm > (uintptr_t)INT32_MAX) {
+      auto d = NuanceJit::toGp64(regDest); // use 64-bit register for pointer arithmetic
+      a.mov(asmjit::x86::r15, (uint64_t)(uintptr_t)imm);
+      switch(groupIndex) {
+        case 0: a.add(d, asmjit::x86::r15); break;
+        case 1: a.or_(d, asmjit::x86::r15); break;
+        case 2: a.adc(d, asmjit::x86::r15); break;
+        case 3: a.sbb(d, asmjit::x86::r15); break;
+        case 4: a.and_(d, asmjit::x86::r15); break;
+        case 5: a.sub(d, asmjit::x86::r15); break;
+        case 6: a.xor_(d, asmjit::x86::r15); break;
+        case 7: a.cmp(d, asmjit::x86::r15); break;
+        case 17: a.mov(d, asmjit::x86::r15); break;
+      }
+    } else {
+      auto d = NuanceJit::toGp32(regDest);
+      switch(groupIndex) {
+        case 0: a.add(d, (int32_t)imm); break;
+        case 1: a.or_(d, (int32_t)imm); break;
+        case 2: a.adc(d, (int32_t)imm); break;
+        case 3: a.sbb(d, (int32_t)imm); break;
+        case 4: a.and_(d, (int32_t)imm); break;
+        case 5: a.sub(d, (int32_t)imm); break;
+        case 6: a.xor_(d, (int32_t)imm); break;
+        case 7: a.cmp(d, (int32_t)imm); break;
+        case 17: a.mov(d, (int32_t)imm); break;
+      }
+    }
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_ax)
   {
     //r8,imm8
@@ -325,6 +421,25 @@ void NativeCodeCache::X86Emit_Group1IR(const intptr_t imm, const x86Reg regDest,
 
 void NativeCodeCache::X86Emit_Group1IM(const int32 imm, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    switch(groupIndex) {
+        case 0: a.add(m, imm); break;
+        case 1: a.or_(m, imm); break;
+        case 2: a.adc(m, imm); break;
+        case 3: a.sbb(m, imm); break;
+        case 4: a.and_(m, imm); break;
+        case 5: a.sub(m, imm); break;
+        case 6: a.xor_(m, imm); break;
+        case 7: a.cmp(m, imm); break;
+        case 17: a.mov(m, imm); break;
+      }
+    return;
+  }
+  #endif
+
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     //mem8,imm8
@@ -378,6 +493,23 @@ void NativeCodeCache::X86Emit_Group1IM(const int32 imm, const x86MemPtr ptrType,
 
 void NativeCodeCache::X86Emit_Group2IR(const x86Reg regDest, const uint8 shiftCount, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    switch(groupIndex) {
+        case 0: a.rol(d, shiftCount); break;
+        case 1: a.ror(d, shiftCount); break;
+        case 2: a.rcl(d, shiftCount); break;
+        case 3: a.rcr(d, shiftCount); break;
+        case 4: case 6: a.shl(d, shiftCount); break;
+        case 5: a.shr(d, shiftCount); break;
+        case 7: a.sar(d, shiftCount); break;
+      }
+    return;
+  }
+  #endif
+
   //SHIFTOP r8, CL, SHIFTOP r16, CL, or SHIFTOP r32, CL
   
   if(regDest < x86Reg::x86Reg_ax)
@@ -428,6 +560,23 @@ void NativeCodeCache::X86Emit_Group2IR(const x86Reg regDest, const uint8 shiftCo
 
 void NativeCodeCache::X86Emit_Group2IM(const x86MemPtr ptrType, const uint8 shiftCount, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    switch(groupIndex) {
+        case 0: a.rol(m, shiftCount); break;
+        case 1: a.ror(m, shiftCount); break;
+        case 2: a.rcl(m, shiftCount); break;
+        case 3: a.rcr(m, shiftCount); break;
+        case 4: case 6: a.shl(m, shiftCount); break;
+        case 5: a.shr(m, shiftCount); break;
+        case 7: a.sar(m, shiftCount); break;
+      }
+    return;
+  }
+  #endif
+
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     if(shiftCount == 1)
@@ -476,6 +625,23 @@ void NativeCodeCache::X86Emit_Group2IM(const x86MemPtr ptrType, const uint8 shif
 
 void NativeCodeCache::X86Emit_Group2RR(const x86Reg regDest, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    switch(groupIndex) {
+        case 0: a.rol(d, asmjit::x86::cl); break;
+        case 1: a.ror(d, asmjit::x86::cl); break;
+        case 2: a.rcl(d, asmjit::x86::cl); break;
+        case 3: a.rcr(d, asmjit::x86::cl); break;
+        case 4: case 6: a.shl(d, asmjit::x86::cl); break;
+        case 5: a.shr(d, asmjit::x86::cl); break;
+        case 7: a.sar(d, asmjit::x86::cl); break;
+      }
+    return;
+  }
+  #endif
+
   //SHIFTOP r8, CL, SHIFTOP r16, CL, or SHIFTOP r32, CL
   
   if(regDest < x86Reg::x86Reg_ax)
@@ -501,6 +667,22 @@ void NativeCodeCache::X86Emit_Group2RR(const x86Reg regDest, const uint8 groupIn
 
 void NativeCodeCache::X86Emit_Group2RM(const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp, const uint8 groupIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    switch(groupIndex) {
+        case 0: a.rol(m, asmjit::x86::cl); break;
+        case 1: a.ror(m, asmjit::x86::cl); break;
+        case 2: a.rcl(m, asmjit::x86::cl); break;
+        case 3: a.rcr(m, asmjit::x86::cl); break;
+        case 4: case 6: a.shl(m, asmjit::x86::cl); break;
+        case 5: a.shr(m, asmjit::x86::cl); break;
+        case 7: a.sar(m, asmjit::x86::cl); break;
+      }
+    return;
+  }
+  #endif
 
   //OP m8, reg8, OP m16, reg16 or OP m32, reg32
 
@@ -524,6 +706,23 @@ void NativeCodeCache::X86Emit_Group2RM(const x86MemPtr ptrType, const uintptr_t 
 
 void NativeCodeCache::X86Emit_ADDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  X86Emit_Group1RR(regDest, regSrc, 0);
+}
+
+// 64-bit ADD r64, r64. Used after Emit_LoadBankPtr to combine a 64-bit bank
+// pointer (held in the 64-bit alias of regSrc) with a 32-bit NUON address
+// offset (held in regDest). On 64-bit, plain X86Emit_ADDRR uses 32-bit add
+// which truncates the upper 32 bits of the bank pointer and produces an
+// unmapped address. On 32-bit it falls through to the existing 32-bit add.
+void NativeCodeCache::X86Emit_ADDRR64(const x86Reg regDest, const x86Reg regSrc)
+{
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.add(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
+    return;
+  }
+#endif
   X86Emit_Group1RR(regDest, regSrc, 0);
 }
 
@@ -799,6 +998,14 @@ void NativeCodeCache::X86Emit_AAS()
 
 void NativeCodeCache::X86Emit_INCR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.inc(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
+
   if(reg < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xFE;
@@ -817,6 +1024,14 @@ void NativeCodeCache::X86Emit_INCR(const x86Reg reg)
 
 void NativeCodeCache::X86Emit_DECR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.dec(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
+
   if(reg < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xFE;
@@ -861,6 +1076,20 @@ void NativeCodeCache::X86Emit_PUSHAW()
 
 void NativeCodeCache::X86Emit_PUSHAD()
 {
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.push(asmjit::x86::rax);
+    a.push(asmjit::x86::rcx);
+    a.push(asmjit::x86::rdx);
+    a.push(asmjit::x86::rbx);
+    a.push(asmjit::x86::rbp);
+    a.push(asmjit::x86::rsi);
+    a.push(asmjit::x86::rdi);
+    a.push(asmjit::x86::r15);
+    return;
+  }
+#endif
   *pEmitLoc++ = 0x60;
 }
 
@@ -872,6 +1101,20 @@ void NativeCodeCache::X86Emit_POPAW()
 
 void NativeCodeCache::X86Emit_POPAD()
 {
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pop(asmjit::x86::r15);
+    a.pop(asmjit::x86::rdi);
+    a.pop(asmjit::x86::rsi);
+    a.pop(asmjit::x86::rbp);
+    a.pop(asmjit::x86::rbx);
+    a.pop(asmjit::x86::rdx);
+    a.pop(asmjit::x86::rcx);
+    a.pop(asmjit::x86::rax);
+    return;
+  }
+#endif
   *pEmitLoc++ = 0x61;
 }
 
@@ -924,6 +1167,14 @@ void NativeCodeCache::X86Emit_IMULMRR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.imul(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //imul reg16, r16
@@ -936,6 +1187,14 @@ void NativeCodeCache::X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_IMULIRR(const x86Reg regDest, const int32 imm, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.imul(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc), imm);
+    return;
+  }
+  #endif
+
   if(regSrc < x86Reg::x86Reg_eax)
   {
     //reg16, r8, imm8 or reg16, r16, imm16
@@ -1083,6 +1342,32 @@ void NativeCodeCache::X86Emit_JCC(uint8 *pTarget, const int8 conditionCode)
 
 void NativeCodeCache::X86Emit_JCC_Label(const int8 conditionCode, const uint32 labelIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto label = AsmJit_GetLabel(labelIndex);
+    switch(conditionCode) {
+        case 0: a.jo(label); break;
+        case 1: a.jno(label); break;
+        case 2: a.jb(label); break;
+        case 3: a.jnb(label); break;
+        case 4: a.je(label); break;
+        case 5: a.jne(label); break;
+        case 6: a.jbe(label); break;
+        case 7: a.ja(label); break;
+        case 8: a.js(label); break;
+        case 9: a.jns(label); break;
+        case 10: a.jp(label); break;
+        case 11: a.jnp(label); break;
+        case 12: a.jl(label); break;
+        case 13: a.jge(label); break;
+        case 14: a.jle(label); break;
+        case 15: a.jg(label); break;
+      }
+    return;
+  }
+  #endif
+
   if(labelIndex >= patchMgr.numLabels)
   {
     patchMgr.AddPatch(pEmitLoc + 2, PatchType::PatchType_Rel32, pEmitLoc + 6, labelIndex);
@@ -1179,6 +1464,14 @@ void NativeCodeCache::X86Emit_JNLE(uint8 *pTarget)
 
 void NativeCodeCache::X86Emit_TESTRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.test(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   //OP r8, reg8, OP r16, reg16 or OP r32, reg32
   if(regSrc < x86Reg::x86Reg_ax)
   {
@@ -1253,7 +1546,33 @@ void NativeCodeCache::X86Emit_XCHGRM(const x86Reg regSrc, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.mov(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   X86Emit_Group1RR(regDest,regSrc,17);
+}
+
+// 64-bit MOV r64, r64. Used to copy a 64-bit host pointer that was assembled
+// in one register (e.g. via ADDRR64 of bank base + offset) into another
+// register before passing it as a pointer arg to a JIT-emitted CALLI.
+// Plain MOVRR uses 32-bit `mov r32, r32` which zero-extends and truncates
+// the upper 32 bits of the source pointer.
+// On 32-bit, falls through to the existing 32-bit MOV (host pointers fit in 32-bit anyway).
+void NativeCodeCache::X86Emit_MOVRR64(const x86Reg regDest, const x86Reg regSrc)
+{
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.mov(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
+    return;
+  }
+#endif
+  X86Emit_Group1RR(regDest, regSrc, 17);
 }
 
 void NativeCodeCache::X86Emit_LEA(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
@@ -1352,6 +1671,25 @@ void NativeCodeCache::X86Emit_CDQ()
 
 void NativeCodeCache::X86Emit_CALLI(uintptr_t offset, uint16 seg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    // Save RSI/RDI (used as MPE register base pointers by the JIT)
+    a.push(asmjit::x86::rsi);
+    a.push(asmjit::x86::rdi);
+    // Remap __fastcall (ECX, EDX) to System V AMD64 (RDI, RSI) calling convention
+    a.mov(asmjit::x86::rdi, asmjit::x86::rcx);
+    a.mov(asmjit::x86::rsi, asmjit::x86::rdx);
+    // Stack: 8 pushes (PUSHAD) + 2 pushes = 80 bytes. Need 16-byte alignment → push 0 more (80 is 16*5)
+    a.mov(asmjit::x86::r15, (uint64_t)offset);
+    a.call(asmjit::x86::r15);
+    // Restore RSI/RDI
+    a.pop(asmjit::x86::rdi);
+    a.pop(asmjit::x86::rsi);
+    return;
+  }
+  #endif
+
   offset -= (uint32)(pEmitLoc + 5);
 
   if(seg == 0)
@@ -1405,6 +1743,14 @@ void NativeCodeCache::X86Emit_JMPI(uint8 *target, uint16 seg)
 
 void NativeCodeCache::X86Emit_JMPI_Label(const uint32 labelIndex)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.jmp(AsmJit_GetLabel(labelIndex));
+    return;
+  }
+  #endif
+
   if(labelIndex >= patchMgr.numPatches)
   {
     patchMgr.AddPatch(pEmitLoc + 1, PatchType::PatchType_Rel32, pEmitLoc + 5, labelIndex);
@@ -1457,6 +1803,16 @@ void NativeCodeCache::X86Emit_LAHF()
 
 void NativeCodeCache::X86Emit_MOVMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    uint32_t sz = NuanceJit::isReg8(regDest) ? 1 : NuanceJit::isReg16(regDest) ? 2 : 4;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, sz);
+    a.mov(NuanceJit::toGp32(regDest), m);
+    return;
+  }
+  #endif
+
   if((base > 7) && ((regDest == x86Reg::x86Reg_eax) || (regDest == x86Reg::x86Reg_ax) || (regDest == x86Reg::x86Reg_al)))
   {
     if(regDest == x86Reg::x86Reg_al)
@@ -1482,6 +1838,17 @@ void NativeCodeCache::X86Emit_MOVMR(const x86Reg regDest, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVRM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto s = NuanceJit::toGp32(regSrc);
+    uint32_t sz = NuanceJit::isReg8(regSrc) ? 1 : NuanceJit::isReg16(regSrc) ? 2 : 4;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, sz);
+    a.mov(m, s);
+    return;
+  }
+  #endif
+
   if((base > 7) && ((regSrc == x86Reg::x86Reg_eax) || (regSrc == x86Reg::x86Reg_ax) || (regSrc == x86Reg::x86Reg_al)))
   {
     if(regSrc == x86Reg::x86Reg_al)
@@ -1507,6 +1874,18 @@ void NativeCodeCache::X86Emit_MOVRM(const x86Reg regSrc, const uintptr_t base, c
 
 void NativeCodeCache::X86Emit_MOVIR(const intptr_t imm, const x86Reg regDest)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    // If value doesn't fit in 32 bits, use 64-bit mov for pointer loads
+    if ((uintptr_t)imm > (uintptr_t)INT32_MAX) {
+      a.mov(NuanceJit::toGp64(regDest), (uint64_t)(uintptr_t)imm);
+    } else {
+      a.mov(NuanceJit::toGp32(regDest), (int32_t)imm);
+    }
+    return;
+  }
+  #endif
 
   if(regDest < x86Reg::x86Reg_ax)
   {
@@ -1732,6 +2111,14 @@ void NativeCodeCache::X86Emit_SARRM(const x86MemPtr ptrType, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_RETN(uint16 iw)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.ret();
+    return;
+  }
+  #endif
+
   if(iw == 0)
   {
     *pEmitLoc++ = 0xC3;
@@ -1746,6 +2133,15 @@ void NativeCodeCache::X86Emit_RETN(uint16 iw)
 
 void NativeCodeCache::X86Emit_MOVIM(const int32 imm, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    a.mov(m, imm);
+    return;
+  }
+  #endif
+
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     //m8,imm8
@@ -2134,6 +2530,14 @@ void NativeCodeCache::X86Emit_CMC()
 
 void NativeCodeCache::X86Emit_NOTR(const x86Reg regDest)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.not_(NuanceJit::toGp32(regDest));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2170,6 +2574,14 @@ void NativeCodeCache::X86Emit_NOTM(const x86MemPtr ptrType, const uintptr_t base
 
 void NativeCodeCache::X86Emit_IMULRR(const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.imul(NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regSrc < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2187,6 +2599,15 @@ void NativeCodeCache::X86Emit_IMULRR(const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_IMULMR(const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    a.imul(m);
+    return;
+  }
+  #endif
+
   if(ptrType == x86MemPtr::x86MemPtr_byte)
   {
     *pEmitLoc++ = 0xF6;
@@ -2205,6 +2626,14 @@ void NativeCodeCache::X86Emit_IMULMR(const x86MemPtr ptrType, const uintptr_t ba
 
 void NativeCodeCache::X86Emit_NEGR(const x86Reg regDest)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.neg(NuanceJit::toGp32(regDest));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_ax)
   {
     *pEmitLoc++ = 0xF6;
@@ -2223,6 +2652,14 @@ void NativeCodeCache::X86Emit_NEGR(const x86Reg regDest)
 
 void NativeCodeCache::X86Emit_TESTIR(const uint32 imm, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.test(NuanceJit::toGp32(regSrc), imm);
+    return;
+  }
+  #endif
+
   if(regSrc < x86Reg::x86Reg_ax)
   {
     if(regSrc == x86Reg::x86Reg_al)
@@ -2473,6 +2910,13 @@ void NativeCodeCache::X86Emit_UD1(const x86Reg reg)
 
 void NativeCodeCache::X86Emit_BSWAP(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.bswap(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
 
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0xC8 + ((uint32)reg & 0x07);
@@ -2480,6 +2924,13 @@ void NativeCodeCache::X86Emit_BSWAP(const x86Reg reg)
 
 void NativeCodeCache::X86Emit_SETOR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.seto(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
 
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x90;
@@ -2509,6 +2960,14 @@ void NativeCodeCache::X86Emit_SETNOM(const uintptr_t base, const x86IndexReg ind
 
 void NativeCodeCache::X86Emit_SETBR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.setb(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
+
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x92;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)2,((uint32)reg & 0x07));
@@ -2537,6 +2996,14 @@ void NativeCodeCache::X86Emit_SETNBM(const uintptr_t base, const x86IndexReg ind
 
 void NativeCodeCache::X86Emit_SETZR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.sete(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
+
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x94;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)2,((uint32)reg & 0x07));
@@ -2593,6 +3060,13 @@ void NativeCodeCache::X86Emit_SETNBEM(const uintptr_t base, const x86IndexReg in
 
 void NativeCodeCache::X86Emit_SETSR(const x86Reg reg)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.sets(NuanceJit::toGp32(reg));
+    return;
+  }
+  #endif
 
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x98;
@@ -2706,6 +3180,14 @@ void NativeCodeCache::X86Emit_SETNLEM(const uintptr_t base, const x86IndexReg in
 
 void NativeCodeCache::X86Emit_CMOVORR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovo(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2732,6 +3214,14 @@ void NativeCodeCache::X86Emit_CMOVOMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNORR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovno(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2758,6 +3248,14 @@ void NativeCodeCache::X86Emit_CMOVNOMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVBRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovb(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2784,6 +3282,14 @@ void NativeCodeCache::X86Emit_CMOVBMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovae(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2793,6 +3299,23 @@ void NativeCodeCache::X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0x43;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)((uint32)regDest & 0x07),((uint32)regSrc & 0x07));
+}
+
+// 64-bit CMOVAE r64, r64. Used in the legacy bank-selection pattern
+// (4× MOVIR with bank bases + 3× CMP+CMOVNB to pick the right one). Source
+// registers hold 64-bit host pointers from MOVIR_Ptr; the 32-bit CMOVNB
+// truncates the upper 32 bits → segfault when ebx is later used as memory
+// base in the load. On 32-bit it falls through to the existing 32-bit cmovae.
+void NativeCodeCache::X86Emit_CMOVNBRR64(const x86Reg regDest, const x86Reg regSrc)
+{
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovae(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
+    return;
+  }
+#endif
+  X86Emit_CMOVNBRR(regDest, regSrc);
 }
 
 void NativeCodeCache::X86Emit_CMOVNBMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
@@ -2810,6 +3333,14 @@ void NativeCodeCache::X86Emit_CMOVNBMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVZRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmove(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2836,6 +3367,14 @@ void NativeCodeCache::X86Emit_CMOVZMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNZRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovne(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2862,6 +3401,14 @@ void NativeCodeCache::X86Emit_CMOVNZMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVBERR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovbe(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2888,6 +3435,14 @@ void NativeCodeCache::X86Emit_CMOVBEMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVNBERR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmova(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2916,6 +3471,14 @@ void NativeCodeCache::X86Emit_CMOVNBEMR(const x86Reg regDest, const uintptr_t ba
 
 void NativeCodeCache::X86Emit_CMOVSRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovs(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -2942,6 +3505,14 @@ void NativeCodeCache::X86Emit_CMOVSMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNSRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovns(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3020,6 +3591,14 @@ void NativeCodeCache::X86Emit_CMOVNPMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVLRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovl(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3046,6 +3625,14 @@ void NativeCodeCache::X86Emit_CMOVLMR(const x86Reg regDest, const uintptr_t base
 
 void NativeCodeCache::X86Emit_CMOVNLRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovge(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3072,6 +3659,14 @@ void NativeCodeCache::X86Emit_CMOVNLMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVLERR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovle(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3098,6 +3693,14 @@ void NativeCodeCache::X86Emit_CMOVLEMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_CMOVNLERR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.cmovg(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     //r16, r16
@@ -3160,6 +3763,15 @@ void NativeCodeCache::X86Emit_MOVQMR(const x86Reg regDest, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_MOVDQUMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, 16);
+    a.movdqu(NuanceJit::toXmm(regDest), m);
+    return;
+  }
+  #endif
+
   //SSE2
   *pEmitLoc++ = 0xF3;
   *pEmitLoc++ = 0x0F;
@@ -3170,6 +3782,15 @@ void NativeCodeCache::X86Emit_MOVDQUMR(const x86Reg regDest, const uintptr_t bas
 
 void NativeCodeCache::X86Emit_MOVDQAMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, 16);
+    a.movdqa(NuanceJit::toXmm(regDest), m);
+    return;
+  }
+  #endif
+
   //SSE2
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3198,6 +3819,15 @@ void NativeCodeCache::X86Emit_MOVQRM(const x86Reg regSrc, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVDQURM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, 16);
+    a.movdqu(m, NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   //SSE2
   *pEmitLoc++ = 0xF3;
   *pEmitLoc++ = 0x0F;
@@ -3208,6 +3838,15 @@ void NativeCodeCache::X86Emit_MOVDQURM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_MOVDQARM(const x86Reg regSrc, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto m = NuanceJit::buildMem(a, base, index, scale, disp, 16);
+    a.movdqa(m, NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   //SSE2
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3218,6 +3857,14 @@ void NativeCodeCache::X86Emit_MOVDQARM(const x86Reg regSrc, const uintptr_t base
 
 void NativeCodeCache::X86Emit_SHLDIRR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.shld(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc), shiftCount);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3232,6 +3879,14 @@ void NativeCodeCache::X86Emit_SHLDIRR(const x86Reg regDest, const x86Reg regSrc,
 
 void NativeCodeCache::X86Emit_SHLDRRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.shld(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc), asmjit::x86::cl);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3270,6 +3925,14 @@ void NativeCodeCache::X86Emit_SHLDRMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_SHRDIRR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.shrd(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc), shiftCount);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3284,6 +3947,14 @@ void NativeCodeCache::X86Emit_SHRDIRR(const x86Reg regDest, const x86Reg regSrc,
 
 void NativeCodeCache::X86Emit_SHRDRRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.shrd(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc), asmjit::x86::cl);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_eax)
   {
     *pEmitLoc++ = 0x66;
@@ -3322,6 +3993,14 @@ void NativeCodeCache::X86Emit_SHRDRMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_MOVZXRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.movzx(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   uint8 opcode = 0xB6;
 
   if(regDest < x86Reg::x86Reg_eax)
@@ -3339,6 +4018,16 @@ void NativeCodeCache::X86Emit_MOVZXRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVZXMR(const x86Reg regDest, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    a.movzx(d, m);
+    return;
+  }
+  #endif
+
   uint8 opcode = 0xB6;
 
   if(regDest < x86Reg::x86Reg_eax)
@@ -3373,6 +4062,16 @@ void NativeCodeCache::X86Emit_MOVSXRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVSXMR(const x86Reg regDest, const x86MemPtr ptrType, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    auto d = NuanceJit::toGp32(regDest);
+    auto m = NuanceJit::buildMemPtr(a, base, index, scale, disp, ptrType);
+    a.movsx(d, m);
+    return;
+  }
+  #endif
+
   uint8 opcode = 0xBE;
 
   if(regDest < x86Reg::x86Reg_eax)
@@ -3390,6 +4089,14 @@ void NativeCodeCache::X86Emit_MOVSXMR(const x86Reg regDest, const x86MemPtr ptrT
 
 void NativeCodeCache::X86Emit_PSRADRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.psrad(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3408,6 +4115,14 @@ void NativeCodeCache::X86Emit_PSRADRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSRADIR(const x86Reg regDest, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.psrad(NuanceJit::toXmm(regDest), shiftCount);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3428,6 +4143,14 @@ void NativeCodeCache::X86Emit_PSRADIR(const x86Reg regDest, const uint8 shiftCou
 
 void NativeCodeCache::X86Emit_PSRLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.psrld(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3446,6 +4169,14 @@ void NativeCodeCache::X86Emit_PSRLDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSRLDIR(const x86Reg regDest, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.psrld(NuanceJit::toXmm(regDest), shiftCount);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3466,6 +4197,14 @@ void NativeCodeCache::X86Emit_PSRLDIR(const x86Reg regDest, const uint8 shiftCou
 
 void NativeCodeCache::X86Emit_PSLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pslld(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3484,6 +4223,14 @@ void NativeCodeCache::X86Emit_PSLDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_PSLDIR(const x86Reg regDest, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pslld(NuanceJit::toXmm(regDest), shiftCount);
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3504,6 +4251,14 @@ void NativeCodeCache::X86Emit_PSLDIR(const x86Reg regDest, const uint8 shiftCoun
 
 void NativeCodeCache::X86Emit_PMULLDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pmulld(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   //SSE4.1
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3515,6 +4270,14 @@ void NativeCodeCache::X86Emit_PMULLDRR(const x86Reg regDest, const x86Reg regSrc
 
 void NativeCodeCache::X86Emit_PHADDDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.phaddd(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   //SSSE3
   *pEmitLoc++ = 0x66;
   *pEmitLoc++ = 0x0F;
@@ -3526,6 +4289,13 @@ void NativeCodeCache::X86Emit_PHADDDRR(const x86Reg regDest, const x86Reg regSrc
 
 void NativeCodeCache::X86Emit_PSHUFBRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pshufb(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
 
   //SSSE3
   *pEmitLoc++ = 0x66;
@@ -3550,6 +4320,14 @@ void NativeCodeCache::X86Emit_DPPSRR(const x86Reg regDest, const x86Reg regSrc, 
 
 void NativeCodeCache::X86Emit_MOVDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.movd(NuanceJit::toXmm(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3568,6 +4346,14 @@ void NativeCodeCache::X86Emit_MOVDRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_MOVDRR2(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.movd(NuanceJit::toGp32(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regSrc < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3619,6 +4405,14 @@ void NativeCodeCache::X86Emit_MOVLHRR(const x86Reg regDest, const x86Reg regSrc)
 
 void NativeCodeCache::X86Emit_SHUFIR(const x86Reg regDest, const x86Reg regSrc, const uint8 shiftCount)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.shufps(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc), shiftCount);
+    return;
+  }
+  #endif
+
   //SSE
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0xC6;
@@ -3629,6 +4423,14 @@ void NativeCodeCache::X86Emit_SHUFIR(const x86Reg regDest, const x86Reg regSrc, 
 
 void NativeCodeCache::X86Emit_PANDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.pand(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3737,6 +4539,14 @@ void NativeCodeCache::X86Emit_PANDNRM(const x86Reg regSrc, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_PSUBDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.psubd(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3791,6 +4601,14 @@ void NativeCodeCache::X86Emit_PSUBDRM(const x86Reg regSrc, const uintptr_t base,
 
 void NativeCodeCache::X86Emit_PADDRR(const x86Reg regDest, const x86Reg regSrc)
 {
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.paddd(NuanceJit::toXmm(regDest), NuanceJit::toXmm(regSrc));
+    return;
+  }
+  #endif
+
   if(regDest < x86Reg::x86Reg_xmm0)
   {
     //MMX
@@ -3841,4 +4659,17 @@ void NativeCodeCache::X86Emit_PADDRM(const x86Reg regSrc, const uintptr_t base, 
     *pEmitLoc++ = 0xFE;
   }
   X86Emit_ModRegRM(x86ModType::x86ModType_mem,(x86ModReg)((uint32)regSrc & 0x07), base, index, scale, disp);
+}
+
+void NativeCodeCache::X86Emit_MOVIR_Ptr(const uintptr_t addr, const x86Reg regDest)
+{
+#ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.mov(NuanceJit::toGp64(regDest), (uint64_t)addr);
+    return;
+  }
+#endif
+  // On 32-bit, MOVIR with the 32-bit immediate is correct (host pointers fit).
+  X86Emit_MOVIR((int32)addr, regDest);
 }

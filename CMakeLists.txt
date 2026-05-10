@@ -32,6 +32,20 @@ add_library(miniz_impl STATIC external/miniz.c)
 target_include_directories(miniz_impl PUBLIC external)
 set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    file(GLOB_RECURSE ASMJIT_SRC
+        external/asmjit/asmjit/core/*.cpp
+        external/asmjit/asmjit/x86/*.cpp
+        external/asmjit/asmjit/support/*.cpp
+        external/asmjit/asmjit/ujit/*.cpp
+    )
+    add_library(asmjit_static STATIC ${ASMJIT_SRC})
+    target_include_directories(asmjit_static PUBLIC external/asmjit)
+    target_compile_definitions(asmjit_static PUBLIC ASMJIT_STATIC ASMJIT_NO_AARCH64)
+    set_property(TARGET asmjit_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # MurmurHash3 — currently unused (the codebase uses xxHash instead). Kept on disk
 # in case OverlayManager ever switches back; uncomment to re-enable
 #add_library(murmurhash STATIC external/MurmurHash3.cpp)
@@ -112,6 +126,7 @@ set(NUANCE_SOURCES
     src/Utility.cpp
     src/video.cpp
     $<IF:$<PLATFORM_ID:Windows>,,src/NuanceUI.cpp>
+    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:src/asmjit_emit.cpp>
 )
 
 add_executable(nuance ${NUANCE_SOURCES})
@@ -123,6 +138,7 @@ target_include_directories(${NUANCE_TARGET} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glew-2.2.0/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/asmjit
     ${SDL2_INCLUDE_DIRS}
 )
 
@@ -131,6 +147,7 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     GLEW_NO_GLU
     _CRT_SECURE_NO_WARNINGS
     _LARGEFILE64_SOURCE
+    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:USE_ASMJIT>
 )
 
 target_link_libraries(${NUANCE_TARGET} PRIVATE
@@ -138,6 +155,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     miniaudio_impl
     miniz_impl
     #murmurhash # unused — see add_library above
+    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
     OpenGL::GL
     ${SDL2_LIBRARIES}
     pthread
