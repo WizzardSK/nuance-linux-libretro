@@ -580,6 +580,7 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 **version 0.6.7:**
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
+- 64-bit builds employ asmjit instead.
 - Replace FMOD 3.75 with miniaudio. No more outdated FMOD SDK / `fmod.dll` dependency.
 - Due to this, decouple host audio from Nuon DMA via a ring buffer (which was implicitly done by FMOD under the hood).
 - Audio interrupts are kept intact while muted (matches previous behavior, needs to be verified on real HW).
@@ -589,7 +590,10 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 - All "with carry" opcodes (=addwc/subwc/cmpwc variants) should now behave as written in the ISA spec.
 - BTST is still not same as ISA spec (as apparently a real HW bug).
 - Multiple bugs in the "CompilerConstantPropagation"-enabled path fixed, so enabled by default now, leading to more performance.
+- Fix "_MPEAlloc()" logic to match original BIOS
 - Correct Audio Buffer sizes used for all configurations (via GetBufferSize()).
+- Unfortunately, Tetris now sounds even worse than before.
+- instructiontest.cof has been updated with more tests (verified to match real HW).
 
 **03/21/2025 version 0.6.6:**
 - Implement (bi)linear address mirroring properly and enable it.
