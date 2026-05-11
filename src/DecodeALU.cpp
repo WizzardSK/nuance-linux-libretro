@@ -599,11 +599,11 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVZ;
           if((field_1F & 0x10) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
           }
           else
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
           }
           return;
         case 0x03:
@@ -706,11 +706,11 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVZ;
           if((field_1F & 0x10) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
           }
           else
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
           }
           return;
         case 0x03:
@@ -814,11 +814,11 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVZ;
           if((field_1F & 0x10) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
           }
           else
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
           }
           return;
         case 0x03:
@@ -930,11 +930,11 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVZ;
           if((field_1F & 0x10) == 0)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotr((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], field_1F);
           }
           else
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl(entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] = _lrotl((uint32_t)entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)], 32u - field_1F);
           }
           return;
         case 0x03:
@@ -1220,7 +1220,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVCZ;
           if(field_1F)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] >>= (32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] <<= (32u - field_1F);
           }
           return;
         case 0x04:
@@ -1302,7 +1302,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVCZ;
           if(field_1F)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] >>= (32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] <<= (32u - field_1F);
           }
           return;
         case 0x04:
@@ -1384,7 +1384,7 @@ void MPE::DecodeInstruction_ALU32(const uint8 * const iPtr, InstructionCacheEntr
           entry->miscOutputDependencies[SLOT_ALU] = DEPENDENCY_FLAG_NVCZ;
           if(field_1F)
           {
-            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] >>= (32u - field_1F);
+            entry->nuances[FIXED_FIELD(SLOT_ALU,FIELD_ALU_SRC1)] <<= (32u - field_1F);
           }
           return;
         case 0x04:
