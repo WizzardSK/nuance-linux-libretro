@@ -48,7 +48,7 @@ struct PropagateConstantsStatusStruct
   uint32 info[5];
 };
 
-class SuperBlockConstants
+class SuperBlockConstants final
 {
 public:
   SuperBlockConstants(MPE * const mpe) : pMPE(mpe) {}

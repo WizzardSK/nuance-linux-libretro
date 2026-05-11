@@ -27,7 +27,7 @@ enum class ConfigTokenType
   CONFIG_STRING
 };
 
-class ControllerButtonMapping
+class ControllerButtonMapping final
 {
 public:
   ControllerButtonMapping(InputManager::InputType t = InputManager::JOYBUT, int i = 0, int si = 0) :
@@ -49,7 +49,7 @@ public:
   static bool fromString(char* strIn, ControllerButtonMapping* mapping);
 };
 
-class NuonEnvironment
+class NuonEnvironment final
 {
 public:
   NuonEnvironment() : dvdBase(nullptr), audioDevice(nullptr), audioDeviceRate(0), audioMuted(false), audioVolume(1.0f),

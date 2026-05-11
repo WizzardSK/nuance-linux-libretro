@@ -18,7 +18,7 @@ struct AllocatedMemoryBlock
   uint32 numBytes;
 };
 
-class MemoryManager
+class MemoryManager final
 {
 public:
   MemoryManager() {}

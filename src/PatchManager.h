@@ -25,7 +25,7 @@ struct PatchInfo
   PatchType patchType;
 };
 
-class PatchManager
+class PatchManager final
 {
 public:
   PatchInfo patchData[MAX_PATCH_ENTRIES];

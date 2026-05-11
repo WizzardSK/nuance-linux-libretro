@@ -145,7 +145,7 @@ struct InstructionEntry
   uint32 miscOpDependencies;
 };
 
-class InstructionCacheEntry
+class InstructionCacheEntry final
 {
 public:
   InstructionCacheEntry() { pcexec = 0; }
@@ -176,7 +176,7 @@ public:
   void CopyInstructionData(const uint32 toSlot, const InstructionCacheEntry &src, const uint32 fromSlot);
 };
 
-class InstructionCache
+class InstructionCache final
 {
 public:
   InstructionCache(const uint32 numEntries);

@@ -13,7 +13,7 @@
 #define DEFAULT_CODE_BUFFER_BYTES (8U*1024U*1024U)
 //#define DEFAULT_NUM_TLB_ENTRIES (16384U)
 
-class NativeCodeCache
+class NativeCodeCache final
 {
 public:
   NativeCodeCache();

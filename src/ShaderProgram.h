@@ -4,7 +4,7 @@
 #include "basetypes.h"
 #include <GL/glew.h>
 
-class ShaderProgram
+class ShaderProgram final
 {
 public:
   ShaderProgram();

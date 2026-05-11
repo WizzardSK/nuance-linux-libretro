@@ -30,7 +30,7 @@ enum class eFlashMode
   FlashMode_Error
 };
 
-class FlashEEPROM
+class FlashEEPROM final
 {
 public:
   FlashEEPROM()

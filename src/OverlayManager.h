@@ -7,7 +7,7 @@
 #include "../external/xxhash.h"
 #include <list>
 
-class OverlayManager
+class OverlayManager final
 {
 public:
 

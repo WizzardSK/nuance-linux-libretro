@@ -3,7 +3,7 @@
 
 #include <windows.h>
 
-class CriticalSection
+class CriticalSection final
 {
 public:
   CriticalSection()

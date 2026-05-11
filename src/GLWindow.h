@@ -18,7 +18,7 @@ typedef bool (* GLWINDOW_KEYCALLBACK)(int16 vkey, uint32 keydata);
 #define CDS_FULLSCREEN (4)
 #endif
 
-class GLWindow
+class GLWindow final
 {
 public:
   HINSTANCE hInstance;

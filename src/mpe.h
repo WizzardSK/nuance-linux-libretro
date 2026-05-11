@@ -251,7 +251,7 @@ class
 #ifndef _MSC_VER
 __attribute__((aligned(16)))
 #endif
-MPE
+MPE final
 {
 public:
   union {

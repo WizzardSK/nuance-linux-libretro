@@ -14,7 +14,7 @@ extern NuonEnvironment nuonEnv;
 
 InputManager::~InputManager() {}
 
-class InputManagerImpl : public InputManager
+class InputManagerImpl final : public InputManager
 {
 private:
   HINSTANCE hInstance;

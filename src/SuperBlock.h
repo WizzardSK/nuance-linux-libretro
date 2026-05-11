@@ -9,7 +9,7 @@
 #define MAX_SUPERBLOCK_PACKETS 120
 #define MAX_SUPERBLOCK_INSTRUCTIONS_PER_PACKET 5
 
-class CompilerOptions
+class CompilerOptions final
 {
 public:
   CompilerOptions()
@@ -48,7 +48,7 @@ enum class SuperBlockCompileType
   SUPERBLOCKCOMPILETYPE_NATIVE_CODE_BLOCK
 };
 
-class SuperBlock
+class SuperBlock final
 {
 public:
   SuperBlock(MPE * const mpe);

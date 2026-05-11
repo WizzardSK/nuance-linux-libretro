@@ -4,7 +4,7 @@
 #include "basetypes.h"
 #include "MemoryManager.h"
 
-class NuonMemoryManager
+class NuonMemoryManager final
 {
 public:
   NuonMemoryManager() {}

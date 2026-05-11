@@ -35,7 +35,7 @@ struct ISO9660Entry {
     bool isDir;
 };
 
-class ISO9660Reader {
+class ISO9660Reader final {
     FILE* fp;
     uint32_t rootLBA;
     uint32_t rootSize;

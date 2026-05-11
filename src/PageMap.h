@@ -40,7 +40,7 @@ struct RootPageNode
   Level1PageNode *entries[NUM_ROOT_PAGENODE_ENTRIES];
 };
 
-class PageMap
+class PageMap final
 {
 public:
   PageMap();
