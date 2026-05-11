@@ -25,12 +25,11 @@ add_library(miniaudio_impl STATIC external/miniaudio_impl.cpp)
 target_include_directories(miniaudio_impl PUBLIC external)
 set_property(TARGET miniaudio_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# miniz (single-file ZIP reader)
-# Bring miniz in unconditionally; on Linux we don't currently use it (FUSE tools handle ZIPs)
-# but compiling it is cheap and lets us drop the FUSE deps later-on, if wanted
-add_library(miniz_impl STATIC external/miniz.c)
-target_include_directories(miniz_impl PUBLIC external)
-set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
+# miniz (single-file ZIP reader) — currently unused
+# on Linux we don't currently use it (FUSE tools handle ZIPs)
+#add_library(miniz_impl STATIC external/miniz.c)
+#target_include_directories(miniz_impl PUBLIC external)
+#set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -153,7 +152,7 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
 target_link_libraries(${NUANCE_TARGET} PRIVATE
     glew_static
     miniaudio_impl
-    miniz_impl
+    #miniz_impl
     #murmurhash # unused — see add_library above
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
     OpenGL::GL

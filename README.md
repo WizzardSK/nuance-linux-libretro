@@ -581,6 +581,7 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
 - 64-bit builds employ asmjit instead.
+- Static linking of glew (no more `glew32.dll` needed).
 - Replace FMOD 3.75 with miniaudio. No more outdated FMOD SDK / `fmod.dll` dependency.
 - Due to this, decouple host audio from Nuon DMA via a ring buffer (which was implicitly done by FMOD under the hood).
 - Audio interrupts are kept intact while muted (matches previous behavior, needs to be verified on real HW).
