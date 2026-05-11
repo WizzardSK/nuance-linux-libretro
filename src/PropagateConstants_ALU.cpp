@@ -12,8 +12,8 @@
 
 void PropagateConstants_ABS(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_ALU_PROPAGATION)
   {
@@ -59,12 +59,12 @@ void PropagateConstants_ABS(SuperBlockConstants &constants)
 
 void PropagateConstants_BITSImmediate(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const int32 destValue = src1 & (constants.GetScalarRegisterConstant(destIndex) >> src2);
     uint32 flagValues;
     if(!destValue)
@@ -95,8 +95,8 @@ void PropagateConstants_BITSImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_BITSScalar(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -117,15 +117,15 @@ void PropagateConstants_BITSScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_BTST(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_N, 0);
   constants.SetMiscRegisterConstant(CONSTANT_REG_V, 0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const int32 destValue = src1 & constants.GetScalarRegisterConstant(src2Index);
     uint32 flagValues = 0;
     if(!destValue)
@@ -149,7 +149,7 @@ void PropagateConstants_BTST(SuperBlockConstants &constants)
 
 void PropagateConstants_BUTT(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.ClearMiscRegisterConstant(CONSTANT_REG_N);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_V);
@@ -162,8 +162,8 @@ void PropagateConstants_BUTT(SuperBlockConstants &constants)
 
 void PropagateConstants_COPY(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V, 0);
 
@@ -200,8 +200,8 @@ void PropagateConstants_COPY(SuperBlockConstants &constants)
 
 void PropagateConstants_MSB(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -261,8 +261,8 @@ void PropagateConstants_MSB(SuperBlockConstants &constants)
 
 void PropagateConstants_SAT(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -325,8 +325,8 @@ void PropagateConstants_SAT(SuperBlockConstants &constants)
 
 void PropagateConstants_ASL(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
@@ -369,8 +369,8 @@ void PropagateConstants_ASL(SuperBlockConstants &constants)
 
 void PropagateConstants_ASR(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
@@ -409,14 +409,14 @@ void PropagateConstants_ASR(SuperBlockConstants &constants)
 
 void PropagateConstants_AS(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index) & 0x3FU;
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     if(src1 & 0x20)
     {
       //shift left
@@ -447,8 +447,8 @@ void PropagateConstants_AS(SuperBlockConstants &constants)
 
 void PropagateConstants_LSR(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
@@ -487,14 +487,14 @@ void PropagateConstants_LSR(SuperBlockConstants &constants)
 
 void PropagateConstants_LS(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index) & 0x3FU;
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     if(src1 & 0x20)
     {
       //shift left
@@ -525,14 +525,14 @@ void PropagateConstants_LS(SuperBlockConstants &constants)
 
 void PropagateConstants_ROL(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
-    const uint32 destValue = _lrotl(src2, constants.nuance->fields[FIELD_ALU_SRC1]);
+    const uint32 destValue = _lrotl(src2, (int)constants.nuance->fields[FIELD_ALU_SRC1]);
     uint32 flagValues;
     if(!destValue)
     {
@@ -561,14 +561,14 @@ void PropagateConstants_ROL(SuperBlockConstants &constants)
 
 void PropagateConstants_ROR(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
-    const uint32 destValue = _lrotr(src2, constants.nuance->fields[FIELD_ALU_SRC1]);
+    const uint32 destValue = _lrotr(src2, (int)constants.nuance->fields[FIELD_ALU_SRC1]);
     uint32 flagValues;
     if(!destValue)
     {
@@ -597,14 +597,14 @@ void PropagateConstants_ROR(SuperBlockConstants &constants)
 
 void PropagateConstants_ROT(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index) & 0x3FU;
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     if(src1 & 0x20)
     {
       constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ROL;
@@ -633,7 +633,7 @@ void PropagateConstants_ROT(SuperBlockConstants &constants)
 
 void PropagateConstants_ADD_P(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_ALU_OK;
   constants.ClearPixelRegisterConstant(destIndex);
@@ -641,9 +641,9 @@ void PropagateConstants_ADD_P(SuperBlockConstants &constants)
 
 void PropagateConstants_SUB_P(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1]; 
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2]; 
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if((src1Index == src2Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -660,7 +660,7 @@ void PropagateConstants_SUB_P(SuperBlockConstants &constants)
 
 void PropagateConstants_ADD_SV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_ALU_OK;
   constants.ClearShortVectorRegisterConstant(destIndex);
@@ -668,9 +668,9 @@ void PropagateConstants_ADD_SV(SuperBlockConstants &constants)
 
 void PropagateConstants_SUB_SV(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1]; 
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2]; 
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if((src1Index == src2Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -688,12 +688,12 @@ void PropagateConstants_SUB_SV(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION && !DISABLE_ADD_IMMEDIATE_PROPAGATION_MR_WAR)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _addcarry_u32(0, src1, src2, &destValue) ? CC_ALU_CARRY : 0;
@@ -730,13 +730,13 @@ void PropagateConstants_ADDImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
     constants.ClearScalarInputDependency(src1Index);
@@ -756,12 +756,12 @@ void PropagateConstants_ADDScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
@@ -783,12 +783,12 @@ void PropagateConstants_ADDScalarShiftRightImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_ADDScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!
@@ -810,12 +810,12 @@ void PropagateConstants_ADDScalarShiftLeftImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_SUBImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(0, src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -852,12 +852,12 @@ void PropagateConstants_SUBImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBImmediateReverse(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(0, src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -894,9 +894,9 @@ void PropagateConstants_SUBImmediateReverse(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if((src1Index == src2Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -940,13 +940,13 @@ void PropagateConstants_SUBScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_SUBImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
     constants.nuance->fields[FIELD_ALU_SRC2] = destIndex;
@@ -967,13 +967,13 @@ void PropagateConstants_SUBScalarShiftRightImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_SUBScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_SUBImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!
     constants.nuance->fields[FIELD_ALU_SRC2] = destIndex;
@@ -994,11 +994,11 @@ void PropagateConstants_SUBScalarShiftLeftImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_CMPImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(0, src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -1034,11 +1034,11 @@ void PropagateConstants_CMPImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPImmediateReverse(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(0, src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -1074,8 +1074,8 @@ void PropagateConstants_CMPImmediateReverse(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -1107,13 +1107,13 @@ void PropagateConstants_CMPScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_CONSTANT_HANDLER] = Handler_CMPImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
     constants.nuance->fields[FIELD_ALU_SRC2] = destIndex;
@@ -1133,13 +1133,13 @@ void PropagateConstants_CMPScalarShiftRightImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_CMPScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_CMPImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!
     constants.nuance->fields[FIELD_ALU_SRC2] = destIndex;
@@ -1159,13 +1159,13 @@ void PropagateConstants_CMPScalarShiftLeftImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_ANDImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     const uint32 destValue = src1 & src2;
     uint32 flagValues;
@@ -1196,9 +1196,9 @@ void PropagateConstants_ANDImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_ANDScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1230,14 +1230,14 @@ void PropagateConstants_ANDScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ANDImmediateShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-          uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+          uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = (((int32)(constants.GetScalarRegisterConstant(src2Index) << 26)) >> 26) & 0x3FU;
     if(src2 & 0x20)
     {
@@ -1265,8 +1265,8 @@ void PropagateConstants_ANDImmediateShiftScalar(SuperBlockConstants &constants)
 }
 void PropagateConstants_ANDScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1291,8 +1291,8 @@ void PropagateConstants_ANDScalarShiftRightImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_ANDScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1317,14 +1317,14 @@ void PropagateConstants_ANDScalarShiftLeftImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_ANDScalarShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ANDImmediateShiftScalar;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
@@ -1344,9 +1344,9 @@ void PropagateConstants_ANDScalarShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ANDScalarRotateScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1383,13 +1383,13 @@ void PropagateConstants_ANDScalarRotateScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_FTSTImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     const uint32 destValue = src1 & src2;
     uint32 flagValues;
@@ -1419,8 +1419,8 @@ void PropagateConstants_FTSTImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_FTSTScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1451,14 +1451,14 @@ void PropagateConstants_FTSTScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_FTSTImmediateShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-          uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+          uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = (((int32)(constants.GetScalarRegisterConstant(src2Index) << 26)) >> 26) & 0x3FU;
     if(src2 & 0x20)
     {
@@ -1486,8 +1486,8 @@ void PropagateConstants_FTSTImmediateShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_FTSTScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1511,8 +1511,8 @@ void PropagateConstants_FTSTScalarShiftRightImmediate(SuperBlockConstants &const
 
 void PropagateConstants_FTSTScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1536,14 +1536,14 @@ void PropagateConstants_FTSTScalarShiftLeftImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_FTSTScalarShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-    const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_FTSTImmediateShiftScalar;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
@@ -1566,14 +1566,14 @@ void PropagateConstants_FTSTScalarShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_FTSTScalarRotateScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src1Index) && constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+    const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
           uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     const uint32 src2 = (((int32)(constants.GetScalarRegisterConstant(src2Index) << 26)) >> 26) & 0x3FU;
 
@@ -1604,14 +1604,14 @@ void PropagateConstants_FTSTScalarRotateScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ORImmediate(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     const uint32 destValue = src1 | src2;
     uint32 flagValues;
@@ -1642,9 +1642,9 @@ void PropagateConstants_ORImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_ORScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1676,14 +1676,14 @@ void PropagateConstants_ORScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ORImmediateShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-          uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+          uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = (((int32)(constants.GetScalarRegisterConstant(src2Index) << 26)) >> 26) & 0x3FU;
     if(src2 & 0x20)
     {
@@ -1712,8 +1712,8 @@ void PropagateConstants_ORImmediateShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ORScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1738,8 +1738,8 @@ void PropagateConstants_ORScalarShiftRightImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_ORScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1764,14 +1764,14 @@ void PropagateConstants_ORScalarShiftLeftImmediate(SuperBlockConstants &constant
 
 void PropagateConstants_ORScalarShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ORImmediateShiftScalar;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
@@ -1791,9 +1791,9 @@ void PropagateConstants_ORScalarShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ORScalarRotateScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1830,14 +1830,14 @@ void PropagateConstants_ORScalarRotateScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_EORImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     const uint32 destValue = src1 ^ src2;
     uint32 flagValues;
@@ -1868,9 +1868,9 @@ void PropagateConstants_EORImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_EORScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1913,14 +1913,14 @@ void PropagateConstants_EORScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_EORImmediateShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && ALLOW_ALU_PROPAGATION)
   {
-          uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+          uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = (((int32)(constants.GetScalarRegisterConstant(src2Index) << 26)) >> 26) & 0x3FU;
     if(src2 & 0x20)
     {
@@ -1949,8 +1949,8 @@ void PropagateConstants_EORImmediateShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_EORScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -1975,8 +1975,8 @@ void PropagateConstants_EORScalarShiftRightImmediate(SuperBlockConstants &consta
 
 void PropagateConstants_EORScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -2001,14 +2001,14 @@ void PropagateConstants_EORScalarShiftLeftImmediate(SuperBlockConstants &constan
 
 void PropagateConstants_EORScalarShiftScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_EORImmediateShiftScalar;
     constants.nuance->fields[FIELD_ALU_SRC1] = constants.GetScalarRegisterConstant(src1Index);
     constants.ClearScalarInputDependency(src1Index);
@@ -2027,9 +2027,9 @@ void PropagateConstants_EORScalarShiftScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_EORScalarRotateScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
@@ -2066,14 +2066,14 @@ void PropagateConstants_EORScalarRotateScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDWCImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   constants.SetMiscRegisterConstant(CONSTANT_REG_V,0);
 
   if(constants.IsScalarRegisterConstant(src2Index) && constants.IsMiscRegisterConstant(CONSTANT_REG_C) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _addcarry_u32(constants.GetMiscRegisterConstant(CONSTANT_REG_C), src1, src2, &destValue) ? CC_ALU_CARRY : 0;
@@ -2114,12 +2114,12 @@ void PropagateConstants_ADDWCImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDWCScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
@@ -2140,12 +2140,12 @@ void PropagateConstants_ADDWCScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDWCScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
@@ -2167,12 +2167,12 @@ void PropagateConstants_ADDWCScalarShiftRightImmediate(SuperBlockConstants &cons
 
 void PropagateConstants_ADDWCScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_ADDWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!
@@ -2193,12 +2193,12 @@ void PropagateConstants_ADDWCScalarShiftLeftImmediate(SuperBlockConstants &const
 }
 void PropagateConstants_SUBWCImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src2Index) && constants.IsMiscRegisterConstant(CONSTANT_REG_C) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(constants.GetMiscRegisterConstant(CONSTANT_REG_C), src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -2239,12 +2239,12 @@ void PropagateConstants_SUBWCImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBWCImmediateReverse(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && constants.IsMiscRegisterConstant(CONSTANT_REG_C) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(constants.GetMiscRegisterConstant(CONSTANT_REG_C), src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -2285,9 +2285,9 @@ void PropagateConstants_SUBWCImmediateReverse(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBWCScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -2320,12 +2320,12 @@ void PropagateConstants_SUBWCScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_SUBWCScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_SUBWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
@@ -2347,12 +2347,12 @@ void PropagateConstants_SUBWCScalarShiftRightImmediate(SuperBlockConstants &cons
 
 void PropagateConstants_SUBWCScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_SUBWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!
@@ -2374,11 +2374,11 @@ void PropagateConstants_SUBWCScalarShiftLeftImmediate(SuperBlockConstants &const
 
 void PropagateConstants_CMPWCImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   if(constants.IsScalarRegisterConstant(src2Index) && constants.IsMiscRegisterConstant(CONSTANT_REG_C) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src1 = constants.nuance->fields[FIELD_ALU_SRC1];
+    const uint32 src1 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
     const uint32 src2 = constants.GetScalarRegisterConstant(src2Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(constants.GetMiscRegisterConstant(CONSTANT_REG_C), src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -2418,11 +2418,11 @@ void PropagateConstants_CMPWCImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPWCImmediateReverse(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
 
   if(constants.IsScalarRegisterConstant(src1Index) && constants.IsMiscRegisterConstant(CONSTANT_REG_C) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     uint32 destValue;
     uint32 flagValues = _subborrow_u32(constants.GetMiscRegisterConstant(CONSTANT_REG_C), src2, src1, &destValue) ? CC_ALU_CARRY : 0;
@@ -2462,8 +2462,8 @@ void PropagateConstants_CMPWCImmediateReverse(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPWCScalar(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
-  const uint32 src2Index = constants.nuance->fields[FIELD_ALU_SRC2];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src2Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
@@ -2495,12 +2495,12 @@ void PropagateConstants_CMPWCScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_CMPWCScalarShiftRightImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
-    const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_CONSTANT_HANDLER] = Handler_CMPWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = ((int32)src1) >> src2;
@@ -2521,12 +2521,12 @@ void PropagateConstants_CMPWCScalarShiftRightImmediate(SuperBlockConstants &cons
 
 void PropagateConstants_CMPWCScalarShiftLeftImmediate(SuperBlockConstants &constants)
 {
-  const uint32 src1Index = constants.nuance->fields[FIELD_ALU_SRC1];
+  const uint32 src1Index = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC1];
 
   if(constants.IsScalarRegisterConstant(src1Index) && ALLOW_ALU_PROPAGATION)
   {
-    const uint32 src2 = constants.nuance->fields[FIELD_ALU_SRC2];
-    const uint32 destIndex = constants.nuance->fields[FIELD_ALU_DEST]; 
+    const uint32 src2 = (uint32_t)constants.nuance->fields[FIELD_ALU_SRC2];
+    const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_ALU_DEST];
     const uint32 src1 = constants.GetScalarRegisterConstant(src1Index);
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_CMPWCImmediate;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1 << src2; // do not cast to u64 before shift!

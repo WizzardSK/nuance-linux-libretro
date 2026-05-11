@@ -10,8 +10,8 @@ static const __m128i sub_sv_mask = _mm_set_epi32(0xFFFF0000U, 0xFFFF0000U, 0xFFF
 
 void Emit_ABS(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -97,9 +97,9 @@ void Emit_ABS(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BITSScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -152,9 +152,9 @@ void Emit_BITSScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BITSImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -209,8 +209,8 @@ void Emit_BTST(EmitterVariables * const vars, const Nuance &nuance)
   // a NUON hardware bug. Both this JIT path and the interpreter (Execute_BTST)
   // implement only Z (and clear N/V), matching observed NUON HW behaviour.
 
-  const uint32 mask = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 mask = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
   const x86BaseReg ccRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_CC);
@@ -254,9 +254,9 @@ void Emit_BTST(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BUTT(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -340,8 +340,8 @@ void Emit_BUTT(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_COPY(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -387,8 +387,8 @@ void Emit_COPY(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_MSB(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -487,8 +487,8 @@ void Emit_MSB(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SAT(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
   const int32 mask = (0x01U << nuance.fields[FIELD_ALU_SRC2]) - 1;
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   //const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -543,9 +543,9 @@ void Emit_SAT(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADD_SV(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg_0 = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src1RegReadBaseReg_1 = GetScalarRegReadBaseReg(vars,src1RegIndex+1);
   const x86BaseReg src1RegReadBaseReg_2 = GetScalarRegReadBaseReg(vars,src1RegIndex+2);
@@ -602,9 +602,9 @@ void Emit_ADD_SV(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADD_P(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg_0 = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src1RegReadBaseReg_1 = GetScalarRegReadBaseReg(vars,src1RegIndex+1);
   const x86BaseReg src1RegReadBaseReg_2 = GetScalarRegReadBaseReg(vars,src1RegIndex+2);
@@ -639,9 +639,9 @@ void Emit_ADD_P(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUB_SV(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg_0 = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src1RegReadBaseReg_1 = GetScalarRegReadBaseReg(vars,src1RegIndex+1);
   const x86BaseReg src1RegReadBaseReg_2 = GetScalarRegReadBaseReg(vars,src1RegIndex+2);
@@ -709,9 +709,9 @@ void Emit_SUB_SV(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUB_P(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg_0 = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src1RegReadBaseReg_1 = GetScalarRegReadBaseReg(vars,src1RegIndex+1);
   const x86BaseReg src1RegReadBaseReg_2 = GetScalarRegReadBaseReg(vars,src1RegIndex+2);
@@ -756,9 +756,9 @@ void Emit_SUB_P(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ANDScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -807,9 +807,9 @@ void Emit_ANDScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ANDImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -859,9 +859,9 @@ void Emit_ANDImmediateShiftScalar(EmitterVariables * const vars, const Nuance &n
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -942,9 +942,9 @@ void Emit_ANDScalarShiftScalar(EmitterVariables * const vars, const Nuance &nuan
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -1027,9 +1027,9 @@ void Emit_ANDScalarRotateScalar(EmitterVariables * const vars, const Nuance &nua
   constexpr uint32 l_rol = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -1109,9 +1109,9 @@ void Emit_ANDScalarRotateScalar(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_ANDScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1166,9 +1166,9 @@ void Emit_ANDScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_ANDScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1223,9 +1223,9 @@ void Emit_ANDScalarShiftRightImmediate(EmitterVariables * const vars, const Nuan
 
 void Emit_FTSTImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1269,8 +1269,8 @@ void Emit_FTSTImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_FTSTScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -1316,9 +1316,9 @@ void Emit_FTSTImmediateShiftScalar(EmitterVariables * const vars, const Nuance &
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1394,9 +1394,9 @@ void Emit_FTSTScalarShiftScalar(EmitterVariables * const vars, const Nuance &nua
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -1474,9 +1474,9 @@ void Emit_FTSTScalarRotateScalar(EmitterVariables * const vars, const Nuance &nu
   constexpr uint32 l_rol = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -1551,9 +1551,9 @@ void Emit_FTSTScalarRotateScalar(EmitterVariables * const vars, const Nuance &nu
 
 void Emit_FTSTScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1603,9 +1603,9 @@ void Emit_FTSTScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuan
 
 void Emit_FTSTScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1655,9 +1655,9 @@ void Emit_FTSTScalarShiftRightImmediate(EmitterVariables * const vars, const Nua
 
 void Emit_ORImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -1704,9 +1704,9 @@ void Emit_ORImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ORScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1758,9 +1758,9 @@ void Emit_ORImmediateShiftScalar(EmitterVariables * const vars, const Nuance &nu
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -1841,9 +1841,9 @@ void Emit_ORScalarShiftScalar(EmitterVariables * const vars, const Nuance &nuanc
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -1926,9 +1926,9 @@ void Emit_ORScalarRotateScalar(EmitterVariables * const vars, const Nuance &nuan
   constexpr uint32 l_rol = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -2008,9 +2008,9 @@ void Emit_ORScalarRotateScalar(EmitterVariables * const vars, const Nuance &nuan
 
 void Emit_ORScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2065,9 +2065,9 @@ void Emit_ORScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance
 
 void Emit_ORScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2122,9 +2122,9 @@ void Emit_ORScalarShiftRightImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_EORImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -2171,9 +2171,9 @@ void Emit_EORImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_EORScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2225,9 +2225,9 @@ void Emit_EORImmediateShiftScalar(EmitterVariables * const vars, const Nuance &n
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2308,9 +2308,9 @@ void Emit_EORScalarShiftScalar(EmitterVariables * const vars, const Nuance &nuan
   constexpr uint32 l_shl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -2393,9 +2393,9 @@ void Emit_EORScalarRotateScalar(EmitterVariables * const vars, const Nuance &nua
   constexpr uint32 l_rol = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
@@ -2475,9 +2475,9 @@ void Emit_EORScalarRotateScalar(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_EORScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2532,9 +2532,9 @@ void Emit_EORScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_EORScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2589,9 +2589,9 @@ void Emit_EORScalarShiftRightImmediate(EmitterVariables * const vars, const Nuan
 
 void Emit_ADDImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -2665,9 +2665,9 @@ void Emit_ADDImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADDScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2743,9 +2743,9 @@ void Emit_ADDScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADDScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2822,9 +2822,9 @@ void Emit_ADDScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_ADDScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -2901,9 +2901,9 @@ void Emit_ADDScalarShiftRightImmediate(EmitterVariables * const vars, const Nuan
 
 void Emit_SUBImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -2977,9 +2977,9 @@ void Emit_SUBImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUBScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3055,9 +3055,9 @@ void Emit_SUBScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUBImmediateReverse(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -3131,9 +3131,9 @@ void Emit_SUBImmediateReverse(EmitterVariables * const vars, const Nuance &nuanc
 
 void Emit_SUBScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3210,9 +3210,9 @@ void Emit_SUBScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_SUBScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3289,9 +3289,9 @@ void Emit_SUBScalarShiftRightImmediate(EmitterVariables * const vars, const Nuan
 
 void Emit_CMPImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -3360,9 +3360,9 @@ void Emit_CMPImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_CMPScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3433,9 +3433,9 @@ void Emit_CMPScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_CMPImmediateReverse(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -3504,9 +3504,9 @@ void Emit_CMPImmediateReverse(EmitterVariables * const vars, const Nuance &nuanc
 
 void Emit_CMPScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3578,9 +3578,9 @@ void Emit_CMPScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuanc
 
 void Emit_CMPScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3655,9 +3655,9 @@ void Emit_ROT(EmitterVariables * const vars, const Nuance &nuance)
   constexpr uint32 l_rol = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3734,9 +3734,9 @@ void Emit_ROT(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ROL(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -3790,9 +3790,9 @@ void Emit_ROL(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ROR(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -3849,9 +3849,9 @@ void Emit_AS(EmitterVariables * const vars, const Nuance &nuance)
   constexpr uint32 l_asl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -3949,9 +3949,9 @@ void Emit_AS(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ASL(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4017,9 +4017,9 @@ void Emit_ASL(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ASR(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4088,9 +4088,9 @@ void Emit_LS(EmitterVariables * const vars, const Nuance &nuance)
   constexpr uint32 l_asl = 0;
   constexpr uint32 l_calc_flags = 1;
 
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4188,9 +4188,9 @@ void Emit_LS(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_LSR(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   //const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4256,9 +4256,9 @@ void Emit_LSR(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADDWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4341,9 +4341,9 @@ void Emit_ADDWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADDWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4428,9 +4428,9 @@ void Emit_ADDWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_ADDWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4516,9 +4516,9 @@ void Emit_ADDWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
 
 void Emit_ADDWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4604,9 +4604,9 @@ void Emit_ADDWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
 
 void Emit_SUBWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4689,9 +4689,9 @@ void Emit_SUBWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUBWCImmediateReverse(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -4774,9 +4774,9 @@ void Emit_SUBWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_SUBWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4861,9 +4861,9 @@ void Emit_SUBWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_SUBWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -4949,9 +4949,9 @@ void Emit_SUBWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
 
 void Emit_SUBWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -5037,9 +5037,9 @@ void Emit_SUBWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nu
 
 void Emit_CMPWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1Imm = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -5117,9 +5117,9 @@ void Emit_CMPWCImmediate(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_CMPWCImmediateReverse(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccRegReadBaseReg = GetMiscRegReadBaseReg(vars,REGINDEX_CC);
@@ -5197,9 +5197,9 @@ void Emit_CMPWCImmediateReverse(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_CMPWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 {
-  //const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2RegIndex = nuance.fields[FIELD_ALU_SRC2];
+  //const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg src2RegReadBaseReg = GetScalarRegReadBaseReg(vars,src2RegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -5279,9 +5279,9 @@ void Emit_CMPWCScalar(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_CMPWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
@@ -5362,9 +5362,9 @@ void Emit_CMPWCScalarShiftLeftImmediate(EmitterVariables * const vars, const Nua
 
 void Emit_CMPWCScalarShiftRightImmediate(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_ALU_DEST];
-  const uint32 src1RegIndex = nuance.fields[FIELD_ALU_SRC1];
-  const uint32 src2Imm = nuance.fields[FIELD_ALU_SRC2];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_ALU_DEST];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ALU_SRC1];
+  const uint32 src2Imm = (uint32_t)nuance.fields[FIELD_ALU_SRC2];
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
   const x86BaseReg destRegReadBaseReg = GetScalarRegReadBaseReg(vars,destRegIndex);
   //const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);

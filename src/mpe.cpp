@@ -904,7 +904,7 @@ void MPE::Reset()
   cc = (CC_COUNTER0_ZERO | CC_COUNTER1_ZERO);
   cycleCounter = 0;
   //Nuon = aries 2, MPE release = aries 2, mpe identifier, halted on reset
-  configa = (3U << 24) | (3U << 16) | (mpeIndex << 8) | 0;
+  configa = (3U << 24) | (3U << 16) | (mpeIndex << 8) | 0; // 1 = Aries 1, 3 = Aries 2, 4 = Aries 3
   configb = 0;
 }
 
@@ -1643,7 +1643,7 @@ void MPE::DecompressPacket(const uint8 *iBuffer, InstructionCacheEntry &pICacheE
     pICacheEntry.pRegs = reg_union;
 
   for(uint32 i = 0; i < pICacheEntry.nuanceCount; ++i)
-    pICacheEntry.handlers[i] = pICacheEntry.nuances[i*5];
+    pICacheEntry.handlers[i] = (uint32_t)pICacheEntry.nuances[i*5];
 }
 
 inline bool MPE::ChooseInstructionPairOrdering(const InstructionCacheEntry &entry, const uint32 slot1, const uint32 slot2)

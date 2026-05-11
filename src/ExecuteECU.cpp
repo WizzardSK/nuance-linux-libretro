@@ -50,7 +50,7 @@ void Execute_BRAConditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = nuance.fields[FIELD_ECU_ADDRESS];
       mpe.ecuSkipCounter = 3;
@@ -62,7 +62,7 @@ void Execute_BRAConditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance &
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = nuance.fields[FIELD_ECU_ADDRESS];
       mpe.ecuSkipCounter = 1;
@@ -92,7 +92,7 @@ void Execute_JMPConditionalIndirect(MPE &mpe, const uint32 pRegs[48], const Nuan
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = pRegs[nuance.fields[FIELD_ECU_ADDRESS]];
       mpe.ecuSkipCounter = 3;
@@ -104,7 +104,7 @@ void Execute_JMPConditionalIndirect_NOP(MPE &mpe, const uint32 pRegs[48], const 
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = pRegs[nuance.fields[FIELD_ECU_ADDRESS]];
       mpe.ecuSkipCounter = 1;
@@ -136,7 +136,7 @@ void Execute_JSRConditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.rz = nuance.fields[FIELD_ECU_PCFETCHNEXT];
       mpe.pcfetchnext = nuance.fields[FIELD_ECU_ADDRESS];
@@ -149,7 +149,7 @@ void Execute_JSRConditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance &
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.rz = nuance.fields[FIELD_ECU_PCROUTE];
       mpe.pcfetchnext = nuance.fields[FIELD_ECU_ADDRESS];
@@ -182,7 +182,7 @@ void Execute_JSRConditionalIndirect(MPE &mpe, const uint32 pRegs[48], const Nuan
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.rz = nuance.fields[FIELD_ECU_PCFETCHNEXT];
       mpe.pcfetchnext = pRegs[nuance.fields[FIELD_ECU_ADDRESS]];
@@ -195,7 +195,7 @@ void Execute_JSRConditionalIndirect_NOP(MPE &mpe, const uint32 pRegs[48], const 
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.rz = nuance.fields[FIELD_ECU_PCROUTE];
       mpe.pcfetchnext = pRegs[nuance.fields[FIELD_ECU_ADDRESS]];
@@ -226,7 +226,7 @@ void Execute_RTSConditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = pRegs[RZ_REG+0];
       mpe.ecuSkipCounter = 3;
@@ -238,7 +238,7 @@ void Execute_RTSConditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance &
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.pcfetchnext = pRegs[RZ_REG+0];
       mpe.ecuSkipCounter = 1;
@@ -250,7 +250,7 @@ void Execute_RTI1Conditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nua
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.intctl &= ~(1U << 1);
       mpe.pcfetchnext = pRegs[RZ_REG+1];
@@ -263,7 +263,7 @@ void Execute_RTI1Conditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance 
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.intctl &= ~(1U << 1);
       mpe.pcfetchnext = pRegs[RZ_REG+1];
@@ -276,7 +276,7 @@ void Execute_RTI2Conditional(MPE &mpe, const uint32 pRegs[48], const Nuance &nua
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.intctl &= ~(1U << 5);
       mpe.pcfetchnext = pRegs[RZ_REG+2];
@@ -289,7 +289,7 @@ void Execute_RTI2Conditional_NOP(MPE &mpe, const uint32 pRegs[48], const Nuance 
 {
   if(!mpe.ecuSkipCounter)
   {
-    if(mpe.TestConditionCode(nuance.fields[FIELD_ECU_CONDITION]))
+    if(mpe.TestConditionCode((uint32_t)nuance.fields[FIELD_ECU_CONDITION]))
     {
       mpe.intctl &= ~(1U << 5);
       mpe.pcfetchnext = pRegs[RZ_REG+2];

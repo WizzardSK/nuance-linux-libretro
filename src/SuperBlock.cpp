@@ -546,7 +546,7 @@ void SuperBlock::PrintBlockToFile(SuperBlockCompileType compileType, uint32 size
   {
     for(uint32 j = numInstructions; j > 0; j--)
     {
-      uint32 handler = pCurrentInstruction->instruction.fields[0];
+      uint32 handler = (uint32_t)pCurrentInstruction->instruction.fields[0];
       if((handler == Handler_PacketEnd) && (pCurrentInstruction->packet->flags & SUPERBLOCKINFO_CHECK_ECUSKIPCOUNTER))
       {
         handler = Handler_CheckECUSkipCounter;

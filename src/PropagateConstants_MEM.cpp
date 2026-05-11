@@ -13,11 +13,11 @@ extern NuonEnvironment nuonEnv;
 
 void PropagateConstants_UpdateFlagConstants(SuperBlockConstants &constants)
 {
-  const uint32 flagMask = constants.nuance->fields[FIELD_CONSTANT_FLAGMASK];
+  const uint32 flagMask = (uint32_t)constants.nuance->fields[FIELD_CONSTANT_FLAGMASK];
 
   if(flagMask)
   {
-    const uint32 flagValues = constants.nuance->fields[FIELD_CONSTANT_FLAGVALUES];
+    const uint32 flagValues = (uint32_t)constants.nuance->fields[FIELD_CONSTANT_FLAGVALUES];
     //Lock instruction in place if it sets flag constants
     constants.SetInstructionFlags(SUPERBLOCKINFO_LOCKED);
     if(flagMask & CC_COPROCESSOR0)
@@ -71,7 +71,7 @@ void PropagateConstants_StoreScalarRegisterConstant(SuperBlockConstants &constan
 {
   constants.status.status = PROPAGATE_CONSTANTS_STORE_SCALAR_REGISTER_CONSTANT;
   constants.status.info[0] = constants.nuance->fields[FIELD_CONSTANT_ADDRESS];
-  constants.SetScalarRegisterConstant(constants.nuance->fields[FIELD_CONSTANT_ADDRESS],constants.nuance->fields[FIELD_CONSTANT_VALUE]);
+  constants.SetScalarRegisterConstant((uint32_t)constants.nuance->fields[FIELD_CONSTANT_ADDRESS], (uint32_t)constants.nuance->fields[FIELD_CONSTANT_VALUE]);
   constants.bConstantPropagated = true;
   PropagateConstants_UpdateFlagConstants(constants);
 }
@@ -83,8 +83,8 @@ void PropagateConstants_StoreMiscRegisterConstant(SuperBlockConstants &constants
 
   if(constants.nuance->fields[FIELD_CONSTANT_ADDRESS] != CONSTANT_REG_DISCARD)
   {
-    constants.SetMiscRegisterConstant(constants.nuance->fields[FIELD_CONSTANT_ADDRESS],constants.nuance->fields[FIELD_CONSTANT_VALUE]);
-    //This lock should be updated with a mask that only locks if a side-effect will occur
+    constants.SetMiscRegisterConstant((uint32_t)constants.nuance->fields[FIELD_CONSTANT_ADDRESS], (uint32_t)constants.nuance->fields[FIELD_CONSTANT_VALUE]);
+    //This lock should be updated with a mask that only locks if a side effect will occur
     constants.SetInstructionFlags(SUPERBLOCKINFO_LOCKED);
   }
   constants.bConstantPropagated = true;
@@ -93,8 +93,8 @@ void PropagateConstants_StoreMiscRegisterConstant(SuperBlockConstants &constants
 
 void PropagateConstants_Mirror(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -123,16 +123,16 @@ void PropagateConstants_Mirror(SuperBlockConstants &constants)
 
 void PropagateConstants_MV_SImmediate(SuperBlockConstants &constants)
 {
-  const uint32 srcValue = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcValue = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.SetScalarRegisterConstant(destIndex,srcValue);
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
 }
 
 void PropagateConstants_MV_SScalar(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -152,14 +152,14 @@ void PropagateConstants_MV_SScalar(SuperBlockConstants &constants)
 
 void PropagateConstants_MV_V(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;  
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_PopVector(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;  
   constants.ClearVectorRegisterConstant(destIndex);
   constants.SetInstructionFlags(SUPERBLOCKINFO_LOCKED);
@@ -167,7 +167,7 @@ void PropagateConstants_PopVector(SuperBlockConstants &constants)
 
 void PropagateConstants_PopVectorRz(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;  
   constants.ClearPixelRegisterConstant(destIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_RZ);
@@ -176,7 +176,7 @@ void PropagateConstants_PopVectorRz(SuperBlockConstants &constants)
 
 void PropagateConstants_PopScalarRzi1(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_RZ);
@@ -187,7 +187,7 @@ void PropagateConstants_PopScalarRzi1(SuperBlockConstants &constants)
 
 void PropagateConstants_PopScalarRzi2(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_RZ);
@@ -222,11 +222,11 @@ void PropagateConstants_PushScalarRzi2(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadScalarControlRegisterAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   uint32 regValue;
   bool bIsConstant;
 
-  const uint32 regIndex = (constants.nuance->fields[FIELD_MEM_FROM] - MPE_CTRL_BASE) >> 4;
+  const uint32 regIndex = ((uint32_t)constants.nuance->fields[FIELD_MEM_FROM] - MPE_CTRL_BASE) >> 4;
   switch(regIndex)
   {
     case 0x7:
@@ -351,29 +351,29 @@ void PropagateConstants_LoadScalarControlRegisterAbsolute(SuperBlockConstants &c
 
 void PropagateConstants_LoadByteAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadWordAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadScalarAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadScalarLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -405,14 +405,14 @@ void PropagateConstants_LoadScalarLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadVectorAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadVectorControlRegisterAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
   constants.SetInstructionFlags(SUPERBLOCKINFO_LOCKED);
@@ -420,22 +420,22 @@ void PropagateConstants_LoadVectorControlRegisterAbsolute(SuperBlockConstants &c
 
 void PropagateConstants_LoadPixelAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearPixelRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadPixelZAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadByteLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -457,22 +457,22 @@ void PropagateConstants_LoadByteLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadByteBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadByteBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadWordLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -494,43 +494,43 @@ void PropagateConstants_LoadWordLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadWordBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadWordBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadScalarBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadScalarBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearScalarRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadShortVectorAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadShortVectorLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -552,22 +552,22 @@ void PropagateConstants_LoadShortVectorLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadShortVectorBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadShortVectorBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadVectorLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -599,22 +599,22 @@ void PropagateConstants_LoadVectorLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadVectorBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadVectorBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadPixelLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -636,22 +636,22 @@ void PropagateConstants_LoadPixelLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadPixelBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadPixelBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadPixelZLinear(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -672,14 +672,14 @@ void PropagateConstants_LoadPixelZLinear(SuperBlockConstants &constants)
 
 void PropagateConstants_LoadPixelZBilinearUV(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
 
 void PropagateConstants_LoadPixelZBilinearXY(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO]; 
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_MEM_OK;
   constants.ClearVectorRegisterConstant(destIndex);
 }
@@ -692,8 +692,8 @@ void PropagateConstants_StoreScalarImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_StoreScalarControlRegisterImmediate(SuperBlockConstants &constants)
 {
-  uint32 destValue = constants.nuance->fields[FIELD_MEM_FROM]; 
-  uint32 destIndex = (constants.nuance->fields[FIELD_MEM_TO] - MPE_CTRL_BASE) >> 4; 
+  uint32 destValue = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
+  uint32 destIndex = ((uint32_t)constants.nuance->fields[FIELD_MEM_TO] - MPE_CTRL_BASE) >> 4;
   bool bIsConstant = true;
   bool bLockInstruction = false;
   bool bScalarReg = false;
@@ -845,7 +845,7 @@ void PropagateConstants_StoreScalarControlRegisterImmediate(SuperBlockConstants 
 
 void PropagateConstants_StoreScalarControlRegisterAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -856,7 +856,7 @@ void PropagateConstants_StoreScalarControlRegisterAbsolute(SuperBlockConstants &
   }
   else
   {
-    const uint32 destIndex = (constants.nuance->fields[FIELD_MEM_TO] - MPE_CTRL_BASE) >> 4;
+    const uint32 destIndex = ((uint32_t)constants.nuance->fields[FIELD_MEM_TO] - MPE_CTRL_BASE) >> 4;
     switch(destIndex)
     {
       case 0x4:
@@ -949,7 +949,7 @@ void PropagateConstants_StoreScalarControlRegisterAbsolute(SuperBlockConstants &
 
 void PropagateConstants_StoreScalarAbsolute(SuperBlockConstants &constants)
 {
-  const uint32 srcIndex = constants.nuance->fields[FIELD_MEM_FROM];
+  const uint32 srcIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_FROM];
 
   if(constants.IsScalarRegisterConstant(srcIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -967,14 +967,14 @@ void PropagateConstants_StoreScalarAbsolute(SuperBlockConstants &constants)
 
 void PropagateConstants_StoreScalarLinear(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_MEM_PROPAGATION)
   {
     constants.nuance->fields[FIELD_MEM_TO] = constants.GetScalarRegisterConstant(destIndex);
     constants.nuance->fields[FIELD_MEM_POINTER] = (size_t)nuonEnv.GetPointerToMemory(constants.pMPE->mpeIndex, constants.GetScalarRegisterConstant(destIndex));
     constants.ClearScalarInputDependency(destIndex);
-    constants.SetScalarInputDependency(constants.nuance->fields[FIELD_MEM_FROM]);
+    constants.SetScalarInputDependency((uint32_t)constants.nuance->fields[FIELD_MEM_FROM]);
     constants.bConstantPropagated = true;
     if((constants.GetScalarRegisterConstant(destIndex) & MPE_CTRL_BASE) == MPE_CTRL_BASE)
     {
@@ -1026,7 +1026,7 @@ void PropagateConstants_StoreShortVectorAbsolute(SuperBlockConstants &constants)
 }
 void PropagateConstants_StoreShortVectorLinear(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -1059,7 +1059,7 @@ void PropagateConstants_StoreVectorAbsolute(SuperBlockConstants &constants)
 }
 void PropagateConstants_StoreVectorLinear(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -1088,7 +1088,7 @@ void PropagateConstants_StoreVectorBilinearXY(SuperBlockConstants &constants)
 
 void PropagateConstants_StorePixelLinear(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_MEM_PROPAGATION)
   {
@@ -1117,7 +1117,7 @@ void PropagateConstants_StorePixelBilinearXY(SuperBlockConstants &constants)
 }
 void PropagateConstants_StorePixelZLinear(SuperBlockConstants &constants)
 {
-  const uint32 destIndex = constants.nuance->fields[FIELD_MEM_TO];
+  const uint32 destIndex = (uint32_t)constants.nuance->fields[FIELD_MEM_TO];
 
   if(constants.IsScalarRegisterConstant(destIndex) && ALLOW_MEM_PROPAGATION)
   {

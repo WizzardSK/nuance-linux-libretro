@@ -60,15 +60,15 @@ void Emit_SaveRegs(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_StoreScalarRegisterConstant(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_CONSTANT_ADDRESS];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_CONSTANT_ADDRESS];
   const x86BaseReg destRegWriteBaseReg = GetScalarRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_CC);
   const int32 destRegDisp = GetScalarRegEmitDisp(vars,destRegIndex);
   const int32 ccDisp = GetMiscRegEmitDisp(vars,REGINDEX_CC);
-  const uint32 flagMask = nuance.fields[FIELD_CONSTANT_FLAGMASK];
-  const uint32 flagValues = (nuance.fields[FIELD_CONSTANT_FLAGVALUES] /*& flagMask*/); //see below
+  const uint32 flagMask = (uint32_t)nuance.fields[FIELD_CONSTANT_FLAGMASK];
+  const uint32 flagValues = ((uint32_t)nuance.fields[FIELD_CONSTANT_FLAGVALUES] /*& flagMask*/); //see below
 
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_CONSTANT_VALUE], x86MemPtr::x86MemPtr_dword, destRegWriteBaseReg,x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, destRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_CONSTANT_VALUE], x86MemPtr::x86MemPtr_dword, destRegWriteBaseReg,x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, destRegDisp);
   if(flagMask)
   {
     //If any of the flags represented by the mask are to be set to 0, clear all of the flags first
@@ -87,13 +87,13 @@ void Emit_StoreScalarRegisterConstant(EmitterVariables * const vars, const Nuanc
 
 void Emit_StoreMiscRegisterConstant(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 destRegIndex = nuance.fields[FIELD_CONSTANT_ADDRESS];
+  const uint32 destRegIndex = (uint32_t)nuance.fields[FIELD_CONSTANT_ADDRESS];
   const x86BaseReg destRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,destRegIndex);
   const x86BaseReg ccWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_CC);
   const int32 destRegDisp = GetMiscRegEmitDisp(vars,destRegIndex+1);
   const int32 ccDisp = GetMiscRegEmitDisp(vars,REGINDEX_CC);
-  const uint32 flagMask = nuance.fields[FIELD_CONSTANT_FLAGMASK];
-  const uint32 flagValues = (nuance.fields[FIELD_CONSTANT_FLAGVALUES] /*& flagMask*/); //see below
+  const uint32 flagMask = (uint32_t)nuance.fields[FIELD_CONSTANT_FLAGMASK];
+  const uint32 flagValues = ((uint32_t)nuance.fields[FIELD_CONSTANT_FLAGVALUES] /*& flagMask*/); //see below
 
   if(destRegIndex != CONSTANT_REG_DISCARD)
   {
@@ -115,14 +115,14 @@ void Emit_StoreMiscRegisterConstant(EmitterVariables * const vars, const Nuance 
       case CONSTANT_REG_UVRANGE:
       case CONSTANT_REG_ACSHIFT:
       case CONSTANT_REG_SVSHIFT:
-        vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_CONSTANT_VALUE], x86MemPtr::x86MemPtr_dword, destRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, destRegDisp);
+        vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_CONSTANT_VALUE], x86MemPtr::x86MemPtr_dword, destRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, destRegDisp);
         break;
       default:
         assert(false);
         break;
     }
   }
-  
+
   if(flagMask)
   {
     //If any of the flags represented by the mask are to be set to 0, clear all of the flags first

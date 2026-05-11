@@ -271,7 +271,7 @@ void Execute_Mirror(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_MV_SImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.regs[nuance.fields[FIELD_MEM_TO]] = nuance.fields[FIELD_MEM_FROM];
+  mpe.regs[nuance.fields[FIELD_MEM_TO]] = (uint32_t)nuance.fields[FIELD_MEM_FROM];
 }
 
 void Execute_MV_SScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -281,8 +281,8 @@ void Execute_MV_SScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_MV_V(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 src = nuance.fields[FIELD_MEM_FROM];
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 src  = (uint32_t)nuance.fields[FIELD_MEM_FROM];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
 
   mpe.regs[dest    ] = pRegs[src];
   mpe.regs[dest + 1] = pRegs[src + 1];
@@ -422,7 +422,7 @@ void Execute_PushScalarRzi2(MPE &mpe, const uint32 pRegs[48], const Nuance &nuan
 
 void Execute_LoadScalarControlRegisterAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.regs[nuance.fields[FIELD_MEM_TO]] = mpe.ReadControlRegister(nuance.fields[FIELD_MEM_FROM] - MPE_CTRL_BASE, pRegs);
+  mpe.regs[nuance.fields[FIELD_MEM_TO]] = mpe.ReadControlRegister((uint32_t)nuance.fields[FIELD_MEM_FROM] - MPE_CTRL_BASE, pRegs);
 }
 
 void Execute_LoadByteAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -448,7 +448,7 @@ void Execute_LoadScalarAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
 
 void Execute_LoadScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
   const uint32 address = pRegs[nuance.fields[FIELD_MEM_FROM]];
 
   if((address < MPE_CTRL_BASE) || (address >= MPE_RESV_BASE))
@@ -477,8 +477,8 @@ void Execute_LoadVectorAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &
 
 void Execute_LoadVectorControlRegisterAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
-  const uint32 address = nuance.fields[FIELD_MEM_FROM];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_MEM_FROM];
 
   mpe.regs[dest    ] = mpe.ReadControlRegister(address      - MPE_CTRL_BASE, pRegs);
   mpe.regs[dest + 1] = mpe.ReadControlRegister(address + 4  - MPE_CTRL_BASE, pRegs);
@@ -580,7 +580,7 @@ void __fastcall _LoadPixelAbsolute(MPE* const __restrict mpe, const void* const 
 void Execute_LoadPixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   void * const memPtr = (void *)((uint32 *)nuance.fields[FIELD_MEM_POINTER]);
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
 
   uint32 pixType;
   bool bChnorm;
@@ -771,7 +771,7 @@ void __fastcall _LoadPixelZAbsolute(MPE* const __restrict mpe, const void* const
 void Execute_LoadPixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   void * const memPtr = (void *)((uint32 *)nuance.fields[FIELD_MEM_POINTER]);
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
   
   uint32 pixType;
   bool bChnorm;
@@ -903,7 +903,7 @@ void Execute_LoadByteBilinearXY(MPE &mpe, const uint32 pRegs[48], const Nuance &
 
 void Execute_LoadWordLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
   const uint32 address = pRegs[nuance.fields[FIELD_MEM_FROM]];
 
   const uint8* const memPtr = (uint8 *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,address & 0xFFFFFFFE));
@@ -963,7 +963,7 @@ void Execute_LoadScalarBilinearXY(MPE &mpe, const uint32 pRegs[48], const Nuance
 
 void Execute_LoadShortVectorAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
   const uint8 * const ptr = (uint8 *)nuance.fields[FIELD_MEM_POINTER];
   uint32 data[4] = {*((uint32 *)(ptr + 0)),*((uint32 *)(ptr + 2)),*((uint32 *)(ptr + 4)),*((uint32 *)(ptr + 6))};
   SwapVectorBytes(data);
@@ -980,7 +980,7 @@ void Execute_LoadShortVectorAbsolute(MPE &mpe, const uint32 pRegs[48], const Nua
 
 void Execute_LoadShortVectorLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 dest = nuance.fields[FIELD_MEM_TO];
+  const uint32 dest = (uint32_t)nuance.fields[FIELD_MEM_TO];
   const uint8 * const ptr = (uint8 *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,pRegs[nuance.fields[FIELD_MEM_FROM]] & 0xFFFFFFF8));
   uint32 data[4] = {*((uint32 *)(ptr + 0)),*((uint32 *)(ptr + 2)),*((uint32 *)(ptr + 4)),*((uint32 *)(ptr + 6))};
   SwapVectorBytes(data);
@@ -1168,9 +1168,9 @@ void Execute_StoreScalarAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance 
 
 void Execute_StoreScalarControlRegisterImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 reg = nuance.fields[FIELD_MEM_TO];
+  const uint32 reg = (uint32_t)nuance.fields[FIELD_MEM_TO];
   //normal control register write
-  mpe.WriteControlRegister(reg - MPE_CTRL_BASE, nuance.fields[FIELD_MEM_FROM]);
+  mpe.WriteControlRegister(reg - MPE_CTRL_BASE, (uint32_t)nuance.fields[FIELD_MEM_FROM]);
 }
 
 void Execute_StoreScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -1220,7 +1220,7 @@ void Execute_StoreScalarBilinearXY(MPE &mpe, const uint32 pRegs[48], const Nuanc
 
 void Execute_StoreScalarControlRegisterAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 reg = nuance.fields[FIELD_MEM_TO];
+  const uint32 reg = (uint32_t)nuance.fields[FIELD_MEM_TO];
   if(reg != 0x20500FF0)
   {
     mpe.WriteControlRegister(reg - MPE_CTRL_BASE, pRegs[nuance.fields[FIELD_MEM_FROM]]);
@@ -1233,7 +1233,7 @@ void Execute_StoreScalarControlRegisterAbsolute(MPE &mpe, const uint32 pRegs[48]
 
 void Execute_StoreVectorControlRegisterAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 address = nuance.fields[FIELD_MEM_TO];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_MEM_TO];
   const uint32 * const srcPtr = &(pRegs[nuance.fields[FIELD_MEM_FROM]]);
 
   mpe.WriteControlRegister(address      - MPE_CTRL_BASE, srcPtr[0]);
@@ -1283,8 +1283,8 @@ void __fastcall _StorePixelAbsolute(const MPE* const __restrict mpe, void* const
 
 void Execute_StorePixelAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 src = nuance.fields[FIELD_MEM_FROM];
-  const uint32 address = nuance.fields[FIELD_MEM_TO];
+  const uint32 src = (uint32_t)nuance.fields[FIELD_MEM_FROM];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_MEM_TO];
   void * const memPtr = (void *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,address));
 
   uint32 pixType;
@@ -1387,8 +1387,8 @@ void __fastcall _StorePixelZAbsolute(const MPE* const __restrict mpe, void* cons
 
 void Execute_StorePixelZAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 src = nuance.fields[FIELD_MEM_FROM];
-  const uint32 address = nuance.fields[FIELD_MEM_TO];
+  const uint32 src = (uint32_t)nuance.fields[FIELD_MEM_FROM];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_MEM_TO];
   //const uint32* const srcPtr = &(pRegs[src]);
   //uint16* const destPtr = (uint16 *)nuance.fields[FIELD_MEM_POINTER];
 
@@ -1504,7 +1504,7 @@ void Execute_StoreShortVectorBilinearXY(MPE &mpe, const uint32 pRegs[48], const 
 void Execute_StoreVectorAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 *const destPtr = (uint32 *)nuance.fields[FIELD_MEM_POINTER];
-  const uint32 src = nuance.fields[FIELD_MEM_FROM];
+  const uint32 src = (uint32_t)nuance.fields[FIELD_MEM_FROM];
   destPtr[0] = pRegs[src];
   destPtr[1] = pRegs[src+1];
   destPtr[2] = pRegs[src+2];

@@ -209,7 +209,7 @@ void EmitConditionCheck(const EmitterVariables * const vars, const uint32 condit
 
 void Emit_BRAAlways(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -231,7 +231,7 @@ void Emit_BRAAlways(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BRAAlways_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -254,7 +254,7 @@ void Emit_BRAAlways_NOP(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BRAConditional(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -266,7 +266,7 @@ void Emit_BRAConditional(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
@@ -277,7 +277,7 @@ void Emit_BRAConditional(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_BRAConditional_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -289,7 +289,7 @@ void Emit_BRAConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
@@ -301,7 +301,7 @@ void Emit_BRAConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
 
 void Emit_JMPAlwaysIndirect(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
 
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
@@ -326,7 +326,7 @@ void Emit_JMPAlwaysIndirect(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_JMPAlwaysIndirect_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
 
   const x86BaseReg src1RegReadBaseReg = GetScalarRegReadBaseReg(vars,src1RegIndex);
@@ -352,7 +352,7 @@ void Emit_JMPAlwaysIndirect_NOP(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_JMPConditionalIndirect(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -368,7 +368,7 @@ void Emit_JMPConditionalIndirect(EmitterVariables * const vars, const Nuance &nu
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
 
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
@@ -380,7 +380,7 @@ void Emit_JMPConditionalIndirect(EmitterVariables * const vars, const Nuance &nu
 
 void Emit_JMPConditionalIndirect_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -396,7 +396,7 @@ void Emit_JMPConditionalIndirect_NOP(EmitterVariables * const vars, const Nuance
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
 
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
@@ -412,7 +412,7 @@ void Emit_JSRAlways(EmitterVariables * const vars, const Nuance &nuance)
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
 
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
 
   vars->mpe->nativeCodeCache.patchMgr.Reset();
@@ -424,7 +424,7 @@ void Emit_JSRAlways(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
@@ -436,7 +436,7 @@ void Emit_JSRAlways_NOP(EmitterVariables * const vars, const Nuance &nuance)
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
 
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
 
   vars->mpe->nativeCodeCache.patchMgr.Reset();
@@ -448,7 +448,7 @@ void Emit_JSRAlways_NOP(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
   Emit_ExitBlock(vars);
 
@@ -461,7 +461,7 @@ void Emit_JSRConditional(EmitterVariables * const vars, const Nuance &nuance)
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
 
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -473,10 +473,10 @@ void Emit_JSRConditional(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
@@ -488,7 +488,7 @@ void Emit_JSRConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
 
-  const uint32 address = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 address = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   constexpr uint32 l_skip_ecu = 0;
   constexpr uint32 l_condition_true = 1;
 
@@ -500,10 +500,10 @@ void Emit_JSRConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(address, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
   Emit_ExitBlock(vars);
 
@@ -513,7 +513,7 @@ void Emit_JSRConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
 
 void Emit_JSRAlwaysIndirect(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
   constexpr uint32 l_skip_ecu = 0;
@@ -532,7 +532,7 @@ void Emit_JSRAlwaysIndirect(EmitterVariables * const vars, const Nuance &nuance)
 
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
@@ -541,7 +541,7 @@ void Emit_JSRAlwaysIndirect(EmitterVariables * const vars, const Nuance &nuance)
 
 void Emit_JSRAlwaysIndirect_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
   constexpr uint32 l_skip_ecu = 0;
@@ -560,7 +560,7 @@ void Emit_JSRAlwaysIndirect_NOP(EmitterVariables * const vars, const Nuance &nua
 
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
   Emit_ExitBlock(vars);
 
@@ -570,7 +570,7 @@ void Emit_JSRAlwaysIndirect_NOP(EmitterVariables * const vars, const Nuance &nua
 
 void Emit_JSRConditionalIndirect(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
   constexpr uint32 l_skip_ecu = 0;
@@ -588,11 +588,11 @@ void Emit_JSRConditionalIndirect(EmitterVariables * const vars, const Nuance &nu
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
 
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCFETCHNEXT], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
 
   vars->mpe->nativeCodeCache.SetLabelPointer(l_skip_ecu);
@@ -601,7 +601,7 @@ void Emit_JSRConditionalIndirect(EmitterVariables * const vars, const Nuance &nu
 
 void Emit_JSRConditionalIndirect_NOP(EmitterVariables * const vars, const Nuance &nuance)
 {
-  const uint32 src1RegIndex = nuance.fields[FIELD_ECU_ADDRESS];
+  const uint32 src1RegIndex = (uint32_t)nuance.fields[FIELD_ECU_ADDRESS];
   const x86BaseReg rzRegWriteBaseReg = GetMiscRegWriteBaseReg(vars,REGINDEX_RZ);
   const int32 rzRegDisp = GetMiscRegEmitDisp(vars,REGINDEX_RZ);
   constexpr uint32 l_skip_ecu = 0;
@@ -619,11 +619,11 @@ void Emit_JSRConditionalIndirect_NOP(EmitterVariables * const vars, const Nuance
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
 
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
-  vars->mpe->nativeCodeCache.X86Emit_MOVIM(nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
+  vars->mpe->nativeCodeCache.X86Emit_MOVIM((uint32_t)nuance.fields[FIELD_ECU_PCROUTE], x86MemPtr::x86MemPtr_dword, rzRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVIM(1, x86MemPtr::x86MemPtr_dword, (uintptr_t)&(vars->mpe->ecuSkipCounter));
   Emit_ExitBlock(vars);
 
@@ -697,7 +697,7 @@ void Emit_RTSConditional(EmitterVariables * const vars, const Nuance &nuance)
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzRegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
@@ -724,7 +724,7 @@ void Emit_RTSConditional_NOP(EmitterVariables * const vars, const Nuance &nuance
     vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
     vars->mpe->nativeCodeCache.X86Emit_JCC_Label(X86_CC_NZ, l_skip_ecu);
   }
-  EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+  EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzRegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzRegDisp);
   vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, (uintptr_t)&(vars->mpe->pcfetchnext));
@@ -754,7 +754,7 @@ void Emit_RTI1Conditional(EmitterVariables * const vars, const Nuance &nuance)
   }
   if(nuance.fields[FIELD_ECU_CONDITION] != ECU_CONDITION_T)
   {
-    EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+    EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   }
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi1RegDisp);
@@ -784,7 +784,7 @@ void Emit_RTI1Conditional_NOP(EmitterVariables * const vars, const Nuance &nuanc
   }
   if(nuance.fields[FIELD_ECU_CONDITION] != ECU_CONDITION_T)
   {
-    EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+    EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   }
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi1RegDisp);
@@ -816,7 +816,7 @@ void Emit_RTI2Conditional(EmitterVariables * const vars, const Nuance &nuance)
   }
   if(nuance.fields[FIELD_ECU_CONDITION] != ECU_CONDITION_T)
   {
-    EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+    EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   }
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi2RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi2RegDisp);
@@ -847,7 +847,7 @@ void Emit_RTI2Conditional_NOP(EmitterVariables * const vars, const Nuance &nuanc
   }
   if(nuance.fields[FIELD_ECU_CONDITION] != ECU_CONDITION_T)
   {
-    EmitConditionCheck(vars, nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
+    EmitConditionCheck(vars, (uint32_t)nuance.fields[FIELD_ECU_CONDITION], l_skip_ecu, l_condition_true);
   }
   vars->mpe->nativeCodeCache.SetLabelPointer(l_condition_true);
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, rzi2RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rzi2RegDisp);

@@ -29,8 +29,8 @@ void Execute_SaveRegs(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_StoreScalarRegisterConstant(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.regs[nuance.fields[FIELD_CONSTANT_ADDRESS]] = nuance.fields[FIELD_CONSTANT_VALUE];
-  const uint32 flagMask = nuance.fields[FIELD_CONSTANT_FLAGMASK];
+  mpe.regs[nuance.fields[FIELD_CONSTANT_ADDRESS]] = (uint32_t)nuance.fields[FIELD_CONSTANT_VALUE];
+  const uint32 flagMask = (uint32_t)nuance.fields[FIELD_CONSTANT_FLAGMASK];
 
   if(flagMask)
   {
@@ -41,12 +41,12 @@ void Execute_StoreScalarRegisterConstant(MPE &mpe, const uint32 pRegs[48], const
 
 void Execute_StoreMiscRegisterConstant(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  const uint32 miscRegIndex = nuance.fields[FIELD_CONSTANT_ADDRESS];
-  const uint32 flagMask = nuance.fields[FIELD_CONSTANT_FLAGMASK];
+  const uint32 miscRegIndex = (uint32_t)nuance.fields[FIELD_CONSTANT_ADDRESS];
+  const uint32 flagMask = (uint32_t)nuance.fields[FIELD_CONSTANT_FLAGMASK];
 
   if(miscRegIndex != CONSTANT_REG_DISCARD)
   {
-    const uint32 c = nuance.fields[FIELD_CONSTANT_VALUE];
+    const uint32 c = (uint32_t)nuance.fields[FIELD_CONSTANT_VALUE];
     switch(miscRegIndex)
     {
       case CONSTANT_REG_RX:

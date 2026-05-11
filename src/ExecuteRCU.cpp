@@ -55,12 +55,12 @@ void Execute_DECBoth(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_ADDRImmediateOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = pRegs[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] + nuance.fields[FIELD_RCU_SRC];
+  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = pRegs[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] + (uint32_t)nuance.fields[FIELD_RCU_SRC];
 }
 
 void Execute_ADDRImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = pRegs[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] + nuance.fields[FIELD_RCU_SRC];
+  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = pRegs[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] + (uint32_t)nuance.fields[FIELD_RCU_SRC];
 
   if(nuance.fields[FIELD_RCU_INFO] & RCU_DEC_RC0)
   {
@@ -130,12 +130,12 @@ void Execute_ADDRScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 
 void Execute_MVRImmediateOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = nuance.fields[FIELD_RCU_SRC];
+  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = (uint32_t)nuance.fields[FIELD_RCU_SRC];
 }
 
 void Execute_MVRImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = nuance.fields[FIELD_RCU_SRC];
+  mpe.reg_union[INDEX_REG+nuance.fields[FIELD_RCU_DEST]] = (uint32_t)nuance.fields[FIELD_RCU_SRC];
   if(nuance.fields[FIELD_RCU_INFO] & RCU_DEC_RC0)
   {
     mpe.cc |= CC_COUNTER0_ZERO;
@@ -205,7 +205,7 @@ void Execute_MVRScalar(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 void Execute_RangeOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 rcu_range;
-  uint32 rcu_src = nuance.fields[FIELD_RCU_SRC];
+  uint32 rcu_src = (uint32_t)nuance.fields[FIELD_RCU_SRC];
   switch(rcu_src)
   {
     case 0:
@@ -253,7 +253,7 @@ void Execute_RangeOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 void Execute_Range(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 rcu_range;
-  uint32 rcu_src = nuance.fields[FIELD_RCU_SRC];
+  uint32 rcu_src = (uint32_t)nuance.fields[FIELD_RCU_SRC];
   switch(rcu_src)
   {
     case 0:
@@ -329,7 +329,7 @@ void Execute_Range(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 void Execute_ModuloOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 rcu_range;
-  uint32 rcu_src = nuance.fields[FIELD_RCU_SRC];
+  uint32 rcu_src = (uint32_t)nuance.fields[FIELD_RCU_SRC];
   switch(rcu_src)
   {
     case 0:
@@ -381,7 +381,7 @@ void Execute_ModuloOnly(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 void Execute_Modulo(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 rcu_range;
-  uint32 rcu_src = nuance.fields[FIELD_RCU_SRC];
+  uint32 rcu_src = (uint32_t)nuance.fields[FIELD_RCU_SRC];
   switch(rcu_src)
   {
     case 0:

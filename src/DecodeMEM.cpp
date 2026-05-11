@@ -108,7 +108,7 @@ void MPE::DecodeInstruction_MEM16(const uint8 * const iPtr, InstructionCacheEntr
       entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] = (field_3E0 << 4) + MPE_CTRL_BASE;
       entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = field_1F;
       entry->scalarOutputDependencies[SLOT_MEM] = SCALAR_REG_DEPENDENCY_MASK(field_1F);
-      entry->miscInputDependencies[SLOT_MEM] = GetControlRegisterInputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)],bException);
+      entry->miscInputDependencies[SLOT_MEM] = GetControlRegisterInputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)],bException);
 
       switch(field_3E0)
       {
@@ -141,7 +141,7 @@ void MPE::DecodeInstruction_MEM16(const uint8 * const iPtr, InstructionCacheEntr
       entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = (field_3E0 << 4) + MPE_CTRL_BASE;
       entry->scalarInputDependencies[SLOT_MEM] = SCALAR_REG_DEPENDENCY_MASK(field_1F);
 
-      entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)],bException);
+      entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)],bException);
       if(bException)
       {
         entry->packetInfo |= PACKETINFO_NEVERCOMPILE;
@@ -355,7 +355,7 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
         case 2:
           entry->packetInfo |= loadScalarControlRegisterFlags;
           entry->packetInfo |= PACKETINFO_MEMORY_IO;
-          entry->miscInputDependencies[SLOT_MEM] = GetControlRegisterInputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)], bException);
+          entry->miscInputDependencies[SLOT_MEM] = GetControlRegisterInputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)], bException);
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_HANDLER)] = Handler_LoadScalarControlRegisterAbsolute;
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_FROM)] += MPE_CTRL_BASE;
           if(bException)
@@ -701,7 +701,7 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
         case 2:
           entry->packetInfo |= PACKETINFO_MEMORY_IO;
           entry->packetInfo |= storeControlRegisterFlags;
-          entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
+          entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_HANDLER)] = Handler_StoreScalarControlRegisterAbsolute;
           entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] += MPE_CTRL_BASE;
           if(bException)
@@ -972,7 +972,7 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
         entry->packetInfo |= storeControlRegisterFlags;
         entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_HANDLER)] = Handler_StoreScalarControlRegisterImmediate;
         entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] = (((field_1E0 << 5) | field_3E00000) << 4);
-        entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
+        entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
         entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] += MPE_CTRL_BASE;
         if(bException)
         {
@@ -1002,7 +1002,7 @@ void MPE::DecodeInstruction_MEM32(const uint8 * const iPtr, InstructionCacheEntr
             entry->packetInfo |= PACKETINFO_MEMORY_IO;
             entry->packetInfo |= storeControlRegisterFlags;
             entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_HANDLER)] = Handler_StoreScalarControlRegisterImmediate;
-            entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies(entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
+            entry->miscOutputDependencies[SLOT_MEM] = GetControlRegisterOutputDependencies((uint32_t)entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)], bException);
             entry->nuances[FIXED_FIELD(SLOT_MEM,FIELD_MEM_TO)] += MPE_CTRL_BASE;
             if(bException)
             {

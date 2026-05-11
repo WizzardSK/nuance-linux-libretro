@@ -82,7 +82,7 @@ void PropagateConstants_DECBoth(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDRImmediateOnly(SuperBlockConstants &constants)
 {
-  const uint32 regIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
 
   if(constants.IsMiscRegisterConstant(regIndex) && ALLOW_RCU_PROPAGATION)
   {
@@ -103,7 +103,7 @@ void PropagateConstants_ADDRImmediateOnly(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDRImmediate(SuperBlockConstants &constants)
 {
-  const uint32 regIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
   constants.ClearMiscRegisterConstant(regIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_C0Z);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_C1Z);
@@ -114,8 +114,8 @@ void PropagateConstants_ADDRImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDRScalarOnly(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-  const uint32 regSrcIndex = constants.nuance->fields[FIELD_RCU_SRC];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regSrcIndex = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
 
   if(constants.IsScalarRegisterConstant(regSrcIndex) && ALLOW_RCU_PROPAGATION)
   {
@@ -133,8 +133,8 @@ void PropagateConstants_ADDRScalarOnly(SuperBlockConstants &constants)
 
 void PropagateConstants_ADDRScalar(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-  const uint32 regSrcIndex = constants.nuance->fields[FIELD_RCU_SRC];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regSrcIndex = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
 
   if(constants.IsScalarRegisterConstant(regSrcIndex) && ALLOW_RCU_PROPAGATION)
   {
@@ -158,8 +158,8 @@ void PropagateConstants_MVRImmediateOnly(SuperBlockConstants &constants)
 {
   if(ALLOW_RCU_PROPAGATION)
   {
-    const uint32 regIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-    const uint32 regValue = constants.nuance->fields[FIELD_RCU_SRC];
+    const uint32 regIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+    const uint32 regValue = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
     constants.SetMiscRegisterConstant(regIndex,regValue);
   }
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_RCU_OK;
@@ -173,8 +173,8 @@ void PropagateConstants_MVRImmediate(SuperBlockConstants &constants)
   constants.ClearMiscRegisterConstant(CONSTANT_REG_C1Z);
   if(ALLOW_RCU_PROPAGATION)
   {
-    const uint32 regIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-    const uint32 regValue = constants.nuance->fields[FIELD_RCU_SRC];
+    const uint32 regIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+    const uint32 regValue = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
     constants.SetMiscRegisterConstant(regIndex,regValue);
   }
   constants.status.status = PROPAGATE_CONSTANTS_STATUS_RCU_OK;
@@ -182,8 +182,8 @@ void PropagateConstants_MVRImmediate(SuperBlockConstants &constants)
 
 void PropagateConstants_MVRScalarOnly(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-  const uint32 regSrcIndex = constants.nuance->fields[FIELD_RCU_SRC];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regSrcIndex = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
 
   if(constants.IsScalarRegisterConstant(regSrcIndex) && ALLOW_RCU_PROPAGATION)
   {
@@ -201,8 +201,8 @@ void PropagateConstants_MVRScalarOnly(SuperBlockConstants &constants)
 
 void PropagateConstants_MVRScalar(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
-  const uint32 regSrcIndex = constants.nuance->fields[FIELD_RCU_SRC];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regSrcIndex = (uint32_t)constants.nuance->fields[FIELD_RCU_SRC];
 
   if(constants.IsScalarRegisterConstant(regSrcIndex) && ALLOW_RCU_PROPAGATION)
   {
@@ -242,7 +242,7 @@ void PropagateConstants_Range(SuperBlockConstants &constants)
 
 void PropagateConstants_ModuloOnly(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
   constants.ClearMiscRegisterConstant(regDestIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_MODMI);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_MODGE);
@@ -251,7 +251,7 @@ void PropagateConstants_ModuloOnly(SuperBlockConstants &constants)
 
 void PropagateConstants_Modulo(SuperBlockConstants &constants)
 {
-  const uint32 regDestIndex = CONSTANT_REG_RX + constants.nuance->fields[FIELD_RCU_DEST];
+  const uint32 regDestIndex = CONSTANT_REG_RX + (uint32_t)constants.nuance->fields[FIELD_RCU_DEST];
   constants.ClearMiscRegisterConstant(regDestIndex);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_MODMI);
   constants.ClearMiscRegisterConstant(CONSTANT_REG_MODGE);
