@@ -79,7 +79,7 @@ bool NativeCodeCache::ReleaseBuffer(NativeCodeCacheEntryPoint entryPoint, uint32
   if(alignment)
   {
     size_t address = (size_t)pEmitLoc;
-    address = ((address + ((1u << alignment) - 1)) & ~((1u << alignment) - 1));
+    address = ((address + (((size_t)1 << alignment) - 1)) & ~(((size_t)1 << alignment) - 1));
     pEmitLoc = (uint8 *)address;
   }
 
@@ -1690,7 +1690,7 @@ void NativeCodeCache::X86Emit_CALLI(uintptr_t offset, uint16 seg)
   }
   #endif
 
-  offset -= (uint32)(pEmitLoc + 5);
+  offset -= (uintptr_t)(pEmitLoc + 5);
 
   if(seg == 0)
   {

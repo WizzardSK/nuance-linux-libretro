@@ -443,7 +443,13 @@ void GLWindow::CleanUp()
 
 LRESULT CALLBACK GLWindow::GLWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-  GLWindow *window = (GLWindow *)(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+  GLWindow *window =
+#ifndef _WIN64
+    (GLWindow *)GetWindowLong(hWnd, GWL_USERDATA);
+#else
+    (GLWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+#endif
+
   RECT windowRect;
   PAINTSTRUCT ps;
 

@@ -194,7 +194,12 @@ BOOL CALLBACK InputManagerImpl::EnumJoysticksCallback(const DIDEVICEINSTANCE* pD
 bool InputManagerImpl::Init(HWND hDpyWnd)
 {
   hDisplayWnd = hWnd = hDpyWnd;
-  hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
+  hInstance =
+#ifndef _WIN64
+    (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
+#else
+    (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
+#endif
 
   HRESULT hr = DirectInput8Create(hInstance, DIRECTINPUT_VERSION,
     IID_IDirectInput8, (VOID**)&pDi8, nullptr);

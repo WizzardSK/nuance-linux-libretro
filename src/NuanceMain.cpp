@@ -651,7 +651,7 @@ INT_PTR CALLBACK CfgInputDialogProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
       size_t numJoysticks;
       const Joystick* pJoysticks = im->EnumJoysticks(&numJoysticks);
       const GUID& controller1Joystick = nuonEnv.GetController1Joystick();
-      int controller1JoystickIdx = -1;
+      SSIZE_T controller1JoystickIdx = -1;
       HWND hwndCtrl = GetDlgItem(hwndDlg, IDC_JOYSTICK_COMBO);
 
       for (size_t i = 0; i < numJoysticks; i++) {
@@ -666,7 +666,7 @@ INT_PTR CALLBACK CfgInputDialogProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
       {
         if (controller1JoystickIdx < 0) controller1JoystickIdx = 0;
         SendMessage(hwndCtrl, CB_SETCURSEL, controller1JoystickIdx, 0);
-        if (im->GrabJoystick(hwndDlg, controller1JoystickIdx)) joyGrabbed = controller1JoystickIdx;
+        if (im->GrabJoystick(hwndDlg, controller1JoystickIdx)) joyGrabbed = (int)controller1JoystickIdx;
       }
       else
       {
@@ -678,7 +678,7 @@ INT_PTR CALLBACK CfgInputDialogProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 #define INIT_CTRLR_EDIT(id) \
 do { \
   hwndCtrl = GetDlgItem(hwndDlg, (id)); \
-  WNDPROC proc = (WNDPROC)SetWindowLongPtr(hwndCtrl, GWL_WNDPROC, (LONG_PTR)SetButtonControlProc); \
+  WNDPROC proc = (WNDPROC)SetWindowLongPtr(hwndCtrl, GWLP_WNDPROC, (LONG_PTR)SetButtonControlProc); \
   if (pOrigEditProc) \
   { \
       assert(pOrigEditProc == proc); \
@@ -702,7 +702,7 @@ do { \
 #define UNINIT_CTRLR_EDIT(id) \
 do { \
   hwndCtrl = GetDlgItem(hwndDlg, (id)); \
-  SetWindowLongPtr(hwndCtrl, GWL_WNDPROC, (LONG_PTR)pOrigEditProc); \
+  SetWindowLongPtr(hwndCtrl, GWLP_WNDPROC, (LONG_PTR)pOrigEditProc); \
 } while(0)
       FOR_ALL_JOY_EDIT_CTRLS(UNINIT_CTRLR_EDIT);
 #undef UNINIT_CTRLR_EDIT
@@ -926,14 +926,19 @@ INT_PTR CALLBACK ControlPanelDialogProc(HWND hwndDlg,UINT msg,WPARAM wParam,LPAR
           }
           else if ((HWND)lParam == cbCfgInput)
           {
-              HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hwndDlg, GWL_HINSTANCE);
-              if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_CFG_INPUT), hwndDlg, CfgInputDialogProc))
+            HINSTANCE hInstance =
+#ifndef _WIN64
+              (HINSTANCE)GetWindowLong(hwndDlg, GWL_HINSTANCE);
+#else
+              (HINSTANCE)GetWindowLongPtr(hwndDlg, GWLP_HINSTANCE);
+#endif
+            if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_CFG_INPUT), hwndDlg, CfgInputDialogProc))
+            {
+              if (MessageBox(hwndDlg, _T("Save Joystick config to configuration file?"), _T("Save Config"), MB_YESNO | MB_ICONQUESTION) == IDYES)
               {
-                if (MessageBox(hwndDlg, _T("Save Joystick config to configuration file?"), _T("Save Config"), MB_YESNO | MB_ICONQUESTION) == IDYES)
-                {
-                  nuonEnv.SaveConfigFile(nullptr);
-                }
+                nuonEnv.SaveConfigFile(nullptr);
               }
+            }
           }
           else if((HWND)lParam == textMPE0)
           {
