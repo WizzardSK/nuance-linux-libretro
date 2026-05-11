@@ -1,3 +1,47 @@
+/*
+ * NUON instruction-set test harness.
+ *
+ * The actual tests live in nuontest.s; this file is just the C wrapper
+ * that runs them against both the interpreter and the JIT compiler and
+ * reports pass/fail on screen.  Add new tests to nuontest.s (extend the
+ * SetTestNumber sequence) - no change should be needed here.
+ *
+ * =====================================================================
+ * BUILD STEPS (Windows / git-bash):
+ *
+ *   # 1. Set up the NUON SDK env (in SDKFolder).
+ *   #    env.sh is for Linux; on Windows in git-bash export the win32
+ *   #    paths directly:
+ *   export VMLABS="SDKFolder/vmlabs"
+ *   export VMBLESSDIR="SDKFolder/bless"
+ *   export BUILDHOST=WINDOWS_NT
+ *   export PATH="$PATH:/SDKFolder/bin/win32:/SDKFolder/vmlabs/bin/win32"
+ *
+ *   # 2. (Optional) clean stale outputs so gmake actually rebuilds:
+ *   rm -f nuontest.o instructiontest.cof cd_app.cof NUON.CD
+ *
+ *   # 3. Build.  The Makefile uses gmake (GNU Make 3.79.1 shipped with
+ *   #    the SDK at vmlabs/bin/win32/gmake) - plain "make" won't be on
+ *   #    PATH on Windows.
+ *   gmake
+ *
+ * Outputs:
+ *   nuontest.o          - assembled NUON test packets
+ *   instructiontest.cof - linked test executable
+ *   cd_app.cof          - coffpack-consolidated COFF
+ *   NUON.CD             - bootable disc image (what the emulator loads)
+ *
+ * Run by loading NUON.CD in Release/Nuance.exe.  The on-screen status
+ * line reports either "All instruction set tests passed" or the failing
+ * test number.  Tests run twice (interpreter, then 5000 JIT iterations);
+ * a mismatch between the two paths indicates either an interpreter bug
+ * or a JIT/constant-propagation bug.
+ *
+ * If you only changed nuontest.s, gmake's mtime check is enough; you do
+ * not need to wipe artifacts.  CreateNuonCD always re-runs, which is harmless.
+ * =====================================================================
+ */
+
 #include <nuon/dma.h>
 #include <nuon/bios.h>
 #include <nuon/mml2d.h>

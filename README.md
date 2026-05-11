@@ -588,12 +588,12 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 - Can load games directly from ZIP/ISO files on Windows.
 - On Linux additionally supports RAR/7z via FUSE tools.
 - All "with carry" opcodes (=addwc/subwc/cmpwc variants) should now behave as written in the ISA spec.
-- BTST is still not same as ISA spec (as apparently a real HW bug).
+- BTST is still not same as ISA spec (as apparently a real HW bug, at least on Aries 2 (=tested there)).
 - Multiple bugs in the "CompilerConstantPropagation"-enabled path fixed, so enabled by default now, leading to more performance.
 - Fix "_MPEAlloc()" logic to match original BIOS
 - Correct Audio Buffer sizes used for all configurations (via GetBufferSize()).
 - Unfortunately, Tetris now sounds even worse than before.
-- instructiontest.cof has been updated with more tests (verified to match real HW).
+- instructiontest.cof has been updated with more tests (verified to match real HW / Samsung N501).
 
 **03/21/2025 version 0.6.6:**
 - Implement (bi)linear address mirroring properly and enable it.

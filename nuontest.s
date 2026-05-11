@@ -4627,6 +4627,70 @@ StoreResult r4
 TestFlags modgef+modmif
 TestResult $00010002
 
+;==================================================================
+; ADDWC with pre-shifted immediate (#n,>>#m,Sk form).
+; Per spec for addwc:
+;   addwc #n,>>#m,Sk  with  -16 <= m <= 0
+; The ">>" syntax is arithmetic shift; per the same spec section,
+; positive m means right shift, negative m means left shift. Since
+; this form restricts m to non-positive values, the immediate gets
+; LEFT-shifted by |m| bits (or no shift for m=0).
+;
+; The decoder pre-computes the shifted immediate (src/DecodeALU.cpp).
+;==================================================================
+
+`test_addwc_immediate_shift:
+
+;ADDWC: #5 left-shifted by 2 (m=-2) + r4 + carry_in.
+;Spec: r4 = r4 + (5 << 2) + carry_in = 10 + 20 + 1 = 31.
+;Flags after: NF=0 (positive), ZF=0 (non-zero), VF=0, CF=0 (no carry-out).
+SetTestNumber 191
+LoadTestReg 10, r4
+LoadFlags cf                  ; carry-in = 1
+addwc #5, >>#-2, r4
+StoreResult r4
+TestFlagsExact noflags
+TestResult 31
+
+;ADDWC: #1 left-shifted by 4 (m=-4) + r4 + no-carry.
+;Spec: r4 = r4 + (1 << 4) + 0 = -16 + 16 + 0 = 0.
+;Flags after WC rule: ZF preserved-or-cleared; here result==0 so Z stays
+;at its prior value. We pre-set ZF, so Z must STAY set after. CF set
+;(unsigned wrap of -16 + 16 = $100000000 -> carry-out=1).
+LoadTestReg -16, r4           ; $FFFFFFF0
+LoadFlags zf                  ; Z=1 going in, C=0 (no carry-in)
+addwc #1, >>#-4, r4
+StoreResult r4
+TestFlagsExact zf+cf          ; Z preserved (WC rule), C set, N=0, V=0
+TestResult 0
+
+;==================================================================
+; CMP with pre-shifted immediate (#n,>>#m,Sq form).
+; Per spec for cmp:
+;   cmp #n,>>#m,Sq  with  -16 <= m <= 0
+; Same shift convention as addwc above (left-shift by |m|).
+; The decoder in src/DecodeALU.cpp uses "<<= (32u - field_1F)"
+; which produces the left-shifted immediate the spec asks for.
+; CMP semantics: Sq - shifted_n, flags reflect the subtraction, no
+; register write. This test verifies the shift form sets flags per
+; spec for both the "equal" and "less-than" cases.
+;==================================================================
+
+`test_cmp_immediate_shift:
+
+;CMP: shifted_n = 5 << 2 = 20.  r4 = 20.  20 - 20 = 0 -> ZF set.
+SetTestNumber 192
+LoadTestReg 20, r4
+LoadFlags noflags
+cmp #5, >>#-2, r4             ; r4 - (5 << 2) = 20 - 20 = 0
+TestFlagsExact zf
+
+;CMP: r4 = 19.  19 - 20 = -1 -> NF set, CF set (borrow), ZF=0, VF=0.
+LoadTestReg 19, r4
+LoadFlags noflags
+cmp #5, >>#-2, r4             ; r4 - (5 << 2) = 19 - 20 = -1
+TestFlagsExact nf+cf
+
 allpass:
 
 ;Return $0 to indicate success
@@ -4688,5 +4752,4 @@ add #4, scratchBufferReg
 st_s r7, (scratchBufferReg)
 rts nop
 }
-
 
