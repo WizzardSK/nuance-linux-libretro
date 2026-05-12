@@ -375,9 +375,30 @@ int main(int argc, char* argv[])
     {
       cycles++;
 
-      for (int i = 3; i >= 0; --i)
-        if (i != 3 || nuonEnv.MPE3wait_fieldCounter == 0)
+      // NUANCE_MPE_RATIO=<mpe0>:<mpe1>:<mpe2>:<mpe3> — how many cycles
+      // each MPE runs per main loop iteration (default 1:1:1:1).
+      // IS3 needs workers (MPE0-2) to keep up with MPE3's high-rate
+      // MPEStop/MPERun dispatch; try `1:10:10:1` to give workers 10x
+      // cycle budget so they can complete tasks before MPE3 interrupts.
+      static int s_ratio[4] = {1, 1, 1, 1};
+      static int s_ratio_inited = 0;
+      if (!s_ratio_inited) {
+        s_ratio_inited = 1;
+        if (const char* s = getenv("NUANCE_MPE_RATIO")) {
+          int v[4] = {1,1,1,1};
+          if (sscanf(s, "%d:%d:%d:%d", &v[0], &v[1], &v[2], &v[3]) == 4) {
+            for (int j = 0; j < 4; j++)
+              s_ratio[j] = (v[j] >= 1 && v[j] <= 100) ? v[j] : 1;
+            fprintf(stderr, "[MPE-RATIO] %d:%d:%d:%d\n",
+                    s_ratio[0], s_ratio[1], s_ratio[2], s_ratio[3]);
+          }
+        }
+      }
+      for (int i = 3; i >= 0; --i) {
+        if (i == 3 && nuonEnv.MPE3wait_fieldCounter != 0) continue;
+        for (int k = 0; k < s_ratio[i]; k++)
           nuonEnv.mpe[i].FetchDecodeExecute();
+      }
 
       if (nuonEnv.pendingCommRequests)
         DoCommBusController();
