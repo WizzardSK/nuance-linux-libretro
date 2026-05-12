@@ -397,8 +397,239 @@ void IncrementVideoFieldCounter()
   }
 }
 
+// Simple textured-quad path for .mpx decoded frames. We can't go through
+// the full NUON video pipeline because that depends on state set by
+// VidConfig/VidSetup which fmv.run never reaches. So when an .mpx
+// decoder is active, upload the latest YCrCbA frame to a dedicated
+// texture and draw it directly with a tiny BT.601 → RGB shader.
+static GLuint g_mpxTex = 0;
+static uint32 g_mpxTexW = 0, g_mpxTexH = 0;
+static GLuint g_mpxProg = 0;
+
+static void RenderMpxOverlay(int winwidth, int winheight,
+                             const uint8* ycrcba, uint32 w, uint32 h)
+{
+  if (g_mpxTex == 0) {
+    glGenTextures(1, &g_mpxTex);
+    glBindTexture(GL_TEXTURE_2D, g_mpxTex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  } else {
+    glBindTexture(GL_TEXTURE_2D, g_mpxTex);
+  }
+
+  if (g_mpxTexW != w || g_mpxTexH != h) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)w, (GLsizei)h, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, ycrcba);
+    g_mpxTexW = w; g_mpxTexH = h;
+  } else {
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (GLsizei)w, (GLsizei)h,
+                    GL_RGBA, GL_UNSIGNED_BYTE, ycrcba);
+  }
+
+  glViewport(0, 0, winwidth, winheight);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  if (g_mpxProg == 0) {
+    static const char* vs =
+      "#version 120\n"
+      "varying vec2 vTexCoord;\n"
+      "void main(){ vTexCoord = gl_MultiTexCoord0.xy; gl_Position = gl_Vertex; }\n";
+    static const char* fs =
+      "#version 120\n"
+      "uniform sampler2D tex;\n"
+      "varying vec2 vTexCoord;\n"
+      "void main(){\n"
+      "  vec4 t = texture2D(tex, vTexCoord);\n"
+      "  float Y  = (t.r * 255.0 - 16.0)  / 219.0;\n"
+      "  float Cb = (t.g * 255.0 - 128.0) / 224.0;\n"
+      "  float Cr = (t.b * 255.0 - 128.0) / 224.0;\n"
+      "  float r = Y + 1.402   * Cr;\n"
+      "  float g = Y - 0.34414 * Cb - 0.71414 * Cr;\n"
+      "  float b = Y + 1.772   * Cb;\n"
+      "  gl_FragColor = vec4(r, g, b, 1.0);\n"
+      "}\n";
+    GLuint v = glCreateShader(GL_VERTEX_SHADER);
+    GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(v, 1, &vs, nullptr); glCompileShader(v);
+    glShaderSource(f, 1, &fs, nullptr); glCompileShader(f);
+    g_mpxProg = glCreateProgram();
+    glAttachShader(g_mpxProg, v); glAttachShader(g_mpxProg, f);
+    glLinkProgram(g_mpxProg);
+    glDeleteShader(v); glDeleteShader(f);
+  }
+  glUseProgram(g_mpxProg);
+  glUniform1i(glGetUniformLocation(g_mpxProg, "tex"), 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, g_mpxTex);
+
+  glBegin(GL_TRIANGLE_STRIP);
+    glMultiTexCoord2f(GL_TEXTURE0, 0.0f, 1.0f); glVertex2f(-1.0f, -1.0f);
+    glMultiTexCoord2f(GL_TEXTURE0, 1.0f, 1.0f); glVertex2f( 1.0f, -1.0f);
+    glMultiTexCoord2f(GL_TEXTURE0, 0.0f, 0.0f); glVertex2f(-1.0f,  1.0f);
+    glMultiTexCoord2f(GL_TEXTURE0, 1.0f, 0.0f); glVertex2f( 1.0f,  1.0f);
+  glEnd();
+  glUseProgram(0);
+}
+
 void RenderVideo(const int winwidth, const int winheight)
 {
+  // NUANCE_LOG_RENDER=1: periodic dump of render state. Helps diagnose
+  // "engine runs but no pixels" — shows whether bCanDisplayVideo is
+  // set, whether channels are active, and where structMainChannel
+  // points. Logs only on state change to avoid noise.
+  {
+    static int s_log_render = -1;
+    if (s_log_render < 0) s_log_render = getenv("NUANCE_LOG_RENDER") ? 1 : 0;
+    if (s_log_render) {
+      static int prev_can = -1;
+      static int prev_main = -1, prev_overlay = -1;
+      static uint32 prev_base = 0xFFFFFFFFu, prev_w = 0, prev_h = 0;
+      const int can     = bCanDisplayVideo ? 1 : 0;
+      const int main_a  = bMainChannelActive ? 1 : 0;
+      const int over_a  = bOverlayChannelActive ? 1 : 0;
+      if (can != prev_can || main_a != prev_main || over_a != prev_overlay ||
+          structMainChannel.base != prev_base ||
+          structMainChannel.src_width != prev_w ||
+          structMainChannel.src_height != prev_h) {
+        fprintf(stderr, "[RENDER] canDisplay=%d main=%d overlay=%d base=0x%08X src=%ux%u dflags=0x%08X\n",
+                can, main_a, over_a,
+                (uint32)structMainChannel.base,
+                structMainChannel.src_width,
+                structMainChannel.src_height,
+                structMainChannel.dmaflags);
+        prev_can = can; prev_main = main_a; prev_overlay = over_a;
+        prev_base = structMainChannel.base;
+        prev_w = structMainChannel.src_width;
+        prev_h = structMainChannel.src_height;
+      }
+      // Periodic pixel hex hash from structMainChannel.base — diagnose
+      // "channels active, buffer empty" vs "buffer has pixels but
+      // shader doesn't sample". Hash 16 bytes from the middle of the
+      // buffer every ~120 frames (2 s).
+      static int s_pixCount = 0;
+      if (((s_pixCount++) % 120) == 0 && bMainChannelActive && structMainChannel.src_width && structMainChannel.src_height) {
+        const uint32 pixType = (structMainChannel.dmaflags >> 4) & 0x0F;
+        const uint32 bpp = (pixType == 2) ? 2 : 4; // 16-bit or 32-bit
+        const uint32 stride = structMainChannel.src_width * bpp;
+        const uint32 middleY = structMainChannel.src_height / 2;
+        const uint32 middleX = structMainChannel.src_width / 4;
+        const uint32 sampleAddr = (uint32)structMainChannel.base + middleY * stride + middleX * bpp;
+        const uint8* p = (uint8*)nuonEnv.GetPointerToSystemMemory(sampleAddr);
+        if (p) {
+          uint32 sum = 0, max = 0, nonzero = 0;
+          for (int i = 0; i < 256; i++) {
+            sum += p[i];
+            if (p[i] > max) max = p[i];
+            if (p[i]) nonzero++;
+          }
+          fprintf(stderr, "[RENDER-PIX] sample @0x%08X: sum=%u max=%u nonzero=%d/256  first16=%02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
+                  sampleAddr, sum, max, nonzero,
+                  p[0],p[1],p[2],p[3], p[4],p[5],p[6],p[7],
+                  p[8],p[9],p[10],p[11], p[12],p[13],p[14],p[15]);
+        }
+      }
+    }
+  }
+
+  // DVD-Video player hijack: API_PresentVOB started a VOB playback
+  // (Tetris / Sampler demo discs, IS3 once we wire fmv.run.dat). Same
+  // shader path as MPX — we just feed it a different YCrCbA32 buffer.
+  extern bool DvdPlayerActive_Probe(uint32*, uint32*);
+  extern bool DvdPlayerActive_GetLatestFrame(uint8*, uint32, uint32, uint32);
+  {
+    uint32 dvdW = 0, dvdH = 0;
+    if (DvdPlayerActive_Probe(&dvdW, &dvdH) && dvdW && dvdH) {
+      static int firstHit = 1;
+      if (firstHit) { firstHit = 0; fprintf(stderr, "[DVD] render path active %ux%u\n", dvdW, dvdH); }
+      static uint8* dbuf = nullptr;
+      static uint32 dbufSz = 0;
+      const uint32 needed = dvdW * dvdH * 4;
+      if (dbufSz < needed) { delete[] dbuf; dbuf = new uint8[needed]; dbufSz = needed; }
+      DvdPlayerActive_GetLatestFrame(dbuf, dvdW * 4, dvdW, dvdH);
+      RenderMpxOverlay(winwidth, winheight, dbuf, dvdW, dvdH);
+      return;  // DVD path swallows the frame; channels rendered on next pass
+    }
+  }
+
+  // .mpx cutscene playback hijack: when a libavcodec decoder is active
+  // for a .mpx file the game opened, draw the latest decoded frame
+  // directly and skip the NUON video pipeline (which fmv.run never
+  // initializes anyway because the FMV hardware isn't emulated).
+  extern bool MpxDecoderActive_Probe(uint32*, uint32*);
+  extern bool MpxDecoderActive_GetLatestFrame(uint8*, uint32, uint32, uint32);
+  extern void MpxSkipCutscene();
+  {
+    uint32 mpxW = 0, mpxH = 0;
+    if (MpxDecoderActive_Probe(&mpxW, &mpxH) && mpxW && mpxH) {
+      // When NUON channels are active at a DIFFERENT resolution than
+      // the still-alive MPX decoder, the game has moved past attract
+      // into a code path that's writing its own framebuffers — e.g.
+      // IS3 transitioning from menu.run (uses menu.mpx as 704x480
+      // attract background) into ismerlin.run (640x240 double-buffered
+      // game engine). The MPX overlay would otherwise glClear + draw
+      // the stale menu video every frame, clobbering the game's own
+      // channel render. Tear the decoder down so the MPX hijack stops
+      // firing and the NUON channel path can show what the game drew.
+      if (bMainChannelActive && structMainChannel.src_width &&
+          structMainChannel.src_width != mpxW) {
+        static int s_torndown = 0;
+        if (!s_torndown) {
+          s_torndown = 1;
+          fprintf(stderr, "[MPX] channels active %ux%u != mpx %ux%u — tearing down MPX\n",
+                  structMainChannel.src_width, structMainChannel.src_height, mpxW, mpxH);
+          MpxSkipCutscene();
+        }
+        // Skip the MPX hijack on this frame; control falls through to
+        // NUON channel rendering below.
+        goto skip_mpx_hijack;
+      }
+      static int firstHit = 1;
+      if (firstHit) { firstHit = 0; fprintf(stderr, "[MPX] render path active %ux%u\n", mpxW, mpxH); }
+      static uint8* sbuf = nullptr;
+      static uint32 sbufSz = 0;
+      const uint32 needed = mpxW * mpxH * 4;
+      if (sbufSz < needed) { delete[] sbuf; sbuf = new uint8[needed]; sbufSz = needed; }
+      MpxDecoderActive_GetLatestFrame(sbuf, mpxW * 4, mpxW, mpxH);
+      RenderMpxOverlay(winwidth, winheight, sbuf, mpxW, mpxH);
+      // If the game has also activated NUON channels (e.g. for the
+      // menu's interactive overlay UI on top of the looping menu.mpx
+      // background), fall through to render those on top instead of
+      // returning early. Otherwise we'd see only the MPX background
+      // and never the menu items / sprites the game's 3D code drew
+      // into the channel buffers.
+      if (!bMainChannelActive && !bOverlayChannelActive) return;
+      static int firstOverlay = 1;
+      if (firstOverlay) {
+        firstOverlay = 0;
+        fprintf(stderr, "[MPX+NUON] both active: main=%d overlay=%d — composing\n",
+                bMainChannelActive ? 1 : 0, bOverlayChannelActive ? 1 : 0);
+        for (int m = 0; m < 4; m++)
+          fprintf(stderr, "  mpe%d pc=0x%08X go=%d\n",
+                  m, nuonEnv.mpe[m].pcexec,
+                  (nuonEnv.mpe[m].mpectl & 2) ? 1 : 0);
+      }
+      // NUANCE_KICK_MPE0=1: when channels are active but MPE0 is
+      // halted, force MPE0.mpectl |= MPEGO every frame so it has
+      // a chance to pick up commands. Useful in combination with
+      // FORCE_LOAD_COFF where the swap-loaded module might be
+      // setting up MPE0 commands that wouldn't run otherwise.
+      if (getenv("NUANCE_KICK_MPE0")) {
+        if (!(nuonEnv.mpe[0].mpectl & 2)) {
+          static int kicked = 0;
+          if (++kicked < 5)
+            fprintf(stderr, "[KICK-MPE0 #%d] mpe0 pc=0x%08X go=0 -> setting MPEGO\n",
+                    kicked, nuonEnv.mpe[0].pcexec);
+          nuonEnv.mpe[0].mpectl |= 2;
+        }
+      }
+    }
+  }
+  skip_mpx_hijack:;
+
   if(!bCanDisplayVideo)
     return;
 
@@ -895,6 +1126,31 @@ void VidConfig(MPE &mpe)
   const uint32 main = mpe.regs[1];
   const uint32 osd = mpe.regs[2];
   //const uint32 reserved = mpe.regs[3];
+
+  // NUANCE_LOG_VIDCFG=1: log every VidConfig invocation so we can see
+  // when the game (re)configures channels. Critical for diagnosing
+  // "engine runs but renders black" scenarios — if a game module
+  // never calls VidConfig with non-zero main, bMainChannelActive
+  // stays false and our renderer never samples the framebuffer.
+  static int s_log_vidcfg = -1;
+  if (s_log_vidcfg < 0) s_log_vidcfg = getenv("NUANCE_LOG_VIDCFG") ? 1 : 0;
+  if (s_log_vidcfg) {
+    fprintf(stderr, "[VIDCFG] mpe%u pc=0x%08X display=0x%08X main=0x%08X osd=0x%08X\n",
+            mpe.mpeIndex, mpe.pcexec, display_addr, main, osd);
+    if (main) {
+      const VidChannel* p = (VidChannel*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, main);
+      if (p) {
+        // Channel struct is stored byte-swapped in NUON sysram; show
+        // both raw and swapped views so we can spot the pattern.
+        uint32 base   = SwapBytes((uint32)p->base);
+        uint32 sw     = SwapBytes((uint32)p->src_width);
+        uint32 sh     = SwapBytes((uint32)p->src_height);
+        uint32 dflags = SwapBytes((uint32)p->dmaflags);
+        fprintf(stderr, "  main: base=0x%08X src=%ux%u dmaflags=0x%08X (pixType=%u)\n",
+                base, sw, sh, dflags, (dflags >> 4) & 0xF);
+      }
+    }
+  }
 
   VidDisplay maindisplay;
   if(display_addr)
@@ -1494,4 +1750,25 @@ void VideoCleanup()
     }
   }
   if(bUseSeparateThread) gfx_lock.unlock();
+}
+
+void VideoInvalidateGLState()
+{
+  // Called when the GL context is destroyed (e.g. RetroArch fullscreen
+  // toggle). The old shader/texture/display-list IDs are tied to the dead
+  // context; clearing the flags forces RenderVideo to re-create them in
+  // the new context on the next call.
+  bShadersInstalled = false;
+  bTexturesInitialized = false;
+  bSetupViewport = false;
+  // The new mainTexName/osdTexName from glGenTextures will have no storage
+  // until glTexImage2D runs. Force the upload path that calls glTexImage2D
+  // (vs glTexSubImage2D, which is a no-op on a texture without storage and
+  // would leave the shader sampling all-zero — looks bright green through
+  // the YCrCb→RGB conversion).
+  bMainTexturePixType = -1;
+  bOverlayTexturePixType = -1;
+  // Drop the cached shader handles — calling glDelete* on the dead
+  // context would be undefined, so just zero them out.
+  shaderProgram.ForgetHandles();
 }

@@ -1,4 +1,5 @@
 #include "basetypes.h"
+#include <cstdlib>
 #include "byteswap.h"
 #include "comm.h"
 #include "dma.h"
@@ -187,6 +188,72 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
       }
     }
     default:
+      // VLD-BDU (NUON hardware MPEG-2 variable-length decoder) live in
+      // control regs 0x1200-0x1320 — see PrintMEM.cpp:199. We don't
+      // emulate the actual decoder, but IS3's MPE2 firmware polls
+      // cf0/cf1 after each write and reads back values it interprets
+      // as MPEG start codes. Stateful HLE:
+      //   - First N reads → 0x0B300000 (sequence_header_code 0xB3)
+      //   - After that → 0x0B700000 (sequence_end_code 0xB7)
+      // so the firmware finds a "header, then end" stream and signals
+      // MPE3 that the stream is done. Visual playback comes from
+      // libavcodec overlay (video.cpp), so the meaningless decoded
+      // data the firmware produces here is never shown.
+      if (address >= 0x1200 && address <= 0x1320) {
+        // NUANCE_VLD_PATTERN selects start-code stream:
+        //   0 = realistic MPEG-2 cycle until NUANCE_VLD_END_AFTER reads,
+        //       then B7 once, then B2 forever.
+        //   1 = legacy stub: B3 four times, then B7 forever.
+        //   2 (default) = EOF-gated: B3 once, then B5 (extension)
+        //       until libavcodec hits EOF, then B7 once, then B2.
+        //       Keeps MPE2 in "still parsing" state for the actual
+        //       movie duration so visually all frames render before
+        //       fmv.run advances. Combined with vldReadCount reset on
+        //       every MPX MediaOpen (media.cpp), unblocks IS3 cutscene
+        //       chain and lets each cutscene play its full length.
+        //   3 = B2 (user_data) forever — quiet stream.
+        static int s_pattern = -1;
+        static uint32 s_end_after = 0;
+        if (s_pattern == -1) {
+          s_pattern = getenv("NUANCE_VLD_PATTERN")
+                    ? (int)strtol(getenv("NUANCE_VLD_PATTERN"), nullptr, 0) : 2;
+          s_end_after = getenv("NUANCE_VLD_END_AFTER")
+                    ? (uint32)strtoul(getenv("NUANCE_VLD_END_AFTER"), nullptr, 0)
+                    : 1024;
+        }
+        const uint32 n = vldReadCount++;
+        uint8 code = 0xB2;
+        if (s_pattern == 1) {
+          code = (n < 4) ? 0xB3 : 0xB7;
+        } else if (s_pattern == 2) {
+          extern bool MpxDecoderActive_IsAtEnd();
+          if (n == 0) {
+            code = 0xB3;  // sequence header
+          } else if (!MpxDecoderActive_IsAtEnd()) {
+            code = 0xB5;  // benign extension — keeps MPE2 parsing
+                          // until libavcodec actually finishes the file
+          } else {
+            code = 0xB7;  // sequence_end_code, fires once EOF reached
+          }
+        } else if (s_pattern == 3) {
+          code = 0xB2;
+        } else {
+          if (n == 0) code = 0xB3;
+          else if (n == 1) code = 0xB5;
+          else if (n == 2) code = 0xB8;
+          else if (n == 3) code = 0xB5;
+          else if (n < s_end_after) {
+            const uint32 phase = (n - 4) % 9;
+            static const uint8 cycle[9] = {0x00,0xB5,0x01,0x02,0x03,0x04,0x05,0xB5,0xB5};
+            code = cycle[phase];
+          } else if (n == s_end_after) {
+            code = 0xB7;
+          } else {
+            code = 0xB2;
+          }
+        }
+        return ((uint32)code) << 20;
+      }
       //no special handling: return control register contents verbatim
       return *(&mpectl + (address >> 4));
   }
@@ -194,6 +261,16 @@ uint32 MPE::ReadControlRegister(const uint32 address, const uint32 entrypRegs[48
 
 void MPE::WriteControlRegister(const uint32 address, const uint32 data)
 {
+  // VLD-BDU stub: mark the coprocessor "done" by setting CC_COPROCESSOR0
+  // and CC_COPROCESSOR1 in this MPE's tempCC. The firmware polling
+  // loops at e.g. 0x20300594/0x20300598 (`bra cf1lo, $...; bra cf0lo,
+  // $...`) check these bits and exit when they're set.
+  if (address >= 0x1200 && address <= 0x1320) {
+    tempCC |= (CC_COPROCESSOR0 | CC_COPROCESSOR1);
+    cc = tempCC;
+    return;
+  }
+
   switch(address >> 4)
   {
     case 0x0:

@@ -1,4 +1,8 @@
 #include "basetypes.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
 #include "byteswap.h"
 #include "Bios.h"
 #include "mpe.h"
@@ -6,6 +10,66 @@
 
 extern NuonEnvironment nuonEnv;
 extern void NullBiosHandler(MPE &mpe);
+
+// DVD-Video playback (defined in media.cpp). API_PresentVOB /
+// API_PresentCell open the disc's main VOB through libavformat so
+// disc menus and FMV cutscenes that we don't have a NUON-side
+// fmv.run path for actually show up.
+extern bool DvdPlayerStart(const char* path);
+extern void DvdPlayerStop();
+extern bool DvdPlayerActive_Probe(uint32*, uint32*);
+extern bool DvdPlayerActive_IsAtEnd();
+
+// Path to the mounted ISO's directory (set by NuanceMain_linux.cpp
+// in g_ISOPath when an ISO is opened). We resolve VIDEO_TS/*.VOB
+// inside it on the first PE present call.
+extern std::string g_ISOPath;
+
+// Find the largest VTS_*_*.VOB in the mounted ISO's video_ts/ dir
+// (= the main feature stream). Falls back to video_ts.vob if no
+// VTS file is found. Empty string on failure.
+static std::string FindMainVob()
+{
+  if (g_ISOPath.empty()) return "";
+  // g_ISOPath is the mount point ("/tmp/nuance_xxxx/"). VOBs live in
+  // either video_ts/ or VIDEO_TS/.
+  std::string base = g_ISOPath;
+  if (!base.empty() && base.back() != '/') base += '/';
+
+  // Enumerate via popen — POSIX, no extra deps. Pick the largest VOB.
+  const std::string cmd =
+      "find \"" + base + "\" -maxdepth 3 -type f -iname 'vts_*.vob' "
+      "-printf '%s %p\\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-";
+  FILE* p = popen(cmd.c_str(), "r");
+  if (!p) return "";
+  char buf[512] = {};
+  if (!fgets(buf, sizeof(buf), p)) { pclose(p); return ""; }
+  pclose(p);
+  std::string path(buf);
+  while (!path.empty() && (path.back() == '\n' || path.back() == '\r')) path.pop_back();
+  return path;
+}
+
+static bool g_pePlaybackStarted = false;
+static void EnsureDvdPlaybackStarted(const char* whichApi)
+{
+  if (g_pePlaybackStarted) return;
+  // Allow opting out in case a title misbehaves with DVD playback on.
+  if (getenv("NUANCE_NO_DVD")) {
+    g_pePlaybackStarted = true;  // suppress retries
+    return;
+  }
+  const std::string vob = FindMainVob();
+  if (vob.empty()) {
+    fprintf(stderr, "[%s] no VTS VOB found under %s — leaving stub no-op\n",
+            whichApi, g_ISOPath.c_str());
+    g_pePlaybackStarted = true;
+    return;
+  }
+  fprintf(stderr, "[%s] starting DVD playback: %s\n", whichApi, vob.c_str());
+  if (DvdPlayerStart(vob.c_str()))
+    g_pePlaybackStarted = true;
+}
 
 void API_EnterPE(MPE &mpe)
 {
@@ -27,8 +91,10 @@ void API_FindDiskType(MPE &mpe)
 
 void API_IsPresenting(MPE &mpe)
 {
-  //Return "not presenting" for now
-  mpe.regs[0] = 0;
+  // Return 1 while a DVD VOB is actively playing; some demo discs
+  // (Tetris, Sampler) loop on this poll until VOB playback starts.
+  uint32 w = 0, h = 0;
+  mpe.regs[0] = (DvdPlayerActive_Probe(&w, &h) && !DvdPlayerActive_IsAtEnd()) ? 1 : 0;
 }
 
 void API_GetFieldCounter(MPE &mpe)
@@ -64,22 +130,26 @@ void API_ForwardSpeed(MPE &mpe)
 
 void API_PresentVOB(MPE &mpe)
 {
-  //mpe.regs[0] = 1;
+  EnsureDvdPlaybackStarted("API_PresentVOB");
+  mpe.regs[0] = 1;
 }
 
 void API_StartCellStill(MPE &mpe)
 {
-  //mpe.regs[0] = 1;
+  EnsureDvdPlaybackStarted("API_StartCellStill");
+  mpe.regs[0] = 1;
 }
 
 void API_CellStillDone(MPE &mpe)
 {
-  //mpe.regs[0] = 1;
+  // "Is the still cell done?" — return 1 once the VOB hits EOF.
+  mpe.regs[0] = DvdPlayerActive_IsAtEnd() ? 1 : 0;
 }
 
 void API_PresentCell(MPE &mpe)
 {
-  //mpe.regs[0] = 1;
+  EnsureDvdPlaybackStarted("API_PresentCell");
+  mpe.regs[0] = 1;
 }
 
 void API_CellReadDone(MPE &mpe)

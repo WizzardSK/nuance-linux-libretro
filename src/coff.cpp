@@ -86,8 +86,13 @@ bool MPE::LoadCoffFile(const char * const filename, bool bSetEntryPoint, int han
       sectionhdr.s_nlnno = bswap32(sectionhdr.s_nlnno);
       sectionhdr.s_flags = bswap32(sectionhdr.s_flags);
 
+      if (getenv("NUANCE_LOG_COFF"))
+        fprintf(stderr, "[COFF] section name=%-8s paddr=0x%08X size=0x%08X flags=0x%08X scnptr=0x%X\n",
+                sectionhdr.s_name, sectionhdr.s_paddr, sectionhdr.s_size, sectionhdr.s_flags, sectionhdr.s_scnptr);
       if((sectionhdr.s_flags & 0x000000282) != 0)
       {
+        if (getenv("NUANCE_LOG_COFF"))
+          fprintf(stderr, "  (skipped due to flags & 0x282)\n");
         //Don't skip the bss or section even though
         //it is marked as do-not-load.  VM Labs actually
         //puts code into the BSS section and later zeroes it
@@ -110,6 +115,9 @@ bool MPE::LoadCoffFile(const char * const filename, bool bSetEntryPoint, int han
 
       if(sectionhdr.s_paddr < MAIN_BUS_BASE)
       {
+        if (getenv("NUANCE_LOG_COFF"))
+          fprintf(stderr, "  -> writing to mpe.dtrom[0x%X] (LOCAL MPE)\n",
+                  sectionhdr.s_paddr & MPE_VALID_MEMORY_MASK);
         //assume local MPE memory
         _read(handle,&dtrom[sectionhdr.s_paddr & MPE_VALID_MEMORY_MASK],sectionhdr.s_size);
       }
@@ -134,6 +142,10 @@ bool MPE::LoadCoffFile(const char * const filename, bool bSetEntryPoint, int han
       }
       else
       {
+        if (getenv("NUANCE_LOG_COFF"))
+          fprintf(stderr, "  -> writing to systemBusDRAM[0x%X..0x%X]\n",
+                  sectionhdr.s_paddr & SYSTEM_BUS_VALID_MEMORY_MASK,
+                  (sectionhdr.s_paddr & SYSTEM_BUS_VALID_MEMORY_MASK) + sectionhdr.s_size);
         //assume system bus DRAM
         if(strcmp(sectionhdr.s_name,"PATCH") == 0)
         {

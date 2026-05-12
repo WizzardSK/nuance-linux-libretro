@@ -137,6 +137,7 @@ struct RECT {
 #define VK_LEFT  0x25
 #define VK_RIGHT 0x27
 #define VK_F1    0x70
+#define VK_F12   0x7B
 #define VK_ESCAPE 0x1B
 #define VK_RETURN 0x0D
 #define VK_SPACE 0x20

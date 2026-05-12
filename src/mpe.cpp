@@ -928,7 +928,7 @@ bool MPE::LoadBinaryFile(uchar *filename, bool bIRAM)
 }
 #endif
 
-inline uint32 MPE::GetPacketDelta(const uint8 *iPtr, uint32 numLevels)
+uint32 MPE::GetPacketDelta(const uint8 *iPtr, uint32 numLevels)
 {
   bool bTerminating;
 
@@ -1974,8 +1974,12 @@ bool MPE::FetchDecodeExecute()
 
     bool skip_to_execute_block = false;
 
+    static int s_nojit_inited = 0;
+    static bool s_nojit = false;
+    if (!s_nojit_inited) { s_nojit_inited = 1; s_nojit = (getenv("NUANCE_NOJIT") != NULL); }
+
     const bool only_find_icache_entry = (ecuSkipCounter | interpretNextPacket) != 0;
-    if(!only_find_icache_entry)
+    if(!only_find_icache_entry && !s_nojit)
     {
       pNativeCodeCacheEntry = nativeCodeCache.pageMap.FindEntry(pcexecLookupValue);
       if(pNativeCodeCacheEntry && (pNativeCodeCacheEntry->virtualAddress == pcexecLookupValue))
@@ -2089,6 +2093,118 @@ bool MPE::FetchDecodeExecute()
     }
 #endif
 
+    // Runtime PC trace, gated by env vars NUANCE_TRACE_LO / NUANCE_TRACE_HI
+    // (hex, e.g. 0x80031F00 / 0x80031FFF). Optional NUANCE_TRACE_SAMPLE
+    // (default 100) keeps every Nth packet so long-running spins don't fill
+    // the disk. Optional NUANCE_TRACE_CAP (default 500000) is the absolute
+    // upper bound on emitted lines. Off by default — no overhead unless
+    // both LO and HI are set in the environment.
+    {
+      static int trace_inited = 0;
+      static uint32 trace_lo = 0, trace_hi = 0;
+      static uint32 trace_sample = 100;
+      static int trace_cap = 500000;
+      static int trace_count[4] = {0, 0, 0, 0}; // per-MPE: cap is per-MPE
+      static int trace_mpe_mask = 0xF; // bitmask of MPEs to trace
+      if (!trace_inited) {
+        trace_inited = 1;
+        const char* slo = getenv("NUANCE_TRACE_LO");
+        const char* shi = getenv("NUANCE_TRACE_HI");
+        const char* ssamp = getenv("NUANCE_TRACE_SAMPLE");
+        const char* scap = getenv("NUANCE_TRACE_CAP");
+        const char* smpe = getenv("NUANCE_TRACE_MPE"); // e.g. "2" to trace only MPE2
+        if (slo && shi) {
+          trace_lo = (uint32)strtoul(slo, NULL, 0);
+          trace_hi = (uint32)strtoul(shi, NULL, 0);
+          if (ssamp) trace_sample = (uint32)strtoul(ssamp, NULL, 0);
+          if (scap) trace_cap = (int)strtoul(scap, NULL, 0);
+          if (smpe) trace_mpe_mask = 1 << (atoi(smpe) & 3);
+          fprintf(stderr,
+                  "[NUON-TRACE] enabled for PC [0x%08X..0x%08X] sample=%u cap=%d mpemask=0x%X\n",
+                  trace_lo, trace_hi, trace_sample, trace_cap, trace_mpe_mask);
+        }
+      }
+      // Optional NUANCE_WATCH=<hex sysbus addr>: poll value at that
+      // address every packet, log when it changes (and which MPE/PC was
+      // executing at the change). Cheap memory watchpoint.
+      {
+        static int wp_inited = 0;
+        static uint32 wp_addr = 0;
+        static uint32 wp_last = 0xDEADBEEF;
+        if (!wp_inited) {
+          wp_inited = 1;
+          const char* s = getenv("NUANCE_WATCH");
+          if (s) wp_addr = (uint32)strtoul(s, NULL, 0);
+          if (wp_addr >= SYSTEM_BUS_BASE) {
+            extern NuonEnvironment nuonEnv;
+            wp_last = *(uint32*)&nuonEnv.systemBusDRAM[wp_addr & SYSTEM_BUS_VALID_MEMORY_MASK];
+            fprintf(stderr, "[NUON-WATCH] watching 0x%08X (initial host-bytes=0x%08X)\n", wp_addr, wp_last);
+          }
+        }
+        if (wp_addr >= SYSTEM_BUS_BASE) {
+          extern NuonEnvironment nuonEnv;
+          const uint32 cur = *(uint32*)&nuonEnv.systemBusDRAM[wp_addr & SYSTEM_BUS_VALID_MEMORY_MASK];
+          if (cur != wp_last) {
+            fprintf(stderr, "[NUON-WATCH] *0x%08X: 0x%08X -> 0x%08X (mpe%u pc=0x%08X rz=0x%08X)\n",
+                    wp_addr, wp_last, cur, mpeIndex, pcexec, rz);
+            wp_last = cur;
+          }
+        }
+      }
+
+      // Optional NUANCE_RZ_AT=<hex pc>: every time pcexec == that PC, log
+      // mpe.rz (i.e. the link register / who called). Useful for finding
+      // outer-loop callers without running a full PC trace.
+      {
+        static int rz_at_inited = 0;
+        static uint32 rz_at_pc = 0;
+        static uint32 last_rz = 0xDEADBEEF;
+        if (!rz_at_inited) {
+          rz_at_inited = 1;
+          const char* s = getenv("NUANCE_RZ_AT");
+          if (s) rz_at_pc = (uint32)strtoul(s, NULL, 0);
+        }
+        if (rz_at_pc && pcexec == rz_at_pc && rz != last_rz) {
+          fprintf(stderr, "[NUON-RZ-AT] mpe%u pc=0x%08X rz=0x%08X\n",
+                  mpeIndex, pcexec, rz);
+          last_rz = rz;
+        }
+      }
+
+      if (trace_lo && (trace_mpe_mask & (1 << mpeIndex)) &&
+          pcexec >= trace_lo && pcexec <= trace_hi && trace_count[mpeIndex] < trace_cap) {
+        if (trace_count[mpeIndex] == 0) {
+          // Dump 256 bytes around the trace range so the disassembly
+          // is captured alongside the runtime trace.
+          extern NuonEnvironment nuonEnv;
+          uint32 dump_lo = trace_lo & ~0xFFu;
+          uint8* p = (uint8*)nuonEnv.GetPointerToMemory(mpeIndex, dump_lo, false);
+          if (p) {
+            fprintf(stderr, "[NUON-TRACE-DUMP] @0x%08X (256 bytes):\n", dump_lo);
+            for (int row = 0; row < 16; row++) {
+              fprintf(stderr, "  %08X:", dump_lo + row * 16);
+              for (int col = 0; col < 16; col++) {
+                fprintf(stderr, " %02X", p[row * 16 + col]);
+              }
+              fprintf(stderr, "\n");
+            }
+          }
+        }
+        if (trace_sample == 0 || (trace_count[mpeIndex] % trace_sample) == 0) {
+          char dasm[512] = {0};
+          PrintInstructionCachePacket(dasm, sizeof(dasm), pcexec);
+          for (size_t k = strlen(dasm); k > 0 && (dasm[k-1] == '\n' || dasm[k-1] == '\r'); --k)
+            dasm[k-1] = 0;
+          for (char* p = dasm; *p; p++) if (*p == '\n') { p[0] = '|'; }
+          fprintf(stderr,
+                  "[T%06d mpe%u] pc=0x%08X next=0x%08X r0=%08X r29=%08X r30=%08X | %s\n",
+                  trace_count[mpeIndex], mpeIndex, pcexec, pcfetchnext,
+                  regs[0], regs[29], regs[30], dasm);
+        }
+        trace_count[mpeIndex]++;
+      }
+    }
+
     bool skip_to_halt_block = false;
     if(nativeCodeCacheEntryPoint)
     {
@@ -2151,7 +2267,38 @@ bool MPE::FetchDecodeExecute()
       {
         cycleCounter++;
         //Execute BIOS function: force to one of 256 entries
-        BiosJumpTable[(pcexec >> 1) & 0xFF](*this);
+        const uint32 biosSlot = (pcexec >> 1) & 0xFF;
+        // NUANCE_LOG_BIOS=1: log every BIOS call with slot + return-address.
+        // Useful for tracking what a stuck launcher polls on. Slow when on.
+        // NUANCE_LOG_BIOS_SKIP=<slot>[,slot...]: comma-separated slots to
+        // exclude (e.g. spinwait=96, BiosPoll=32, kprintf=145) so the chatty
+        // ones don't drown out the interesting ones.
+        static int s_logBios = -1;
+        static uint64_t s_biosSkipMask[4] = {0,0,0,0};
+        if (s_logBios < 0) {
+          s_logBios = getenv("NUANCE_LOG_BIOS") ? 1 : 0;
+          if (const char* skip = getenv("NUANCE_LOG_BIOS_SKIP")) {
+            const char* p = skip;
+            while (*p) {
+              char* e = nullptr;
+              unsigned long v = strtoul(p, &e, 0);
+              if (e == p) break;
+              if (v < 256) s_biosSkipMask[v >> 6] |= (1ULL << (v & 63));
+              p = e;
+              while (*p == ',' || *p == ' ') p++;
+            }
+          }
+        }
+        if (s_logBios &&
+            !((s_biosSkipMask[biosSlot >> 6] >> (biosSlot & 63)) & 1)) {
+          extern const char* BiosRoutineNames[];
+          fprintf(stderr,
+                  "[BIOS] mpe%u slot=%u (%s) r0=%08X r1=%08X r2=%08X r3=%08X rz=%08X\n",
+                  mpeIndex, biosSlot,
+                  biosSlot < 151 && BiosRoutineNames[biosSlot] ? BiosRoutineNames[biosSlot] : "?",
+                  regs[0], regs[1], regs[2], regs[3], rz);
+        }
+        BiosJumpTable[biosSlot](*this);
 
         if(!bCallingMediaCallback)
         {

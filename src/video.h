@@ -106,6 +106,7 @@ void VidSetCLUTRange(MPE &mpe);
 void InitializeColorSpaceTables();
 void RenderVideo(int width, int height);
 void VideoCleanup();
+void VideoInvalidateGLState();
 void IncrementVideoFieldCounter();
 
 #endif

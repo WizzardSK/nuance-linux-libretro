@@ -14,6 +14,10 @@ public:
 
   bool Uninitalize();
 
+  // Drop GL handles without calling glDelete* — for use after the GL
+  // context they belonged to has already been destroyed.
+  void ForgetHandles();
+
   bool InstallShaderSourceFromFile(const char * const filename, GLenum type);
   bool InstallShaderSourceFromMemory(char **sourceStrings, uint32 count, const int *lengths, GLenum type);
   bool CompileShader(GLenum type);

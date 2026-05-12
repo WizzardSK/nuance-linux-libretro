@@ -213,6 +213,72 @@ void NullBiosHandler(MPE &mpe)
   //::MessageBox(NULL,msg,"Unimplemented BIOS Routine",MB_OK);
 }
 
+// _FindName (BIOS slot 121): enumerate named items under a path and
+// return their names one by one. Tetris / Sampler nuon.run spins on
+// this waiting for the loop sentinel (r0 = -1 = "no more items").
+//
+// Bare-bones implementation: report empty enumeration immediately so
+// the caller falls out of its scan loop. The menu logic on the disc
+// then either renders an empty list or falls back to a hard-coded
+// title (which is fine — DEMO_LAUNCH still gives a launcher).
+//
+// Real signature is undocumented; the calling convention seen on
+// Tetris's MPE3 is:
+//   r0 = path pointer (e.g. "/")
+//   r1 = index
+//   r2 = output name buffer
+//   r3 = output buffer size
+//   r4 = (?) extra slot
+// Return value in r0: -1 = end-of-enumeration, otherwise length / id.
+void FindName(MPE &mpe)
+{
+  // r0 = path (e.g. pointer to "/")
+  // r1 = index (0, 1, 2, ...)
+  // r2 = output name buffer (sysbus address)
+  // r3 = output buffer size
+  // r4 = (?) extra slot
+  // returns r0 = -1 at end-of-enumeration; otherwise a status code and
+  // fills the buffer at r2 with the next item's name.
+  const uint32 idx     = mpe.regs[1];
+  const uint32 outAddr = mpe.regs[2];
+  const uint32 outSize = mpe.regs[3];
+
+  // Fake enumeration: report the .cof / .run apps that ship on demo
+  // discs. End the list with -1 so the caller drops out of its scan.
+  static const char* const kNames[] = {
+    "tnt", "tempest", "merlinracing",
+  };
+  const uint32 N = (uint32)(sizeof(kNames) / sizeof(kNames[0]));
+
+  static int s_logged = 0;
+  if (s_logged < 8) {
+    fprintf(stderr, "[BIOS] _FindName r0=%08X r1=%u r2=%08X r3=%u r4=%08X",
+            mpe.regs[0], idx, outAddr, outSize, mpe.regs[4]);
+    s_logged++;
+  }
+
+  if (idx >= N) {
+    mpe.regs[0] = 0xFFFFFFFFu;
+    if (s_logged < 8) fprintf(stderr, " -> -1 (end)\n");
+    return;
+  }
+
+  // Copy name (NUON sysbus is big-endian byte order; bytes go through
+  // unchanged for char data).
+  extern NuonEnvironment nuonEnv;
+  uint8* dst = (uint8*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, outAddr, true);
+  if (dst && outSize > 0) {
+    const char* name = kNames[idx];
+    const size_t cap = outSize - 1;
+    size_t i = 0;
+    for (; i < cap && name[i]; i++) dst[i] = (uint8)name[i];
+    dst[i] = 0;
+  }
+
+  mpe.regs[0] = 0; // success
+  if (s_logged < 8) fprintf(stderr, " -> 0 (\"%s\")\n", kNames[idx]);
+}
+
 void AssemblyBiosHandler(MPE &mpe)
 {
 }
@@ -344,6 +410,20 @@ void IntSetVector(MPE &mpe)
 
 void BiosExit(MPE &mpe)
 {
+  static int s_logged = 0;
+  if (s_logged < 8) {
+    fprintf(stderr, "[BIOS] BiosExit (slot 30) called: mpe%u pc=0x%08X r0=0x%08X rz=0x%08X\n",
+            mpe.mpeIndex, mpe.pcexec, mpe.regs[0], mpe.rz);
+    s_logged++;
+  }
+  // NUANCE_SLOT30_RET=<value>: don't halt the MPE, instead return the
+  // given value in r0. Used to test whether IS3's mcp.run startup at
+  // 0x80018086 is actually using slot 30 as a "get module index"
+  // overload rather than the documented "BiosExit" semantic.
+  if (const char* s = getenv("NUANCE_SLOT30_RET")) {
+    mpe.regs[0] = (uint32)strtoul(s, nullptr, 0);
+    return;
+  }
   //const uint32 return_value = mpe.regs[0];
   mpe.Halt();
 }
@@ -437,9 +517,9 @@ WillNotImplement, //_MemAdd (42)
 MemAlloc, //_MemAlloc (43)
 MemFree, //_MemFree (44)
 MemLocalScratch, //_MemLocalScratch (45)
-NullBiosHandler, //_MemLoadCoffX (46)
-NullBiosHandler, //_DownloadCoff (47)
-NullBiosHandler, //_StreamLoadCoff (48)
+MemLoadCoff,    //_MemLoadCoffX (46)
+DownloadCoff,   //_DownloadCoff (47)
+StreamLoadCoff, //_StreamLoadCoff (48)
 DMALinear, //_DMALinear (49)
 DMABiLinear, //_DMABiLinear (50)
 FileOpen, //_FileOpen (51)
@@ -512,7 +592,7 @@ NullBiosHandler, //_SecureForPE (117)
 NullBiosHandler, //_StartImageValid (118)
 NullBiosHandler, //_SetStartImage (119)
 NullBiosHandler, //_GetStartImage (120)
-NullBiosHandler, //_FindName (121)
+FindName, //_FindName (121)
 DeviceDetect, //_DeviceDetect (122)
 MPERunThread, //_MPERunThread (123)
 NullBiosHandler, //_BiosIRMask (124)

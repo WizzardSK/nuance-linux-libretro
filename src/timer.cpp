@@ -208,16 +208,19 @@ void TimerInit(MPE &mpe)
   const int32 whichTimer = mpe.regs[0];
   const int32 rate = mpe.regs[1];
 
-  // vidtimer (=2) is set by InitBios for mpe[3] at ~50 or 60Hz
-
-  if(whichTimer != 1) // as timer0 is reserved for BIOS and running at 200Hz according to BIOS doc, and vidtimer (=2) at refresh rate
+  // Three NUON timers are supported by the main-loop scheduler:
+  //   timer0 = sysTimer0 (200Hz default, set by BIOS but games may reinit)
+  //   timer1 = sysTimer1 (user)
+  //   timer2 = vidTimer  (refresh rate, set by BIOS for mpe[3])
+  // Iron Soldier 3's ismerlin.run reinitialises timer0 once level data is
+  // loaded; the previous assert-only stub blocked it from booting.
+  if(whichTimer >= 0 && whichTimer <= 2)
   {
-    assert(false); //!! just to see if something calls this invalid (i.e. with 0 or 2)
-    mpe.regs[0] = 0;
+    TimerInit((uint32)whichTimer, (uint32)rate);
+    mpe.regs[0] = 1;
   }
   else
   {
-    TimerInit(whichTimer,rate);
-    mpe.regs[0] = 1;
+    mpe.regs[0] = 0;
   }
 }

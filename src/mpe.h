@@ -367,6 +367,11 @@ public:
   uint32 interpreterInvalidateRegionEnd;
 
   bool bInvalidateInterpreterCache;
+
+  // VLD-BDU HLE: count reads from MPEG-VLD control regs (0x1200-0x1320)
+  // so the stub can return sequence_header_code first, then
+  // sequence_end_code after a few reads — see MPEControlRegisters.cpp.
+  uint32 vldReadCount = 0;
   bool bInvalidateInstructionCaches;
   bool bInterpretedBranchTaken;
   bool nuances_use_tempreg_union; // steers which pointer to 48 MPE Regs is used, either reg_union or tempreg_union, which is then passed to the Nuances

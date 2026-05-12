@@ -342,6 +342,12 @@ std::string MountAndFind(const char* archivePath)
     return "";
   }
 
+  // Record the mount root in g_ISOPath so PresentationEngine.cpp can
+  // find video_ts/*.vob for DVD playback. PE uses g_ISOPath as the
+  // root of a mounted disc; for the inner-ISO branch above the
+  // ExtractIsoBootAndArmDataReads sets g_ISOPath itself.
+  if (g_ISOPath.empty()) g_ISOPath = mp;
+
   fprintf(stderr, "Found: %s\n", result.c_str());
   return result;
 }

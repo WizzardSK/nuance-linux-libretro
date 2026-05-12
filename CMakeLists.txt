@@ -4,12 +4,16 @@ project(Nuance CXX C)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
-# Find SDL2 and OpenGL
-if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
-    # Manual SDL2 configuration (for static 32-bit builds)
-    message(STATUS "Using manually specified SDL2: ${SDL2_LIBRARIES}")
-else()
-    find_package(SDL2 REQUIRED)
+option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
+
+# Find SDL2 (standalone only) and OpenGL
+if(NOT BUILD_LIBRETRO)
+    if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
+        # Manual SDL2 configuration (for static 32-bit builds)
+        message(STATUS "Using manually specified SDL2: ${SDL2_LIBRARIES}")
+    else()
+        find_package(SDL2 REQUIRED)
+    endif()
 endif()
 find_package(OpenGL REQUIRED)
 
@@ -57,6 +61,7 @@ set(NUANCE_SOURCES
     src/audio.cpp
     src/bdma_type12.cpp
     src/bdma_type5.cpp
+    src/bdma_type6.cpp
     src/bdma_type8.cpp
     src/bdma_type9.cpp
     src/bios.cpp
@@ -124,12 +129,32 @@ set(NUANCE_SOURCES
     src/timer.cpp
     src/Utility.cpp
     src/video.cpp
+    src/mpx_decoder.cpp
+    src/dvd_player.cpp
     $<IF:$<PLATFORM_ID:Windows>,,src/NuanceUI.cpp>
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:src/asmjit_emit.cpp>
 )
 
-add_executable(nuance ${NUANCE_SOURCES})
-set(NUANCE_TARGET nuance)
+# FFmpeg (libavcodec / libavutil / libswscale) for .mpx (NUON-MOVIELIB)
+# cutscene playback. Required for the standalone Linux build.
+if(NOT WIN32)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale)
+    pkg_check_modules(DVDNAV IMPORTED_TARGET dvdnav dvdread)
+endif()
+
+if(BUILD_LIBRETRO)
+    # Libretro core - shared library
+    # Remove standalone-specific files for libretro build
+    list(FILTER NUANCE_SOURCES EXCLUDE REGEX "NuanceMain|GLWindow|InputManager|NuanceUI")
+    add_library(nuance_libretro SHARED ${NUANCE_SOURCES} src/libretro.cpp)
+    set_target_properties(nuance_libretro PROPERTIES PREFIX "" OUTPUT_NAME "nuance_libretro")
+    target_compile_definitions(nuance_libretro PRIVATE LIBRETRO)
+    set(NUANCE_TARGET nuance_libretro)
+else()
+    add_executable(nuance ${NUANCE_SOURCES})
+    set(NUANCE_TARGET nuance)
+endif()
 
 target_include_directories(${NUANCE_TARGET} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -147,6 +172,7 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     _CRT_SECURE_NO_WARNINGS
     _LARGEFILE64_SOURCE
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:USE_ASMJIT>
+    $<$<BOOL:${DVDNAV_FOUND}>:HAVE_DVDNAV>
 )
 
 target_link_libraries(${NUANCE_TARGET} PRIVATE
@@ -155,6 +181,8 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     #miniz_impl
     #murmurhash # unused — see add_library above
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
+    $<$<NOT:$<PLATFORM_ID:Windows>>:PkgConfig::FFMPEG>
+    $<$<AND:$<NOT:$<PLATFORM_ID:Windows>>,$<BOOL:${DVDNAV_FOUND}>>:PkgConfig::DVDNAV>
     OpenGL::GL
     ${SDL2_LIBRARIES}
     pthread
@@ -163,7 +191,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
 )
 
 # Standalone build needs X11/GLX directly (NuanceUI uses Xlib, GLWindow uses GLX)
-if(NOT WIN32)
+if(NOT BUILD_LIBRETRO AND NOT WIN32)
     find_package(X11 REQUIRED)
     target_link_libraries(${NUANCE_TARGET} PRIVATE ${X11_LIBRARIES} -lGLX)
 endif()

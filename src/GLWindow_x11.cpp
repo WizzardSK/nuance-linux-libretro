@@ -236,6 +236,7 @@ static int XKeyToVKey(KeySym key)
     case XK_space: return VK_SPACE;
     case XK_Escape: return VK_ESCAPE;
     case XK_F1: return VK_F1;
+    case XK_F12: return VK_F12;
     default: return key & 0xFF;
   }
 }
@@ -365,6 +366,14 @@ void GLWindow::MessagePump()
         if (inputManager) inputManager->keyDown(applyControllerState, (int16)vkey);
         if (vkey == VK_F1 || (vkey == VK_ESCAPE && bFullScreen))
           ToggleFullscreen();
+        if (vkey == VK_F12) {
+          // Tear down libavcodec; MpxDecoderActive_IsAtEnd() then
+          // returns true, the VLD-BDU stub flips to sequence_end_code,
+          // and fmv.run advances naturally. No MPE halt needed.
+          extern void MpxSkipCutscene();
+          MpxSkipCutscene();
+          fprintf(stderr, "[F12] skip cutscene: torn down MPX decoder\n");
+        }
         break;
       }
       case KeyRelease:

@@ -65,6 +65,17 @@ bool ShaderProgram::Uninitalize()
   return true;
 }
 
+void ShaderProgram::ForgetHandles()
+{
+  hProgramObject = 0;
+  hVertexShaderObject = 0;
+  hFragmentShaderObject = 0;
+  bVertexShaderObjectAttached = false;
+  bFragmentShaderObjectAttached = false;
+  bVertexShaderCodeLoaded = false;
+  bFragmentShaderCodeLoaded = false;
+}
+
 void ShaderProgram::PrintInfoLog(GLhandleARB obj, const char *msg)
 {
   int32 blen = 0;   /* length of buffer to allocate */

@@ -3,6 +3,7 @@
 #include <windows.h>
 #endif
 #include "bdma_type5.h"
+#include "bdma_type6.h"
 #include "bdma_type8.h"
 #include "bdma_type12.h"
 #include "byteswap.h"
@@ -257,7 +258,7 @@ constexpr BilinearDMAHandler BilinearDMAHandlers[] =
 //Pixel Type 6: 32-bit with 32-bit Z
 //Write
   //Horizontal, A = 0, B = 0
-  UnimplementedBilinearDMAHandler,
+  BDMA_Type6_Write_0,
   //Horizontal, A = 1, B = 0
   UnimplementedBilinearDMAHandler,
   //Vertical, A = 0, B = 0
@@ -607,8 +608,56 @@ constexpr BilinearDMAHandler BilinearDMAHandlers[] =
 
 void UnimplementedBilinearDMAHandler(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32 xinfo, const uint32 yinfo, const uint32 intaddr)
 {
+  // Optional histogram: NUANCE_LOG_BDMA=1 records each unique
+  // (pixtype, RBVA) combination that hits this stub and the count.
+  // First 256 hits log inline; on every 1000th hit thereafter we
+  // dump the running histogram so we can see what the game is
+  // actually requesting without flooding stderr.
+  static int s_log_env = -1;
+  if (s_log_env < 0) s_log_env = getenv("NUANCE_LOG_BDMA") ? 1 : 0;
+  if (s_log_env) {
+    const uint32 whichRoutine =
+        (flags & 0xF1u)
+      | ((flags >> (13 - 3)) & 0x08u)
+      | ((flags >> (9 - 2))  & 0x06u);
+    static uint32 hits[128] = {0};
+    static uint64 total = 0;
+    hits[whichRoutine & 0x7F]++;
+    total++;
+    if (total <= 16 || (total % 5000) == 0) {
+      const uint32 pix  = (whichRoutine >> 4) & 0xF;
+      const bool   read = (whichRoutine & 0x08) != 0;
+      const bool   bb   = (whichRoutine & 0x04) != 0;
+      const bool   vert = (whichRoutine & 0x02) != 0;
+      const bool   ba   = (whichRoutine & 0x01) != 0;
+      fprintf(stderr, "[BDMA] unimpl idx=0x%02X pix=%u %s %s A=%d B=%d "
+                      "flags=0x%08X base=0x%08X x=0x%X y=0x%X int=0x%08X (total=%llu)\n",
+              whichRoutine, pix,
+              read ? "Read" : "Write", vert ? "V" : "H", ba ? 1 : 0, bb ? 1 : 0,
+              flags, baseaddr, xinfo, yinfo, intaddr,
+              (unsigned long long)total);
+    }
+    if ((total % 10000) == 0) {
+      fprintf(stderr, "[BDMA] histogram so far:\n");
+      for (int i = 0; i < 128; i++) {
+        if (hits[i]) {
+          fprintf(stderr, "  idx 0x%02X (pix=%u %s %s A=%d B=%d): %u\n",
+                  i, (i >> 4) & 0xF,
+                  (i & 8) ? "Read" : "Write", (i & 2) ? "V" : "H",
+                  (i & 1) ? 1 : 0, (i & 4) ? 1 : 0,
+                  hits[i]);
+        }
+      }
+    }
+  }
 #ifdef ENABLE_EMULATION_MESSAGEBOXES
-  MessageBox(NULL, "UnimplementedBilinearDMAHandler", "Error", MB_OK);
+  static int s_msg_count = 0;
+  // Suppress the MessageBox stub after the first few hits so it
+  // doesn't drown out other diagnostics. The histogram above is a
+  // more useful long-running view.
+  if (!s_log_env && s_msg_count++ < 4) {
+    MessageBox(NULL, "UnimplementedBilinearDMAHandler", "Error", MB_OK);
+  }
 #endif
   return;
 }
@@ -626,23 +675,21 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
   {
     if((baseaddr & 0xF0700000) != MPE_CTRL_BASE) // this is the standard case here for the vast majority of linear DMAs and the only path that continues with the different copy cases below
     {
-      assert(((baseaddr >> 23) & 0x1Fu) < 4);
-      baseMemory = nuonEnv.GetPointerToMemory((baseaddr >> 23) & 0x1Fu, (baseaddr & 0xFFFFFFFC));
+      /* mpe_idx clamped via 0x3u mask below */
+      baseMemory = nuonEnv.GetPointerToMemory((baseaddr >> 23) & 0x3u, (baseaddr & 0xFFFFFFFC));
     }
     else // handle control register read/write and exit
     {
-      if (bRemote)
-        assert(((intaddr >> 23) & 0x1Fu) < 4);
-      MPE& m = bRemote ? nuonEnv.mpe[(intaddr >> 23) & 0x1Fu] : mpe;
+      MPE& m = bRemote ? nuonEnv.mpe[(intaddr >> 23) & 0x3u] : mpe;
       if(bRead)
       {
-        assert(((baseaddr >> 23) & 0x1Fu) < 4);
-        const uint32 directValue = SwapBytes(nuonEnv.mpe[(baseaddr >> 23) & 0x1Fu].ReadControlRegister((baseaddr & 0x207FFFFC) - MPE_CTRL_BASE, mpe.reg_union));
+        /* mpe_idx clamped via 0x3u mask below */
+        const uint32 directValue = SwapBytes(nuonEnv.mpe[(baseaddr >> 23) & 0x3u].ReadControlRegister((baseaddr & 0x207FFFFC) - MPE_CTRL_BASE, mpe.reg_union));
         if((intaddr & MPE_CTRL_BASE) == MPE_CTRL_BASE)
           m.WriteControlRegister((intaddr & 0x207FFFFC) - MPE_CTRL_BASE, directValue);
         else
         {
-          uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+          uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
           *intMemory = directValue;
         }
       }
@@ -655,7 +702,7 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
             directValue = m.ReadControlRegister((intaddr & 0x207FFFFC) - MPE_CTRL_BASE, mpe.reg_union);
           else
           {
-            const uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+            const uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
             directValue = *intMemory;
           }
         }
@@ -665,12 +712,12 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
             directValue = m.ReadControlRegister((intaddr & 0x207FFFFC) - MPE_CTRL_BASE, mpe.reg_union);
           else
           {
-            const uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+            const uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
             directValue = *intMemory;
           }
         }
-        assert(((baseaddr >> 23) & 0x1Fu) < 4);
-        nuonEnv.mpe[(baseaddr >> 23) & 0x1Fu].WriteControlRegister((baseaddr & 0x207FFFFC) - MPE_CTRL_BASE, SwapBytes(directValue));
+        /* mpe_idx clamped via 0x3u mask below */
+        nuonEnv.mpe[(baseaddr >> 23) & 0x3u].WriteControlRegister((baseaddr & 0x207FFFFC) - MPE_CTRL_BASE, SwapBytes(directValue));
       }
 
       return;
@@ -678,10 +725,8 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
   }
   else // handle flashEEPROM read/write and exit
   {
-    if(bRemote)
-      assert(((intaddr >> 23) & 0x1Fu) < 4);
     //internal address is: bRemote ? system address (but still in MPE memory) : local to MPE
-    uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+    uint32* const intMemory = (uint32*)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
 
     if(bRead)
     {
@@ -714,7 +759,7 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
      || flags_mlength == 268443648 // Rem 1 Dir 0 Dup 0 Read 1
      || flags_mlength == 0)) // Rem 0 Dir 0 Dup 0 Read 0
   {
-    void* const pTmp = nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+    void* const pTmp = nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
     const uint32* pSrc32 = (uint32*)(bRead ? baseMemory : pTmp);
     uint32* pDest32 = (uint32*)(bRead ? pTmp : baseMemory);
     while(length--)
@@ -799,8 +844,8 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
     if(bRemote)
     {
       //internal address is system address (but still in MPE memory)
-      assert(((intaddr >> 23) & 0x1Fu) < 4);
-      pDest = nuonEnv.GetPointerToMemory((intaddr >> 23) & 0x1Fu, (intaddr & 0x207FFFFC));
+      /* mpe_idx clamped via 0x3u mask below */
+      pDest = nuonEnv.GetPointerToMemory((intaddr >> 23) & 0x3u, (intaddr & 0x207FFFFC));
       if(bFlushCache)
       {
         //Maintain cache coherency!  This assumes that code will not be
@@ -878,9 +923,9 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
       {
         //Dup but not Direct: read scalar from memory, no need to swap
         if(bRemote)
-          assert(((intaddr >> 23) & 0x1Fu) < 4);
+          /* mpe_idx clamped via 0x3u mask below */
         //internal address is: bRemote ? system address (but still in MPE memory) : local to MPE
-        directValue = *((uint32 *)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC)));
+        directValue = *((uint32 *)nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC)));
 
 #ifndef NUANCE_LITTLE_ENDIAN
         if(wordSize == 1)
@@ -896,9 +941,9 @@ void DMALinear(MPE& mpe, const uint32 flags, const uint32 baseaddr, const uint32
     else
     {
       if(bRemote)
-        assert(((intaddr >> 23) & 0x1Fu) < 4);
+        /* mpe_idx clamped via 0x3u mask below */
       //internal address is: bRemote ? system address (but still in MPE memory) : local to MPE
-      pSrc = nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x1Fu : mpe.mpeIndex, (intaddr & 0x207FFFFC));
+      pSrc = nuonEnv.GetPointerToMemory(bRemote ? (intaddr >> 23) & 0x3u : mpe.mpeIndex, (intaddr & 0x207FFFFC));
     }
   }
 

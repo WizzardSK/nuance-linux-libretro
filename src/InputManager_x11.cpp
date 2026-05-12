@@ -8,6 +8,7 @@
 #include <cstring>
 
 extern NuonEnvironment nuonEnv;
+extern void DvdPlayerActive_SendNavInput(int code);
 
 InputManager::~InputManager() {}
 
@@ -31,7 +32,18 @@ public:
 
   void keyDown(CONTROLLER_CALLBACK applyState, int16 vkey) override {
     const int bitNum = nuonEnv.GetCTRLRBitnumFromMapping(ControllerButtonMapping(KEY, vkey, 0));
-    if (bitNum >= 0) keyButtons |= 1 << bitNum;
+    if (bitNum >= 0) {
+      const uint16 prev = keyButtons;
+      keyButtons |= 1 << bitNum;
+      // Edge-trigger DVD nav input (rising edges only — no auto-repeat).
+      const uint16 edge = keyButtons & ~prev;
+      if (edge & (1 << CTRLR_BITNUM_DPAD_UP))    DvdPlayerActive_SendNavInput(0);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_DOWN))  DvdPlayerActive_SendNavInput(1);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_LEFT))  DvdPlayerActive_SendNavInput(2);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_RIGHT)) DvdPlayerActive_SendNavInput(3);
+      if (edge & (1 << CTRLR_BITNUM_BUTTON_A))   DvdPlayerActive_SendNavInput(4);
+      if (edge & (1 << CTRLR_BITNUM_BUTTON_B))   DvdPlayerActive_SendNavInput(5);
+    }
     if (applyState) applyState(whichController, keyButtons);
   }
 
