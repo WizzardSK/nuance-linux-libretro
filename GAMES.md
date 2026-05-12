@@ -91,6 +91,17 @@ new page-flip is issued. Post-LEVELS slots are all compute/management:
 MPEStop/MPERun, DCacheSync/Flush, MPELoad, TimerInit, DMALinear — no
 rendering at all.
 
+**TimerInit clue**: post-LEVELS, IS3 calls `TimerInit(timer=2, rate=300)` —
+that's 300 µs per tick = 3333 Hz, vs. the normal 16666 µs = 60 Hz video
+refresh. IS3 reuses timer2 as a high-frequency compute interrupt after
+gameplay starts. This is unique to IS3 (other games keep timer2 at 60 Hz).
+The emulator's `(cycles % 500) == 0` rate-limit in the timer dispatcher
+means we deliver these interrupts at most ~1000 Hz, not 3333 Hz — but
+this is unlikely to be the blocker since IS3 doesn't poll the timer
+rate, only consumes the interrupts. Tested decoupling host-render trigger
+from timer2 (rate-limit render to 60 fps regardless of timer2 setting)
+— did NOT help IS3 (broke MPX → menu transition entirely). Reverted.
+
 **MPE3 hot loop**: spends 96% of post-LEVELS time in a memcpy+DCacheFlush
 +verify loop at `0x8008C9BC..0x8008C9F2`:
 1. Memcpy r28 bytes from `r16` (source) to `0x400A0000` (dest)
