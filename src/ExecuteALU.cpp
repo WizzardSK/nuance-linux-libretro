@@ -13,6 +13,7 @@ void Execute_ABS(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
     mpe.cc |= CC_ALU_CARRY;
     if(src1 == (int32)0x80000000)
     {
+      // "function might be considered to fail" according to spec
       //source was negative, result is negative (non-zero)
       mpe.cc |= (CC_ALU_NEGATIVE | CC_ALU_OVERFLOW);
     }
@@ -87,7 +88,7 @@ void Execute_BTST(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   // (0x80000000, 0xF00FF00F, 0x7FFFFFFF), forces CC to a known starting
   // value with `st_s #imm,cc`, runs `btst #$1F,r6`, reads CC back, ANDs
   // with 0x1FF, and `cmp`s against an expected post-state. For
-  // r6=0x80000000 / initial CC=0x1F7, the expected post-CC is 0x1F2 —
+  // r6=0x80000000 / initial CC=0x1F7, the expected post-CC is 0x1F2 -
   // i.e., bit 3 (N, value 0x08) is *cleared*, not set, even though bit 31
   // was tested and was non-zero. The other two tests are consistent.
   //
@@ -165,9 +166,9 @@ void Execute_MSB(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
   uint32 sigbits;
 
   mpe.cc &= ~CC_ALU_ZERO;
-  int32 n = mpe.regs[nuance.fields[FIELD_ALU_SRC1]];
+  int32 n = pRegs[nuance.fields[FIELD_ALU_SRC1]];
 
-  if((n == 0) || (n == -1))
+  if ((uint32)n + 1 <= 1)
   {
     sigbits = 0;
   }
@@ -176,27 +177,15 @@ void Execute_MSB(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
     //n = n if positive, n = ~n if negative
     n = (n ^ (n >> 31));
 
-    //fold n into itself to get a new value where all bits below the
-    //most significant one bit have also been set to one.
-
-    n |= (n >> 1);
-    n |= (n >> 2);
-    n |= (n >> 4);
-    n |= (n >> 8);
-    n |= (n >> 16);
-
-    //get the ones count
-
-    n -= ((n >> 1) & 0x55555555);
-    n = (((n >> 2) & 0x33333333) + (n & 0x33333333));
-    n = (((n >> 4) + n) & 0x0f0f0f0f);
-    n += (n >> 8);
-    n += (n >> 16);
-
-    //return the ones count... if n was originally 0 or -1 then the ones count
-    //will be zero which is exactly what we want
-    sigbits = ((uint32)n) & 0x1FU;
+#ifdef _MSC_VER
+    unsigned long idx;
+    _BitScanReverse(&idx, (unsigned long)n);
+    sigbits = (uint32)(idx + 1);
+#else
+    sigbits = (uint32)(32 - __builtin_clz((unsigned int)n));
+#endif
   }
+
 
   mpe.regs[nuance.fields[FIELD_ALU_DEST]] = sigbits;
 

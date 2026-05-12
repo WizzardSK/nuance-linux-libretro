@@ -207,7 +207,7 @@ void PropagateConstants_MSB(SuperBlockConstants &constants)
   {
     int32 n = constants.GetScalarRegisterConstant(src1Index);
     uint32 sigbits;
-    if((n == 0) || (n == -1))
+    if ((uint32)n+1 <= 1)
     {
       sigbits = 0;
     }
@@ -216,26 +216,13 @@ void PropagateConstants_MSB(SuperBlockConstants &constants)
       //n = n if positive, n = ~n if negative
       n = (n ^ (n >> 31));
 
-      //fold n into itself to get a new value where all bits below the
-      //most significant one bit have also been set to one.
-
-      n |= (n >> 1);
-      n |= (n >> 2);
-      n |= (n >> 4);
-      n |= (n >> 8);
-      n |= (n >> 16);
-
-      //get the ones count
-
-      n -= ((n >> 1) & 0x55555555);
-      n = (((n >> 2) & 0x33333333) + (n & 0x33333333));
-      n = (((n >> 4) + n) & 0x0f0f0f0f);
-      n += (n >> 8);
-      n += (n >> 16);
-
-      //return the ones count... if n was originally 0 or -1 then the ones count
-      //will be zero which is exactly what we want
-      sigbits = ((uint32)n) & 0x1FU;
+#ifdef _MSC_VER
+      unsigned long idx;
+      _BitScanReverse(&idx, (unsigned long)n);
+      sigbits = (uint32)(idx + 1);
+#else
+      sigbits = (uint32)(32 - __builtin_clz((unsigned int)n));
+#endif
     }
 
     uint32 flagValues = 0;
@@ -1548,7 +1535,7 @@ void PropagateConstants_FTSTScalarShiftScalar(SuperBlockConstants &constants)
     constants.nuance->fields[FIELD_ALU_HANDLER] = Handler_FTSTImmediateShiftScalar;
     constants.nuance->fields[FIELD_ALU_SRC1] = src1;
     //SRC2 must remain the shift register index (Sj) and DEST the AND-mask
-    //register index (Sk) — FTSTImmediateShiftScalar uses the same layout.
+    //register index (Sk) - FTSTImmediateShiftScalar uses the same layout.
     //Do NOT copy destIndex into SRC2 here (that is correct only for
     //the ScalarRotateScalar -> FTSTImmediate transform a few lines below).
     constants.ClearScalarInputDependency(src1Index);

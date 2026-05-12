@@ -716,13 +716,13 @@ void NativeCodeCache::X86Emit_ADDRR(const x86Reg regDest, const x86Reg regSrc)
 // unmapped address. On 32-bit it falls through to the existing 32-bit add.
 void NativeCodeCache::X86Emit_ADDRR64(const x86Reg regDest, const x86Reg regSrc)
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.add(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
     return;
   }
-#endif
+  #endif
   X86Emit_Group1RR(regDest, regSrc, 0);
 }
 
@@ -1076,7 +1076,7 @@ void NativeCodeCache::X86Emit_PUSHAW()
 
 void NativeCodeCache::X86Emit_PUSHAD()
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.push(asmjit::x86::rax);
@@ -1089,7 +1089,7 @@ void NativeCodeCache::X86Emit_PUSHAD()
     a.push(asmjit::x86::r15);
     return;
   }
-#endif
+  #endif
   *pEmitLoc++ = 0x60;
 }
 
@@ -1101,7 +1101,7 @@ void NativeCodeCache::X86Emit_POPAW()
 
 void NativeCodeCache::X86Emit_POPAD()
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.pop(asmjit::x86::r15);
@@ -1114,7 +1114,7 @@ void NativeCodeCache::X86Emit_POPAD()
     a.pop(asmjit::x86::rax);
     return;
   }
-#endif
+  #endif
   *pEmitLoc++ = 0x61;
 }
 
@@ -1182,6 +1182,26 @@ void NativeCodeCache::X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc)
   }
   *pEmitLoc++ = 0x0F;
   *pEmitLoc++ = 0xAF;
+  X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)((uint32)regDest & 0x07),((uint32)regSrc & 0x07));
+}
+
+void NativeCodeCache::X86Emit_BSRRR(const x86Reg regDest, const x86Reg regSrc)
+{
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.bsr(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
+  if(regDest < x86Reg::x86Reg_eax)
+  {
+    //r16, r/m16
+    *pEmitLoc++ = 0x66;
+  }
+  *pEmitLoc++ = 0x0F;
+  *pEmitLoc++ = 0xBD;
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)((uint32)regDest & 0x07),((uint32)regSrc & 0x07));
 }
 
@@ -1565,13 +1585,13 @@ void NativeCodeCache::X86Emit_MOVRR(const x86Reg regDest, const x86Reg regSrc)
 // On 32-bit, falls through to the existing 32-bit MOV (host pointers fit in 32-bit anyway).
 void NativeCodeCache::X86Emit_MOVRR64(const x86Reg regDest, const x86Reg regSrc)
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.mov(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
     return;
   }
-#endif
+  #endif
   X86Emit_Group1RR(regDest, regSrc, 17);
 }
 
@@ -3308,13 +3328,13 @@ void NativeCodeCache::X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc
 // base in the load. On 32-bit it falls through to the existing 32-bit cmovae.
 void NativeCodeCache::X86Emit_CMOVNBRR64(const x86Reg regDest, const x86Reg regSrc)
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.cmovae(NuanceJit::toGp64(regDest), NuanceJit::toGp64(regSrc));
     return;
   }
-#endif
+  #endif
   X86Emit_CMOVNBRR(regDest, regSrc);
 }
 
@@ -4663,13 +4683,13 @@ void NativeCodeCache::X86Emit_PADDRM(const x86Reg regSrc, const uintptr_t base, 
 
 void NativeCodeCache::X86Emit_MOVIR_Ptr(const uintptr_t addr, const x86Reg regDest)
 {
-#ifdef USE_ASMJIT
+  #ifdef USE_ASMJIT
   if (asmjitAs) {
     auto& a = *asmjitAs;
     a.mov(NuanceJit::toGp64(regDest), (uint64_t)addr);
     return;
   }
-#endif
+  #endif
   // On 32-bit, MOVIR with the 32-bit immediate is correct (host pointers fit).
   X86Emit_MOVIR((int32)addr, regDest);
 }

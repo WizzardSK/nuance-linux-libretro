@@ -239,6 +239,7 @@ public:
   }
   void X86Emit_IMULRRR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_IMULMRR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
+  void X86Emit_BSRRR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_PUSHIB(const int8 imm);
   void X86Emit_INSB();
   void X86Emit_INSW();
@@ -602,9 +603,9 @@ public:
   bool asmjitLabelBound[MAX_ASMJIT_LABELS] = {};
   bool asmjitBlockActive = false;
 
-  // Begin a new asmjit code block — call before emitting instructions
+  // Begin a new asmjit code block - call before emitting instructions
   void AsmJit_BeginBlock();
-  // End current block, copy code to buffer — returns code size in bytes
+  // End current block, copy code to buffer - returns code size in bytes
   uint32 AsmJit_EndBlock();
   // Bind a label at the current position (replaces SetLabelPointer for asmjit)
   void AsmJit_BindLabel(uint32 labelIndex);
