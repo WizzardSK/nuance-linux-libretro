@@ -163,7 +163,7 @@ void MakeDirsRecursive(const std::string& filePath)
 //
 // If an inner ISO is found, only that ISO is extracted (caller will then open
 // it with ISO9660Reader and read runtime data files from the ISO at original
-// LBAs — much faster than extracting every entry).
+// LBAs - much faster than extracting every entry).
 //
 // If no inner ISO but a boot file is found, every entry is extracted with its
 // directory structure preserved, so that `MediaRead` can later locate any data
@@ -206,7 +206,7 @@ bool ExtractZipBootOrIso(const char* zipPath, const std::string& tempDir, std::s
     }
   }
 
-  // Inner ISO takes priority — extract just it
+  // Inner ISO takes priority - extract just it
   if (innerIsoIdx >= 0) {
     const std::string out = tempDir + PATH_SEP + innerIsoBasename;
     if (mz_zip_reader_extract_to_file(&zip, innerIsoIdx, out.c_str(), 0))
@@ -272,7 +272,7 @@ std::string MountPath(const char* archivePath)
     cmd = "fuseiso \"" + path + "\" \"" + mountPoint + "\" 2>/dev/null";
     ret = system(cmd.c_str());
     if (ret != 0) {
-      // Last resort: extract NUON dir via 7z (not a mount — don't track for fusermount)
+      // Last resort: extract NUON dir via 7z (not a mount - don't track for fusermount)
       cmd = "7z x -y -o\"" + mountPoint + "\" \"" + path + "\" NUON/ nuon/ Nuon/ > /dev/null 2>&1";
       ret = system(cmd.c_str());
       if (ret == 0) {

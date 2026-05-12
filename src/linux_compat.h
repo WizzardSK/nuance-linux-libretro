@@ -337,7 +337,7 @@ inline unsigned int __popcnt(unsigned int x) {
 // _lrotr / _lrotl replacements (32-bit rotate).
 // gcc's <ia32intrin.h> defines these as MACROS using __rorq/__rolq on LP64
 // (64-bit Linux), so #ifndef misses them and you get a 64-bit rotate fed a
-// uint32 — wrong result. Force-redefine to 32-bit rotates.
+// uint32 - wrong result. Force-redefine to 32-bit rotates.
 #undef _lrotr
 #undef _lrotl
 #define _lrotr(val, shift) (uint32_t)(((uint32_t)(val) >> ((shift) & 31)) | ((uint32_t)(val) << ((32 - ((shift) & 31)) & 31)))

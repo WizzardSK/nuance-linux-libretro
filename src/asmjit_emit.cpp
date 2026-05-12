@@ -141,14 +141,14 @@ void NativeCodeCache::AsmJit_BindLabel(uint32 labelIndex)
     if (!asmjitAs || labelIndex >= MAX_ASMJIT_LABELS) return;
 
     if (!asmjitLabelBound[labelIndex]) {
-        // First use — create and bind
+        // First use - create and bind
         if (!asmjitLabels[labelIndex].is_valid()) {
             asmjitLabels[labelIndex] = asmjitAs->new_label();
         }
         asmjitAs->bind(asmjitLabels[labelIndex]);
         asmjitLabelBound[labelIndex] = true;
     } else {
-        // Already bound — just bind again (asmjit will error, but shouldn't happen)
+        // Already bound - just bind again (asmjit will error, but shouldn't happen)
         asmjitAs->bind(asmjitLabels[labelIndex]);
     }
 }
@@ -158,7 +158,7 @@ asmjit::Label& NativeCodeCache::AsmJit_GetLabel(uint32 labelIndex)
     assert(labelIndex < MAX_ASMJIT_LABELS);
 
     // If the label was already bound (by a previous Emit_* function within the
-    // same SuperBlock), create a fresh one — Emit_* helpers assume the small
+    // same SuperBlock), create a fresh one - Emit_* helpers assume the small
     // label indices 0,1,2,... are fresh after patchMgr.Reset() at the top of
     // each handler. Without this, a JCC_Label reference resolves to the OLD
     // bind site, producing a backward jump and an infinite host-side loop.

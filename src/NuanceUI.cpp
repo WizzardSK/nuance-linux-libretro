@@ -111,7 +111,7 @@ static void ShowStatusDialog()
 
 static void ShowRegistersDialog()
 {
-    // Show MPE3 registers (main processor) — could add selection later
+    // Show MPE3 registers (main processor) - could add selection later
     static int mpeIdx = 3;
     const MPE& mpe = nuonEnv.mpe[mpeIdx];
 

@@ -589,6 +589,10 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 - Can load games directly from ZIP/ISO files on Windows.
 - On Linux additionally supports RAR/7z via FUSE tools.
 - All "with carry" opcodes (=addwc/subwc/cmpwc variants) should now behave as written in the ISA spec.
+- MSB JIT bug fixed.
+- Fix bug in JIT versions of MULScalarShiftAcshift, MULImmediateShiftAcshift, MULScalarShiftScalar and MULImmediateShiftScalar (shift broken if left shift >= 32 used).
+- Fix bug in JIT version of MULImmediateShiftLeftImmediate (wrong dependency used).
+- Fix wrong flag setting for large numbers (highest bit set) in JIT versions of DECRc0 and DECRc1.
 - BTST is still not same as ISA spec (as apparently a real HW bug, at least on Aries 2 (=tested there)).
 - Multiple bugs in the "CompilerConstantPropagation"-enabled path fixed, so enabled by default now, leading to more performance.
 - Fix "_MPEAlloc()" logic to match original BIOS

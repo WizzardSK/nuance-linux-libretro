@@ -3322,7 +3322,7 @@ void NativeCodeCache::X86Emit_CMOVNBRR(const x86Reg regDest, const x86Reg regSrc
 }
 
 // 64-bit CMOVAE r64, r64. Used in the legacy bank-selection pattern
-// (4× MOVIR with bank bases + 3× CMP+CMOVNB to pick the right one). Source
+// (4x MOVIR with bank bases + 3x CMP+CMOVNB to pick the right one). Source
 // registers hold 64-bit host pointers from MOVIR_Ptr; the 32-bit CMOVNB
 // truncates the upper 32 bits → segfault when ebx is later used as memory
 // base in the load. On 32-bit it falls through to the existing 32-bit cmovae.

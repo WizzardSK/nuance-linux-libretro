@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
           }
         } else last_time2 = new_time;
 
-        // audTimer — push one Nuon audio period into the host audio ring (byte-swapped), advance the
+        // audTimer - push one Nuon audio period into the host audio ring (byte-swapped), advance the
         // DMA half pointer, fire INT_AUDIO. Ring full -> skip this iteration
         if (nuonEnv.timer_rate[2] > 0) {
           if (nuonEnv.pNuonAudioBuffer &&

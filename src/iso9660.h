@@ -1,4 +1,4 @@
-// Minimal ISO9660 reader — reads files from ISO image without mounting
+// Minimal ISO9660 reader - reads files from ISO image without mounting
 // Supports reading from a file within a FUSE-mounted ZIP
 #ifndef ISO9660_H
 #define ISO9660_H
@@ -135,7 +135,7 @@ public:
                 //logout(o);
                 if (cmpResult == 0) {
                     if (end >= spath.size()) {
-                        // Last component — this is the file
+                        // Last component - this is the file
                         outLBA = e.lba;
                         outSize = e.size;
                         return true;

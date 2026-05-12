@@ -138,7 +138,7 @@ inline uint32_t ptrSize(x86MemPtr ptr) {
 }
 
 // Build a memory operand from base/index/scale/disp.
-// If base > 7, it's an absolute 64-bit address — load into R15 scratch register first.
+// If base > 7, it's an absolute 64-bit address - load into R15 scratch register first.
 // The assembler reference is needed to emit the mov r15 instruction.
 // Returns an asmjit Mem operand suitable for use in the next instruction.
 inline x86::Mem buildMem(x86::Assembler& a, uintptr_t base,
@@ -146,7 +146,7 @@ inline x86::Mem buildMem(x86::Assembler& a, uintptr_t base,
                          uint32_t size = 4)
 {
     if (base > 7) {
-        // Absolute address — load into R15 scratch register
+        // Absolute address - load into R15 scratch register
         a.mov(x86::r15, (uint64_t)base);
         if (index != x86IndexReg::x86IndexReg_none) {
             return x86::ptr(x86::r15, indexToGp64(index), scaleToShift(scale), disp, size);
