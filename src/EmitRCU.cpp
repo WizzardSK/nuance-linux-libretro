@@ -31,11 +31,11 @@ void Emit_DECRc0(EmitterVariables * const vars, const Nuance &nuance)
   //ebp = 0
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
   //rc0M1 = rc0 - 1
-  vars->mpe->nativeCodeCache.X86Emit_DECR(x86Reg::x86Reg_ebx);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(1, x86Reg::x86Reg_ebx);
   //if(rc0M1 >= 0), rc0WriteBack = rc0 (otherwise rc0M1)
-  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNBRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
   //if(rc0M1) > 0), flagSetMask = 0 (otherwise CC_COUNTER0_ZERO)
-  vars->mpe->nativeCodeCache.X86Emit_CMOVNLERR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNBERR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
   if(vars->miscRegOutDep & DEPENDENCY_MASK_RC0)
   {
     //rc0 = rc0WriteBack
@@ -65,9 +65,9 @@ void Emit_DECRc1(EmitterVariables * const vars, const Nuance &nuance)
   vars->mpe->nativeCodeCache.X86Emit_MOVIR(CC_COUNTER1_ZERO, x86Reg::x86Reg_ecx);
   vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
-  vars->mpe->nativeCodeCache.X86Emit_DECR(x86Reg::x86Reg_ebx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVNLERR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(1, x86Reg::x86Reg_ebx);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNBRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNBERR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
   if(vars->miscRegOutDep & DEPENDENCY_MASK_RC1)
   {
     vars->mpe->nativeCodeCache.X86Emit_MOVRM(x86Reg::x86Reg_eax, rc1WriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, rc1Disp);
