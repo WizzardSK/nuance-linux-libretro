@@ -245,15 +245,44 @@ void FindName(MPE &mpe)
 
   // Fake enumeration: report the .cof / .run apps that ship on demo
   // discs. End the list with -1 so the caller drops out of its scan.
+  // The Tetris/Sampler `nuon.run` launcher (function at 0x80013340)
+  // calls _FindName to count items at "/" then iterates further code
+  // paths that we cannot trace via LOG_BIOS (they go through asm-handler
+  // BIOS slots like _CommSendInfo). Tested name variants (`tnt`,
+  // `apptnt`, `app-tnt`) all produce the same outcome: launcher silently
+  // proceeds past enumeration, never renders anything (framebuffer
+  // stays black), never calls MediaOpen on any candidate. The actual
+  // blocker is one layer deeper — likely a missing VidConfig setup
+  // in nuon.run's init that depends on the disc layout. Workaround:
+  // `NUANCE_DEMO_LAUNCH=tnt|tempest|merlinracing` bypasses the launcher.
   static const char* const kNames[] = {
     "tnt", "tempest", "merlinracing",
   };
   const uint32 N = (uint32)(sizeof(kNames) / sizeof(kNames[0]));
 
+  extern NuonEnvironment nuonEnv;
+  // Also fill r4 buffer with plausible file metadata (size, attributes)
+  // — the launcher may use this to decide if the entry is loadable.
+  const uint32 r4Addr = mpe.regs[4];
+  if (r4Addr) {
+    uint32* m = (uint32*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, r4Addr, false);
+    if (m) *m = SwapBytes(0x00000001u); // generic "valid file" marker
+  }
+
   static int s_logged = 0;
   if (s_logged < 8) {
     fprintf(stderr, "[BIOS] _FindName r0=%08X r1=%u r2=%08X r3=%u r4=%08X",
             mpe.regs[0], idx, outAddr, outSize, mpe.regs[4]);
+    // Decode the path string at r0 for context
+    extern NuonEnvironment nuonEnv;
+    const char* path = (const char*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, mpe.regs[0], false);
+    if (path) {
+      char buf[64];
+      size_t i;
+      for (i = 0; i < sizeof(buf)-1 && path[i]; i++) buf[i] = path[i];
+      buf[i] = 0;
+      fprintf(stderr, " path=\"%s\"", buf);
+    }
     s_logged++;
   }
 

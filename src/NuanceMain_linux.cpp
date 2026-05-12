@@ -891,7 +891,13 @@ int main(int argc, char* argv[])
     // delay covers the period where gameplay code (ismerlin.run for IS3)
     // gets DMA-loaded into main DRAM. NUANCE_DUMP_DELAY=<sec> = wait
     // this many seconds past first MPX EOF before dumping.
-    if (s_first_eof_us != 0) {
+    // NUANCE_DUMP_FROM_START=1 instead uses program start as the
+    // reference (for games with no MPX cutscene like Tetris demo disc).
+    static uint64 s_dump_ref_us = 0;
+    if (s_dump_ref_us == 0 && getenv("NUANCE_DUMP_FROM_START"))
+      s_dump_ref_us = useconds_since_start();
+    if (s_first_eof_us != 0 && s_dump_ref_us == 0) s_dump_ref_us = s_first_eof_us;
+    if (s_dump_ref_us != 0) {
         static bool s_dumped = false;
         static uint64 s_dump_at_us = 0;
         static int s_delay_inited = 0;
@@ -901,7 +907,7 @@ int main(int argc, char* argv[])
             s_dump_at_us = (uint64)strtoull(d, nullptr, 0) * 1000000ull;
         }
         const bool dump_now = !s_dumped &&
-            (useconds_since_start() - s_first_eof_us) >= s_dump_at_us;
+            (useconds_since_start() - s_dump_ref_us) >= s_dump_at_us;
         if (dump_now) {
           // Dump MPE3 register state at the moment of the disasm — useful
           // for diagnosing what the stuck loop is comparing against.
