@@ -498,6 +498,9 @@ int main(int argc, char* argv[])
             // Optional NUANCE_BTN_QUEUE_DELAY=<fields> skips the first
             // N video fields before starting (use ~7800 = 130 s @ 60Hz
             // to wait through the IS3 attract/setup phase).
+            // Optional NUANCE_BTN_QUEUE_AFTER_MPX=1: gate the delay
+            // countdown on MPX cutscene EOF (deterministic regardless of
+            // CPU speed). The DELAY then counts fields AFTER MPX ended.
             // Example to navigate IS3 menu:
             //   NUANCE_BTN_QUEUE=A:20,_:60,Down:20,_:60,A:20,_:120
             //   NUANCE_BTN_QUEUE_DELAY=7800
@@ -507,9 +510,11 @@ int main(int argc, char* argv[])
               static size_t s_qIdx = 0;
               static uint32 s_qRemaining = 0;
               static uint32 s_delayLeft = 0;
+              static int s_afterMpx = 0;
 
               if (!s_inited) {
                 s_inited = 1;
+                if (getenv("NUANCE_BTN_QUEUE_AFTER_MPX")) s_afterMpx = 1;
                 if (const char* spec = getenv("NUANCE_BTN_QUEUE")) {
                   if (const char* d = getenv("NUANCE_BTN_QUEUE_DELAY"))
                     s_delayLeft = (uint32)strtoul(d, nullptr, 0);
@@ -552,7 +557,25 @@ int main(int argc, char* argv[])
               }
 
               if (!s_queue.empty() && s_qIdx < s_queue.size()) {
-                if (s_delayLeft > 0) {
+                // Latch: stays gated until MPX hits EOF for the first time,
+                // then stays ungated forever (queue runs even after decoder
+                // is torn down).
+                static bool s_mpxGateCleared = false;
+                bool gated = false;
+                if (s_afterMpx && !s_mpxGateCleared) {
+                  extern bool MpxDecoderActive_Probe(uint32*, uint32*);
+                  extern bool MpxDecoderActive_IsAtEnd();
+                  uint32 mw = 0, mh = 0;
+                  if (MpxDecoderActive_Probe(&mw, &mh) && MpxDecoderActive_IsAtEnd()) {
+                    s_mpxGateCleared = true;
+                    fprintf(stderr, "[BTN-QUEUE] MPX gate cleared, starting delay countdown\n");
+                  } else {
+                    gated = true;
+                  }
+                }
+                if (gated) {
+                  // do nothing — wait for MPX to finish
+                } else if (s_delayLeft > 0) {
                   s_delayLeft--;
                 } else {
                   if (s_qRemaining == 0) {
@@ -673,19 +696,36 @@ int main(int argc, char* argv[])
             }
           }
         }
-        if (useconds_since_start() - sample_start_us > 30000000) {
-          dumped = true;
+        // First dump at 30 s of post-EOF wall time, then re-dump every
+        // NUANCE_GAME_PC_PERIOD seconds (default 30) — clears the
+        // histogram between dumps so each window shows the CURRENT
+        // hot loop, not the cumulative one.
+        static uint64 next_dump_us = 30000000;
+        static uint64 dump_period_us = 30000000;
+        static int s_period_inited = 0;
+        if (!s_period_inited) {
+          s_period_inited = 1;
+          if (const char* s = getenv("NUANCE_GAME_PC_PERIOD"))
+            dump_period_us = (uint64)strtoull(s, nullptr, 0) * 1000000ull;
+        }
+        if (useconds_since_start() - sample_start_us > next_dump_us) {
           std::vector<std::pair<uint32, uint64>> sorted(pc_hits.begin(), pc_hits.end());
           std::sort(sorted.begin(), sorted.end(),
                     [](auto& a, auto& b){ return a.second > b.second; });
-          fprintf(stderr, "[GAME-PC] %llu samples, %zu unique PCs:\n",
+          fprintf(stderr, "[GAME-PC] @%llus %llu samples, %zu unique PCs:\n",
+                  (unsigned long long)((useconds_since_start() - sample_start_us)/1000000),
                   (unsigned long long)sample_total, sorted.size());
-          int n = (int)sorted.size(); if (n > 30) n = 30;
+          int n = (int)sorted.size(); if (n > 15) n = 15;
           for (int i = 0; i < n; i++)
             fprintf(stderr, "[GAME-PC] #%2d pc=0x%08X hits=%llu (%.1f%%)\n",
                     i, sorted[i].first,
                     (unsigned long long)sorted[i].second,
                     100.0 * sorted[i].second / sample_total);
+          // Clear for next window
+          pc_hits.clear();
+          sample_total = 0;
+          next_dump_us += dump_period_us;
+          dumped = (dump_period_us == 0); // legacy mode if period=0
         }
       }
     }
@@ -828,11 +868,16 @@ int main(int argc, char* argv[])
     // Re-poke every frame because fmv.run might clear the flag itself.
     // Address found by static disasm of fmv.run after _MemLoadCoffX.
     // See nuance-stuck-loading.md for the disasm trail.
+    // Latch s_first_eof_us when MPX first hits EOF — used by the
+    // disasm/IRAM dumper below which fires AFTER MPX teardown for games
+    // that load gameplay code post-cutscene (IS3 → ismerlin.run).
+    static uint64 s_first_eof_us = 0;
     {
       extern bool MpxDecoderActive_Probe(uint32*, uint32*);
       extern bool MpxDecoderActive_IsAtEnd();
       uint32 mw = 0, mh = 0;
       if (MpxDecoderActive_Probe(&mw, &mh) && MpxDecoderActive_IsAtEnd()) {
+        if (s_first_eof_us == 0) s_first_eof_us = useconds_since_start();
         if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(0, 0x800BC4E8)) {
           static int n = 0;
           uint32 was = SwapBytes(*p);
@@ -840,14 +885,35 @@ int main(int argc, char* argv[])
           if (n < 5 || (n % 200) == 0)
             fprintf(stderr, "[MPX-EOF] poke #%d mem[0x800BC4E8]: was 0x%08X -> 1\n", ++n, was);
         }
-        // (Halting MPE1/MPE2 was a dead-end experiment — left it as
-        // disabled by default. The VLD-BDU stub in
-        // MPEControlRegisters.cpp lets them progress organically.)
-        // First-time MPE IRAM dumps so we can disasm what mcp.run/fmv.run
-        // DMA-loaded onto MPE0/1/2/3. Triggered here (post-EOF) so all
-        // setup DMAs have certainly run.
+      }
+    }
+    // IRAM/DRAM dump trigger — runs even after MPX is torn down, so the
+    // delay covers the period where gameplay code (ismerlin.run for IS3)
+    // gets DMA-loaded into main DRAM. NUANCE_DUMP_DELAY=<sec> = wait
+    // this many seconds past first MPX EOF before dumping.
+    if (s_first_eof_us != 0) {
         static bool s_dumped = false;
-        if (!s_dumped) {
+        static uint64 s_dump_at_us = 0;
+        static int s_delay_inited = 0;
+        if (!s_delay_inited) {
+          s_delay_inited = 1;
+          if (const char* d = getenv("NUANCE_DUMP_DELAY"))
+            s_dump_at_us = (uint64)strtoull(d, nullptr, 0) * 1000000ull;
+        }
+        const bool dump_now = !s_dumped &&
+            (useconds_since_start() - s_first_eof_us) >= s_dump_at_us;
+        if (dump_now) {
+          // Dump MPE3 register state at the moment of the disasm — useful
+          // for diagnosing what the stuck loop is comparing against.
+          fprintf(stderr, "[MPE3-REGS] pc=0x%08X go=%d\n",
+                  nuonEnv.mpe[3].pcexec,
+                  (nuonEnv.mpe[3].mpectl & 2) ? 1 : 0);
+          for (int rb = 0; rb < 32; rb += 8) {
+            fprintf(stderr, "  r%-2d-%-2d:", rb, rb+7);
+            for (int j = 0; j < 8; j++)
+              fprintf(stderr, " %08X", nuonEnv.mpe[3].regs[rb+j]);
+            fprintf(stderr, "\n");
+          }
           if (const char* dumpPattern = getenv("NUANCE_DUMP_MPE_IRAM_PATTERN")) {
             for (int m = 0; m < 4; m++) {
               char path[256];
@@ -860,9 +926,10 @@ int main(int argc, char* argv[])
               }
             }
           }
-          // NUANCE_DISASM_MPE_IRAM=N:lo:hi:out — disassemble MPE N's IRAM
-          // [lo, hi) (lo/hi are absolute MPE-local addresses, e.g.
-          // 0x20300000) to <out>.
+          // NUANCE_DISASM_MPE_IRAM=N:lo:hi:out — disassemble code from MPE N's
+          // memory view [lo, hi) to <out>. Handles BOTH MPE-local IRAM
+          // addresses (0x20300000..) and main DRAM (0x80000000..) by
+          // resolving the byte pointer per-packet via GetPointerToMemory.
           if (const char* disasmSpec = getenv("NUANCE_DISASM_MPE_IRAM")) {
             int n = 0;
             uint32 lo = 0, hi = 0;
@@ -879,7 +946,8 @@ int main(int argc, char* argv[])
                   nuonEnv.mpe[n].PrintInstructionCachePacket(dasm, sizeof(dasm), pc);
                   fprintf(f, "%08X: %s", pc, dasm);
                   if (dasm[0] && dasm[strlen(dasm)-1] != '\n') fputc('\n', f);
-                  uint8* p = &nuonEnv.mpe[n].dtrom[(pc & 0x7FFFFF)];
+                  uint8* p = (uint8*)nuonEnv.GetPointerToMemory(n, pc);
+                  if (!p) break;
                   uint32 delta = nuonEnv.mpe[n].GetPacketDelta(p, 1);
                   if (delta == 0 || delta > 64) delta = 2;
                   pc += delta;
@@ -893,7 +961,6 @@ int main(int argc, char* argv[])
           }
           s_dumped = true;
         }
-      }
     }
 
     if (nuonEnv.trigger_render_video)
