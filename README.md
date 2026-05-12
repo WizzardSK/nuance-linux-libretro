@@ -5,7 +5,7 @@ A NUON (VM Labs) emulator for Windows and Linux.
 Copyright 2002 - 2007 Mike Perry and 2020 - 2026 all the open source contributors (see separate license.txt)
 
 Continued using the released source/docs in honour of the original author by Carsten Waechter (toxie at ainc.de) in 2020.
-Linux port by WizzardSK in 2026.
+Linux/libretro port by WizzardSK in 2026.
 
 NUON is a trademark of Genesis Microchip, Inc.
 
@@ -71,7 +71,7 @@ automatically copied to the build directory by CMake.
 ```
 NuanceResurrection/
   src/           - All C/C++ source and header files
-  external/      - Bundled libraries (GLEW, FMOD stub, miniaudio, MurmurHash3)
+  external/      - Bundled libraries (GLEW, miniaudio, MurmurHash3)
   compat/        - Windows API compatibility headers for Linux builds
   CMakeLists.txt - Build system
   *.cof, *.cfg   - BIOS and configuration files
@@ -372,10 +372,9 @@ emulate using a timer based approach.  It may be possible to use a performance t
 
 ### Sound support
 
-On Windows, audio is implemented using the FMOD library.  On Linux, audio uses
-the miniaudio library (bundled) which auto-detects PulseAudio, ALSA or other
-available backends.  The emulator supports all DAC configurations made possible
-through the Nuon BIOS audio routines.
+Audio is implemented using the miniaudio library (bundled) which auto-detects
+PulseAudio, ALSA, WASAPI or other available backends.
+The emulator supports all DAC configurations made possible through the Nuon BIOS audio routines.
 
 ### Multi-cycle instructions
 
@@ -579,6 +578,7 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 
 **version 0.6.7:**
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
+- Add libretro port.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
 - 64-bit builds employ asmjit instead.
 - Static linking of glew (no more `glew32.dll` needed).

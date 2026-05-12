@@ -93,8 +93,6 @@ static void log_printf(const char* fmt, ...) {
 // Stub functions needed by other modules
 void StopEmulation(int) { bRun = false; }
 
-// FMOD stubs are in external/fmod_stub.cpp
-
 // InputManager stubs for libretro (input handled by retro_input_state)
 #include "InputManager.h"
 InputManager::~InputManager() {}
@@ -219,7 +217,7 @@ void retro_get_system_info(struct retro_system_info *info)
     memset(info, 0, sizeof(*info));
     info->library_name = "Nuance";
     info->library_version = "0.6.7";
-    info->valid_extensions = "run|cof|iso";
+    info->valid_extensions = "run|cof|nuon|cd|iso|img";
     info->need_fullpath = true;
     info->block_extract = false; // let RetroArch extract ZIPs for us
 }
@@ -270,7 +268,7 @@ static std::string popen_line(const std::string& cmd)
     return buf;
 }
 
-// Extract game files using 7z (no FUSE dependency — works in any context)
+// Extract game files using 7z (no FUSE dependency - works in any context)
 static std::string FindGameFile(const char* path)
 {
     std::string spath(path);
@@ -278,7 +276,9 @@ static std::string FindGameFile(const char* path)
 
     // Direct .run or .cof file
     if ((len > 4 && strcasecmp(path + len - 4, ".run") == 0) ||
-        (len > 4 && strcasecmp(path + len - 4, ".cof") == 0))
+        (len > 4 && strcasecmp(path + len - 4, ".cof") == 0) ||
+        (len > 3 && strcasecmp(path + len - 3, ".cd") == 0) ||
+        (len > 5 && strcasecmp(path + len - 5, ".nuon") == 0))
         return spath;
 
     bool isZip = (len > 4 && strcasecmp(path + len - 4, ".zip") == 0);

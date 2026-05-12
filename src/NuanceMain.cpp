@@ -468,7 +468,7 @@ bool Load(const char* file = nullptr)
       ofn.lpstrFile = (char*)file;
 
     // For .iso/.img/.zip, extract the boot file to a temp location and load from there.
-    // For plain .run/.cof/.nuon this just returns the input unchanged.
+    // For plain .run/.cd/.cof/.nuon this just returns the input unchanged.
     const std::string resolved = ResolveGameFile(ofn.lpstrFile);
     if(resolved.empty())
     {
@@ -1097,7 +1097,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   hDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_CONTROL_PANEL),NULL,ControlPanelDialogProc);
   const HWND hStatusDlg = CreateDialog(hInstance,MAKEINTRESOURCE(IDD_STATUS_DIALOG),NULL,StatusWindowDialogProc);
 
-  // Accept drag-and-dropped files (.run/.cd/.cof/.iso/.zip) on the control panel and
+  // Accept drag-and-dropped files (.run/.cd/.cof/.nuon/.iso/.img/.zip) on the control panel and
   // the GL display window. Both route through Load() -> ResolveGameFile().
   DragAcceptFiles(hDlg, TRUE);
   if (display.hWnd)
@@ -1220,7 +1220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         static uint64 last_time3 = useconds_since_start();
         const uint64 new_time = useconds_since_start();
 
-        // sysTimer0 (BIOS, should always be 200Hz)
+        // sysTimer0 (BIOS, should always be 200Hz) //!! IS3 maybe reconfigures it though!
         if (nuonEnv.timer_rate[0] > 0)
         {
         if (new_time >= last_time0 + nuonEnv.timer_rate[0])
