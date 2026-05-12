@@ -1567,6 +1567,18 @@ void VidChangeBase(MPE &mpe)
 
   mpe.regs[0] = 1;
 
+  // NUANCE_LOG_VIDCHANGE=1: log every page-flip call. Lightweight — only
+  // fires per actual VidChangeBase invocation, not per BIOS dispatch.
+  static int s_logVidChange = -1;
+  if (s_logVidChange < 0) s_logVidChange = getenv("NUANCE_LOG_VIDCHANGE") ? 1 : 0;
+  if (s_logVidChange) {
+    static uint32 s_count = 0;
+    s_count++;
+    if (s_count <= 8 || (s_count % 60) == 0)
+      fprintf(stderr, "[VIDCHANGE] #%u mpe%u which=%d dmaflags=0x%08X base=0x%08X\n",
+              s_count, mpe.mpeIndex, which, dmaflags, base);
+  }
+
 #ifdef ENABLE_EMULATION_MESSAGEBOXES
   if(!base)
     MessageBox(NULL,"VidChangeBase was called with a base parameter of 0","Invalid Video Pointer",MB_OK);
