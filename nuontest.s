@@ -897,6 +897,84 @@ StoreResult r5
 TestFlags noflags
 TestResult 11
 
+;==================================================================
+; MSB - JIT codegen path (Emit_MSB).
+; The four test 40 cases above all use `mv_s #imm, r4` which makes r4
+; a propagator-tracked constant, so PropagateConstants_MSB can fold the
+; whole instruction into a Handler_StoreScalarRegisterConstant before
+; the JIT emits code.  Result: Emit_MSB is never triggered in those tests.
+;
+; To force the JIT path, round-trip the input through memory:
+; PropagateConstants_LoadScalarAbsolute / LoadScalarLinear both call
+; ClearScalarRegisterConstant on the destination, so after a ld_s the
+; propagator no longer knows r4's value and msb r4,r5 must be emitted
+; as Emit_MSB.  Sub-cases mirror the four cases of test 40.
+;
+; scratchBufferReg is r1 (function arg, not propagator-tracked).  At
+; this point scratchBufferReg = scratch+64 (after the v7..v3 save loop
+; in the prologue); +16 gives scratch+80 which is past the saved-vector
+; area (offsets 0..79) into the free 48-byte scalar region.
+;
+; Register usage caveat: r3 is reserved as returnAddressReg by the
+; test framework (line 40) - clobbering it makes RTS at end of
+; _nuontest jump to garbage and the test hangs.  Use r6 instead.
+;==================================================================
+
+`test_msb_jit:
+
+SetTestNumber 193
+mv_s scratchBufferReg, r6
+add #16, r6                       ; r6 = scratch+80, non-constant pointer
+
+;msb(0) -> 0, ZF set
+LoadTestReg $0, r4
+st_s r4, (r6)
+ld_s (r6), r4                     ; reload r4 from mem -> drops constant tracking
+nop                               ; 2-cycle ld latency
+LoadTestReg $FFFFFFFF, r5
+LoadFlags noflags
+msb r4, r5
+StoreResult r5
+TestFlags zf
+TestResult $0
+
+;msb(-1 = $FFFFFFFF) -> 0, ZF set, other flags preserved
+LoadTestReg $FFFFFFFF, r4
+st_s r4, (r6)
+ld_s (r6), r4
+nop
+LoadTestReg $FFFFFFFF, r5
+LoadFlags (allflags & ~zf)
+msb r4, r5
+StoreResult r5
+TestFlags allflags
+TestResult $0
+
+;msb($0007F00F) -> 19 (bit 18 is the topmost 1 bit, count = 18+1)
+LoadTestReg $0007F00F, r4
+st_s r4, (r6)
+ld_s (r6), r4
+nop
+LoadTestReg $FFFFFFFF, r5
+LoadFlags noflags
+msb r4, r5
+StoreResult r5
+TestFlags noflags
+TestResult 19
+
+;msb($FFFFF90C) -> 11 (lowest run-length-from-MSB; spec computes
+;significance after sign-flipping if negative)
+LoadTestReg $FFFFF90C, r4
+st_s r4, (r6)
+ld_s (r6), r4
+nop
+LoadTestReg $FFFFFFFF, r5
+LoadFlags noflags
+msb r4, r5
+StoreResult r5
+TestFlags noflags
+TestResult 11
+
 `test_sat:
 
 ;sat #n, Si, Sk
