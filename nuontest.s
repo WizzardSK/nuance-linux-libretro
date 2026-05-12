@@ -3425,7 +3425,7 @@ TestFlags noflags
 TestResult $FFFFFFFA
 
 ;DOTP scalar form: dotp Si, Vj, >>#m, Sk
-;Si's upper 16 bits get repeated 4× to form a small vector.
+;Si's upper 16 bits get repeated 4x to form a small vector.
 ;Si = r4 with upper-16 = 2, so vector = [2,2,2,2].  Vj = v2 = [5,-6,7,8].
 ;= 2*5 + 2*-6 + 2*7 + 2*8 = 10-12+14+16 = 28 = 0x1C
 SetTestNumber 131

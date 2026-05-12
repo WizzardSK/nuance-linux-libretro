@@ -25,7 +25,7 @@ add_library(miniaudio_impl STATIC external/miniaudio_impl.cpp)
 target_include_directories(miniaudio_impl PUBLIC external)
 set_property(TARGET miniaudio_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# miniz (single-file ZIP reader) — currently unused
+# miniz (single-file ZIP reader) - currently unused
 # on Linux we don't currently use it (FUSE tools handle ZIPs)
 #add_library(miniz_impl STATIC external/miniz.c)
 #target_include_directories(miniz_impl PUBLIC external)
@@ -45,7 +45,7 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set_property(TARGET asmjit_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# MurmurHash3 — currently unused (the codebase uses xxHash instead). Kept on disk
+# MurmurHash3 - currently unused (the codebase uses xxHash instead). Kept on disk
 # in case OverlayManager ever switches back; uncomment to re-enable
 #add_library(murmurhash STATIC external/MurmurHash3.cpp)
 #target_include_directories(murmurhash PUBLIC external)
@@ -153,7 +153,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     glew_static
     miniaudio_impl
     #miniz_impl
-    #murmurhash # unused — see add_library above
+    #murmurhash # unused - see add_library above
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
     OpenGL::GL
     ${SDL2_LIBRARIES}

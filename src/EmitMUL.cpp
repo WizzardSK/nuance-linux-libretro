@@ -227,10 +227,14 @@ mulscalarshiftacshift_exit:
   //l_neg:
   vars->mpe->nativeCodeCache.SetLabelPointer(l_neg);
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
+  // For shifts >= 32, move the 32 low bits of the product (eax) into edx, zero eax, then shift edx by (shift-32)
+  // (as no direct 64bit shift like in Execute version)
+  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_ecx);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(32, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_CMPIR(32, x86Reg::x86Reg_ecx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebp);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_SHLDRRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
   vars->mpe->nativeCodeCache.X86Emit_SHLRR(x86Reg::x86Reg_eax);
   if(vars->miscRegOutDep & DEPENDENCY_FLAG_MV)
@@ -550,9 +554,14 @@ mulscalarshiftacshift_exit:
   //l_neg:
   vars->mpe->nativeCodeCache.SetLabelPointer(l_neg);
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
+  // For shifts >= 32, move the 32 low bits of the product (eax) into edx, zero eax, then shift edx by (shift-32)
+  // (as no direct 64bit shift like in Execute version)
+  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_ecx);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(32, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_CMPIR(32, x86Reg::x86Reg_ecx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_SHLDRRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
   vars->mpe->nativeCodeCache.X86Emit_SHLRR(x86Reg::x86Reg_eax);
   if(vars->miscRegOutDep & DEPENDENCY_FLAG_MV)
@@ -709,9 +718,14 @@ mulscalarshiftacshift_exit:
   //l_neg:
   vars->mpe->nativeCodeCache.SetLabelPointer(l_neg);
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
+  // For shifts >= 32, move the 32 low bits of the product (eax) into edx, zero eax, then shift edx by (shift-32)
+  // (as no direct 64bit shift like in Execute version)
+  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_ecx);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(32, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_CMPIR(32, x86Reg::x86Reg_ecx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_SHLDRRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
   vars->mpe->nativeCodeCache.X86Emit_SHLRR(x86Reg::x86Reg_eax);
   if(vars->miscRegOutDep & DEPENDENCY_FLAG_MV)
@@ -868,9 +882,14 @@ mulscalarshiftacshift_exit:
   //l_neg:
   vars->mpe->nativeCodeCache.SetLabelPointer(l_neg);
   vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_ebp, x86Reg::x86Reg_ebp);
+  // For shifts >= 32, move the 32 low bits of the product (eax) into edx, zero eax, then shift edx by (shift-32)
+  // (as no direct 64bit shift like in Execute version)
+  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_ecx);
+  vars->mpe->nativeCodeCache.X86Emit_SUBIR(32, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_CMPIR(32, x86Reg::x86Reg_ecx);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebp);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVNLRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_ebx);
   vars->mpe->nativeCodeCache.X86Emit_SHLDRRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_eax);
   vars->mpe->nativeCodeCache.X86Emit_SHLRR(x86Reg::x86Reg_eax);
   if(vars->miscRegOutDep & DEPENDENCY_FLAG_MV)
@@ -1024,7 +1043,7 @@ void Emit_MULImmediateShiftLeftImmediate(EmitterVariables * const vars, const Nu
   if(nuance.fields[FIELD_MUL_INFO] > 31)
   {
     vars->mpe->nativeCodeCache.X86Emit_MOVIM(0, x86MemPtr::x86MemPtr_dword, destRegWriteBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, destRegDisp);
-    if(vars->miscRegDep & DEPENDENCY_FLAG_MV)
+    if(vars->miscRegOutDep & DEPENDENCY_FLAG_MV)
     {
       vars->mpe->nativeCodeCache.X86Emit_MOVIR(CC_MUL_OVERFLOW, x86Reg::x86Reg_ebp);
       vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
