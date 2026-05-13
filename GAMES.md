@@ -1,14 +1,14 @@
 # NUON Game Compatibility (Linux/libretro fork)
 
-Status of the nine commercial NUON discs as of 2026-05-12 on the `linux-libretro`
-branch. Tested against the 64-bit asmjit JIT build (`build64/nuance`).
+Status of the nine commercial NUON discs as of 2026-05-13 on the `linux-libretro`
+branch. Tested against the 64-bit asmjit JIT build (`build/nuance`).
 
 ## Summary
 
 - **Fully playable**: 6
+- **Playable to in-game menu**: 1
 - **Demo discs (require workaround)**: 2
-- **Partially working**: 1
-- **Effective availability**: 8 / 9
+- **Effective availability**: 9 / 9 (every disc renders content; gameplay reached for 6)
 
 ## Matrix
 
@@ -20,7 +20,7 @@ branch. Tested against the 64-bit asmjit JIT build (`build64/nuance`).
 | 4 | Freefall 3050 A.D. | ✅ Playable | `CompilerConstantPropagation=Disabled` | |
 | 5 | Space Invaders XL | ✅ Playable | — | |
 | 6 | Jjangguneun Monmallyeo 3 | ✅ Playable | `CompilerConstantPropagation=Disabled` | Korean exclusive |
-| 7 | Iron Soldier 3 | ⚠️ Partial | `NUANCE_FORCE_AUDIOCNT=1 NUANCE_FORCE_AUDIOCNT_OFF_AFTER=3 NUANCE_IS3_STATE=0 NUANCE_BTN_QUEUE_AFTER_MPX=1 NUANCE_BTN_QUEUE_DELAY=300 NUANCE_BTN_QUEUE="_:30,A:30,_:120,A:30,_:120,A:30,_:120,A:30,_:120,A:30,_:120,A:30,_:120,A:30,_:120,A:30,_:6000"` | Reaches title → menu → Demo Mode → LOADING screen + loads level1 from `levels.dat` (4 chunks: dir + sounds + level1_dat + level1_tex). Then ismerlin.run engine freezes in a `0x8008C9xx` memcpy + DCacheFlush + verify hot loop (96% time post-LEVELS). 8-minute run confirms framebuffer byte-identical for 4+ min after LEVELS close. Visual gameplay never reached. |
+| 7 | Iron Soldier 3 | 🟠 Playable to menu | `NUANCE_MPE_RATIO=1:20:20:1 NUANCE_FORCE_AUDIOCNT=1` | **Massive jump 2026-05-13** with commits `36ce8d5` (CommSend/CommSendInfo BIOS slots) + `d2150ce` (MPEWait). Sequence: t=25s IRON-SOLDIER-3 title → t=60s intro cutscene (tank in desert / mech in city) → t=120s boot LOADING → t=180s **Demo Mode main menu**. Auto-attract then loads a demo level and stalls at in-game LOADING (mech silhouette + "LOADING..." text) — same final blocker as before but reached cleanly via natural state flow, no manual BIOS pokes needed. The old `NUANCE_IS3_STATE=0 + NUANCE_BTN_QUEUE=...` recipe is now ACTIVELY HARMFUL — it forces the state machine into a broken path; drop it. |
 | 8 | The Next Tetris | 🟡 Demo disc | `NUANCE_DEMO_LAUNCH=tnt` *or* `NUANCE_AUTO_DVD=1` | `nuon.run` launcher enumerates titles via `_FindName` for path "/" with prefix "app", counts items, then silently proceeds via asm-handler BIOS slots (invisible to LOG_BIOS). Framebuffer stays pure black, never calls MediaOpen / VidConfig. |
 | 9 | Interactive Sampler | 🟡 Demo disc | `NUANCE_DEMO_LAUNCH=tempest\|merlinracing` *or* `NUANCE_AUTO_DVD=1` | Same launcher as Tetris. `NUANCE_AUTO_DVD=1` plays the disc's MPEG-2 attract reel via libdvdnav. |
 
@@ -56,7 +56,8 @@ branch. Tested against the 64-bit asmjit JIT build (`build64/nuance`).
 | `NUANCE_DUMP_MPE_IRAM_PATTERN=<path>` | Dump MPE IRAM to `<path>.0..3` at disasm trigger |
 | `NUANCE_DISASM_MPE_IRAM=N:lo:hi:out` | Disassemble MPE N's code from address [lo, hi) to file (handles both IRAM and main DRAM) |
 | **Scheduling** ||
-| `NUANCE_MPE_RATIO=<n0>:<n1>:<n2>:<n3>` | Cycles per main-loop iteration for each MPE (default 1:1:1:1; try 2:5:5:2 to bias workers) |
+| `NUANCE_MPE_RATIO=<n0>:<n1>:<n2>:<n3>` | Cycles per main-loop iteration for each MPE (default 1:1:1:1; for IS3 use `1:20:20:1` to bias workers) |
+| `NUANCE_AUTO_YIELD=<threshold>[:<boost>]` | Adaptive: when MPE3 stays at the same PC for `threshold` consecutive iterations, multiply worker MPEs' cycle budget by `boost` (default 50) until MPE3 moves on. Useful for games with bursty comm-response spinwaits. `200:100` is a moderate setting; lower thresholds and higher boosts can starve MPE3 of rendering cycles. |
 | **Experimental harnesses** ||
 | `NUANCE_FORCE_LOAD_COFF` | Force-load a specific `.cof` from `programs.dat` |
 | `NUANCE_FORCE_LOAD_COFF_AFTER=<count>` | Configurable MPX-teardown threshold (default 2; `=1` for single-cutscene games) |
@@ -67,62 +68,61 @@ branch. Tested against the 64-bit asmjit JIT build (`build64/nuance`).
 
 ### Iron Soldier 3
 
-Today's deep investigation (2026-05-12) confirmed the engine reaches gameplay
-code but freezes on a verify loop. Three popular hypotheses were ruled out:
+**2026-05-13 update**: the "Empty AssemblyBiosHandler blocks comm" hypothesis,
+previously marked wrong, turned out to be the actual root cause of the boot
+LOADING freeze. The asm at 0x80760080 referenced from bios.cof's jump table is
+unreachable in this emulator — the BIOS dispatcher in `MPE::FetchDecodeExecute`
+calls the C++ slot handler and then does an implicit RTS via `pcexec = rz`, so
+nothing in `bios.s` (which only exists as reference) ever runs.
 
-| Hypothesis | Verdict | Why |
-|------------|---------|-----|
-| Empty `AssemblyBiosHandler` blocks inter-MPE comm (`_CommSendInfo` slot 1) | ❌ Wrong | bios.cof at 0x80000008 contains `bra $80760080, nop` — the real asm handler runs (verified via `NUANCE_DISASM_MPE_IRAM=3:0x80000000:0x80000040`). `NUANCE_LOG_BIOS=1` shows 0 dispatcher hits for slots 0–5. |
-| Missing `VidChangeBase` (BIOS slot 26) prevents page-flipping | ❌ Wrong | IS3 doesn't use the BIOS page-flip API at all (`NUANCE_LOG_VIDCHANGE=1` shows 0 calls). It uses VidConfig with new base each frame, and the base DOES alternate `0x40000000 ↔ 0x4012C000` — the flip works. |
-| MPE3 starves workers via tight MPEStop/MPERun cycle | ❌ Wrong | Tested with `NUANCE_MPE_RATIO=2:5:5:2` (workers get 5 cycles vs MPE3's 2): IS3 reaches LEVELS but freezes at the same LOADING screen at t=160s. Cycle bias is not the root cause. |
+Implementing slots 0/1 in C++ (`src/bios.cpp`, commit `36ce8d5`) drives MPE3's
+unique-PC count from 1 (the spinwait at `0x80237FD8`) to ~1200 in 40 seconds.
+With `NUANCE_MPE_RATIO=1:20:20:1 NUANCE_FORCE_AUDIOCNT=1`, IS3 now plays the
+intro cutscene, briefly hits a boot LOADING screen, and reaches the in-game
+Demo Mode menu with all four MPEs running.
 
-**Smoking gun (2026-05-12)**: BIOS-slot usage comparison before vs after
-`[LEVELS] close`:
+**Remaining blocker**: Demo Mode auto-attract loads a demo level and stalls
+at the in-game LOADING screen (mech silhouette + "LOADING..." text).
+ismerlin.run is actively reading from `levels.dat` (4.4 MB, multiple MediaOpen
++ MediaRead + MediaClose cycles, MemLoadCoffX into 0x80400000 and 0x80600000,
+multiple MPELoad-and-dispatch cycles). The engine is genuinely doing the
+level-load work — registers (r0, r1, r9) change between samples, workers
+have 200k+ active samples per minute — it's not a tight deadlock but a
+slow-or-incomplete process. Possible deeper causes per memory analysis:
 
-| Phase | Unique BIOS slots | Render-path slots |
-|-------|-------------------|-------------------|
-| Pre-LEVELS (menu / LOADING) | 29 | VidConfig=525× ✅ DMABiLinear ✅ |
-| Post-LEVELS (gameplay attempt) | 11 | **VidConfig=0 ❌ DMABiLinear=0 ❌** |
+1. **JIT divergence in a specific worker instruction** that the 6 working games
+   don't hit. asmjit recently had four 64-bit pointer-truncation bugs fixed
+   (`nuance-asmjit-debug-2026-05-06.md`); another instruction may have a
+   similar latent bug only IS3 triggers.
+2. **DCacheFlush no-op** — `_DCacheFlush` (slot 12) is currently a no-op via
+   `UnimplementedCacheHandler`. IS3 calls it ~20× during level load. If the
+   workers write to DRAM and IS3 expects an explicit cache flush before
+   reading, our no-op is silently incorrect when readers see stale cached
+   data. Hard to verify without cache-line-tracking instrumentation.
+3. **Specific MPE0/1/2 task ID** at `0x20300266` that we don't model. Workers
+   only run a few hundred cycles per MPE3-MPERun pair; the dispatcher reads
+   a task ID from `0x201003DC` and jumps to a handler. If the handler we'd
+   need lives in code we don't faithfully execute (JIT bug or pixel handler),
+   tasks would "complete" without producing a result.
 
-The engine never calls VidConfig or DMABiLinear after `levels.dat` closes,
-which means the render-frame pipeline is never reached. Framebuffer is
-literally last set to the LOADING-screen base and stays there because no
-new page-flip is issued. Post-LEVELS slots are all compute/management:
-MPEStop/MPERun, DCacheSync/Flush, MPELoad, TimerInit, DMALinear — no
-rendering at all.
+The `NUANCE_AUTO_YIELD=<threshold>[:<boost>]` knob added in commit `5cba6c8`
+detects per-PC MPE3 spinwaits and boosts worker cycles. Moderate settings
+(`200:100`) confirm the mechanism works (2877 activations across a 7-min
+run, MPE3 moves 2 bytes between yields as expected) but do NOT unblock the
+level-LOADING macro state — the remaining hot spot is the legitimate slow
+memcpy at `0x802397CE..0x802397E6` plus fmv.run audio-counter polling
+(which workers cannot write — needs `NUANCE_FORCE_AUDIOCNT=1`).
 
-**TimerInit clue**: post-LEVELS, IS3 calls `TimerInit(timer=2, rate=300)` —
-that's 300 µs per tick = 3333 Hz, vs. the normal 16666 µs = 60 Hz video
-refresh. IS3 reuses timer2 as a high-frequency compute interrupt after
-gameplay starts. This is unique to IS3 (other games keep timer2 at 60 Hz).
-The emulator's `(cycles % 500) == 0` rate-limit in the timer dispatcher
-means we deliver these interrupts at most ~1000 Hz, not 3333 Hz — but
-this is unlikely to be the blocker since IS3 doesn't poll the timer
-rate, only consumes the interrupts. Tested decoupling host-render trigger
-from timer2 (rate-limit render to 60 fps regardless of timer2 setting)
-— did NOT help IS3 (broke MPX → menu transition entirely). Reverted.
+Today's commits (`36ce8d5`, `d2150ce`, `5cba6c8`):
+- Inter-MPE comm BIOS slots 0/1 implemented in C++
+- `_MPEWait` slot 106 implemented with cycle-yield (no game in the 9-disc
+  set actually calls it, but the AssemblyBiosHandler stub is gone)
+- `NUANCE_AUTO_YIELD` adaptive worker-cycle boost knob
 
-**MPE3 hot loop**: spends 96% of post-LEVELS time in a memcpy+DCacheFlush
-+verify loop at `0x8008C9BC..0x8008C9F2`:
-1. Memcpy r28 bytes from `r16` (source) to `0x400A0000` (dest)
-2. JSR via r30 (= 0x80000060 = DCacheFlush BIOS slot 12 — our impl is a no-op)
-3. Verify: compare source vs dest word-by-word; set r6=0 on mismatch
-
-The loop retries indefinitely, suggesting the verify always fails. Worker MPEs
-(MPE0/1/2) are mostly halted (`MPESTATE` dump: MPE1 at $20300266 in 87% of samples).
-They may be supposed to fill the source buffer between MPE3's iterations but
-either (a) don't get to write the expected data, or (b) write data MPE3 doesn't
-recognise as valid.
-
-Today's progress (commits `c57212d`, `732e5a3`, `1f596f1`, `abd93e8`, `c0d10c0`,
-`2e0f48b`, `550f701`):
-- Deterministic LEVELS-reach recipe (~80% success rate)
-- Visual confirmation: title → menu → Demo Mode → LOADING screen all render correctly
-- 9 new diagnostic env knobs for future investigation
-- 3 wrong hypotheses ruled out, root cause narrowed to internal compute pipeline
-
-Real fix requires reverse-engineering exactly what's expected at the source
-buffer `r16` and which MPE/component is supposed to populate it.
+Real fix for in-game gameplay still requires either: trace `0x20300266` task
+dispatcher disasm + simulate one task end-to-end on real-hardware reference
+to find the divergence, or implement DCache-coherency tracking so the workers'
+writes become visible to MPE3 deterministically.
 
 ### Demo discs (Tetris / Sampler)
 - `nuon.run` launcher calls `_FindName` at path "/" with filter prefix "app"
