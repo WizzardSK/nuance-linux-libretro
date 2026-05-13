@@ -394,9 +394,63 @@ int main(int argc, char* argv[])
           }
         }
       }
+
+      // NUANCE_AUTO_YIELD=<threshold>[:<boost>]: auto-detect MPE3 spinwait
+      // and dynamically boost worker MPE cycles. Threshold is the number
+      // of consecutive iterations MPE3 must spend at the same PC before
+      // we declare it spinning; boost is the multiplier for workers'
+      // s_ratio while spinning is active (default boost=50).
+      //
+      // Rationale: IS3 (and similar high-dispatch-rate engines) spinwait
+      // on memory slots in MPE3 after MPEStop/MPERun. The fixed MPE_RATIO
+      // doesn't help if the spinwait is JIT-compiled tight enough to be
+      // much faster than the worker code per cycle. Detecting the spin
+      // and shifting cycles to workers lets them complete the task and
+      // write the response slot. Example: `NUANCE_AUTO_YIELD=200:100`.
+      static int s_yield_inited = 0;
+      static uint32 s_yield_threshold = 0;  // 0 = disabled
+      static uint32 s_yield_boost = 50;
+      if (!s_yield_inited) {
+        s_yield_inited = 1;
+        if (const char* s = getenv("NUANCE_AUTO_YIELD")) {
+          uint32 t = 0, b = 0;
+          int n = sscanf(s, "%u:%u", &t, &b);
+          if (n >= 1) {
+            s_yield_threshold = t;
+            if (n == 2 && b > 0) s_yield_boost = b;
+            fprintf(stderr, "[AUTO-YIELD] threshold=%u boost=%u\n",
+                    s_yield_threshold, s_yield_boost);
+          }
+        }
+      }
+      static uint32 s_last_mpe3_pc = 0;
+      static uint32 s_same_pc_count = 0;
+      static bool s_yielding = false;
+      if (s_yield_threshold > 0) {
+        const uint32 cur_pc = nuonEnv.mpe[3].pcexec;
+        if (cur_pc == s_last_mpe3_pc) {
+          s_same_pc_count++;
+        } else {
+          if (s_yielding) {
+            fprintf(stderr, "[AUTO-YIELD] MPE3 moved 0x%08X -> 0x%08X after %u iters, normal\n",
+                    s_last_mpe3_pc, cur_pc, s_same_pc_count);
+          }
+          s_same_pc_count = 0;
+          s_last_mpe3_pc = cur_pc;
+          s_yielding = false;
+        }
+        if (!s_yielding && s_same_pc_count >= s_yield_threshold) {
+          fprintf(stderr, "[AUTO-YIELD] MPE3 stuck at 0x%08X for %u iters, boosting workers %ux\n",
+                  cur_pc, s_same_pc_count, s_yield_boost);
+          s_yielding = true;
+        }
+      }
+
       for (int i = 3; i >= 0; --i) {
         if (i == 3 && nuonEnv.MPE3wait_fieldCounter != 0) continue;
-        for (int k = 0; k < s_ratio[i]; k++)
+        int reps = s_ratio[i];
+        if (s_yielding && i != 3) reps *= s_yield_boost;
+        for (int k = 0; k < reps; k++)
           nuonEnv.mpe[i].FetchDecodeExecute();
       }
 
