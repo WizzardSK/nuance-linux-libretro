@@ -279,6 +279,62 @@ void CommSendInfo(MPE &mpe)
   CommSendCore(mpe, mpe.regs[2], mpe.regs[0], mpe.regs[1]);
 }
 
+// _MPEWait (slot 106): wait for target MPE (r0) to halt, then return its r0.
+//
+// NUON-side asm (`riff_mpewait` in bios.s) is a tight spinwait on the target
+// MPE's mpectl.MPECTRL_MPEGO bit. Letting that asm run as-is in a cooperative
+// round-robin scheduler is pathological: the calling MPE3 owns the cycle, the
+// target sits idle, so the bit never clears and we burn cycles forever.
+//
+// Implement directly in C++ and YIELD on the spin: while the target is still
+// running, advance it one packet at a time (and pump the comm bus so any
+// packets it produces can reach further workers). Bounded by maxYield to
+// avoid hanging forever on real-emulator bugs — if the target genuinely
+// never halts in that budget we surface it like an exception (return -1).
+//
+// The original blocked-design comment in nuance-is3-comm-root-cause.md
+// "Refined root cause hypothesis" option 3.
+void MPEWait(MPE &mpe)
+{
+  const uint32 targetID = mpe.regs[0];
+
+  // Invalid target or self-wait: the asm would loop forever; we just bail.
+  if (targetID >= 4 || targetID == mpe.mpeIndex)
+  {
+    mpe.regs[0] = 0xFFFFFFFFu;
+    return;
+  }
+
+  MPE &target = nuonEnv.mpe[targetID];
+
+  // 100k packets is ~3-5x more than a worker task ever takes; keeps us
+  // bounded if a JIT/emulator bug holds MPECTRL_MPEGO set forever.
+  uint32 maxYield = 100000;
+  while ((target.mpectl & MPECTRL_MPEGO) && maxYield > 0)
+  {
+    target.FetchDecodeExecute();
+    if (nuonEnv.pendingCommRequests)
+      DoCommBusController();
+    maxYield--;
+  }
+
+  if (target.mpectl & MPECTRL_MPEGO)
+  {
+    // Timeout — escalate as exception so the caller's error path runs
+    // instead of looping back to call MPEWait again.
+    mpe.regs[0] = 0xFFFFFFFFu;
+    return;
+  }
+
+  // Match the asm postcondition: if (excepsrc & excephalten) != 0 the halt
+  // was caused by an exception and MPEWait returns -1; otherwise return
+  // the remote MPE's r0.
+  if (target.excepsrc & target.excephalten)
+    mpe.regs[0] = 0xFFFFFFFFu;
+  else
+    mpe.regs[0] = target.regs[0];
+}
+
 void WillNotImplement(MPE &mpe)
 {
   //char msg[512];
@@ -559,7 +615,7 @@ PatchJumptable, //_PatchJumptable (102)
 NullBiosHandler, //_BiosResume (103)
 MPEStop, //_MPEStop (104)
 MPERun, //_MPERun (105)
-AssemblyBiosHandler, //_MPEWait (106)
+MPEWait, //_MPEWait (106)
 MPEReadRegister, //_MPEReadRegister (107)
 MPEWriteRegister, //_MPEWriteRegister (108)
 NullBiosHandler, //_SetParentalControl (109)
