@@ -165,9 +165,9 @@ public:
 
         ISO_FSEEK(fp, (long long)lba * 2048, SEEK_SET);
         uint8_t buf[65536];
-        SSIZE_T remaining = size;
+        uint32_t remaining = size;
         while (remaining > 0) {
-            SSIZE_T chunk = remaining < sizeof(buf) ? remaining : sizeof(buf);
+            uint32_t chunk = remaining < sizeof(buf) ? remaining : sizeof(buf);
             size_t rd = fread(buf, 1, chunk, fp);
             if (rd == 0) break;
             fwrite(buf, 1, rd, out);
