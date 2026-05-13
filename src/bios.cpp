@@ -5,6 +5,7 @@
 
 #include <string>
 #include "byteswap.h"
+#include "comm.h"
 #include "media.h"
 #include "mpe.h"
 #include "audio.h"
@@ -217,6 +218,67 @@ void AssemblyBiosHandler(MPE &mpe)
 {
 }
 
+// Shared core for _CommSend (slot 0) and _CommSendInfo (slot 1). The
+// NUON-side bios.s implements these as a tight asm spinwait around
+// the commctl xmit-buffer-full bit (see riff_commsend / riff_commsenddirect
+// in bios.s). We can't spin from C++, so instead we just stage the packet
+// in commxmit[0..3], set the target ID + xmit-buffer-full bit, and bump
+// pendingCommRequests. The main emulation loop's DoCommBusController()
+// call (already gated on pendingCommRequests > 0) will then route the
+// packet to the target MPE's commrecv on the next pass, which is when
+// the caller's spinwait at commctl.bit15 will see the bit go clear and
+// fall through.
+//
+// IS3 hits this path almost immediately after the LOADING screen comes
+// up: its mcp.run module-comm code (around 0x80237FD8) calls
+// _CommSendInfo expecting an ack to come back, and previously froze
+// because AssemblyBiosHandler was an empty stub and the xmit-buffer-
+// full bit was never set.
+static void CommSendCore(MPE &mpe, uint32 packetAddr, uint32 target, uint32 info)
+{
+  const uint32* src = (const uint32*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, packetAddr, false);
+  if (!src)
+  {
+    // Bad packet pointer — mirror the asm fallthrough (xmit_failed) by
+    // leaving COMM_XMIT_FAILED_BIT set without queuing anything. The
+    // NUON-side loop will then retry or bail per the COMM_XMIT_RETRY_BIT.
+    mpe.commctl |= COMM_XMIT_FAILED_BIT;
+    return;
+  }
+
+  // The packet sits in NUON-endian memory; commxmit/commrecv hold values
+  // in "MPE register native" form (host endian, since MPEControlRegisters
+  // never byte-swaps on the write side). SwapBytes() converts from BE to host.
+  for (uint32 i = 0; i < 4; i++)
+    mpe.commxmit[i] = SwapBytes(src[i]);
+
+  // comminfo low 8 bits = info word (matches `st_s r5, comminfo` in bios.s)
+  mpe.comminfo = (mpe.comminfo & ~0xFFu) | (info & 0xFFu);
+
+  // commctl target field is the low 8 bits; preserve other control bits.
+  mpe.commctl = (mpe.commctl & ~COMM_TARGET_ID_BITS) | (target & COMM_TARGET_ID_BITS);
+
+  // Mark xmit pending; clear any stale failed bit. Bump the global count so
+  // the main loop services us this iteration.
+  mpe.commctl &= ~COMM_XMIT_FAILED_BIT;
+  mpe.commctl |= COMM_XMIT_BUFFER_FULL_BIT;
+  nuonEnv.pendingCommRequests++;
+}
+
+// _CommSend (slot 0): r0 = target MPE, r1 = address of 16-byte packet.
+// info field is zero (the asm prelude does `sub r5, r5` before falling
+// into commsend_loadpacket).
+void CommSend(MPE &mpe)
+{
+  CommSendCore(mpe, mpe.regs[1], mpe.regs[0], 0);
+}
+
+// _CommSendInfo (slot 1): r0 = target MPE, r1 = info, r2 = packet ptr.
+void CommSendInfo(MPE &mpe)
+{
+  CommSendCore(mpe, mpe.regs[2], mpe.regs[0], mpe.regs[1]);
+}
+
 void WillNotImplement(MPE &mpe)
 {
   //char msg[512];
@@ -391,8 +453,8 @@ void BiosGetInfo(MPE &mpe)
 }
 
 NuonBiosHandler BiosJumpTable[256] = {
-AssemblyBiosHandler, //_CommSend (0)
-AssemblyBiosHandler, //_CommSendInfo (1)
+CommSend, //_CommSend (0)
+CommSendInfo, //_CommSendInfo (1)
 AssemblyBiosHandler, //_CommRecvInfo (2)
 AssemblyBiosHandler, //_CommRecvInfoQuery (3)
 AssemblyBiosHandler, //_CommSendRecv (4)
