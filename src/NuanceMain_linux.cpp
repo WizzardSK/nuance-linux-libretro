@@ -817,7 +817,12 @@ int main(int argc, char* argv[])
       static int autoskip_sec = -1;
       if (autoskip_sec == -1) {
         const char* v = getenv("NUANCE_AUTOSKIP");
-        autoskip_sec = (v && *v == '0') ? 0 : 5;
+        // Accept any non-negative integer: 0 disables, >0 = seconds.
+        // Default 5 when unset. Previously only "0" was honored and any
+        // other value silently fell back to 5, which surprised people.
+        if (!v) autoskip_sec = 5;
+        else    autoskip_sec = atoi(v);
+        if (autoskip_sec < 0) autoskip_sec = 0;
       }
       extern bool MpxDecoderActive_IsAtEnd();
       extern void* MpxDecoderActive_Token();
