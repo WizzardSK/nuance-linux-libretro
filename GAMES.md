@@ -1,6 +1,6 @@
 # NUON Game Compatibility (Linux/libretro fork)
 
-Status of the nine commercial NUON discs as of 2026-05-13 on the `linux-libretro`
+Status of the nine commercial NUON discs as of 2026-05-14 on the `linux-libretro`
 branch. Tested against the 64-bit asmjit JIT build (`build/nuance`).
 
 ## Summary
@@ -20,7 +20,7 @@ branch. Tested against the 64-bit asmjit JIT build (`build/nuance`).
 | 4 | Freefall 3050 A.D. | ✅ Playable | `CompilerConstantPropagation=Disabled` | |
 | 5 | Space Invaders XL | ✅ Playable | — | |
 | 6 | Jjangguneun Monmallyeo 3 | ✅ Playable | `CompilerConstantPropagation=Disabled` | Korean exclusive |
-| 7 | Iron Soldier 3 | 🟠 Playable to menu | `NUANCE_MPE_RATIO=1:20:20:1 NUANCE_FORCE_AUDIOCNT=1` | Reaches Demo Mode menu cleanly via natural state flow after commits `36ce8d5` (CommSend/CommSendInfo BIOS slots) + `d2150ce` (MPEWait). Auto-attract still stalls at the in-game mech-silhouette LOADING screen at ~5 min, verified by window-targeted screenshot series (identical 195 823-byte PNG from t=300 s through t=640 s). DCache BIOS slots 9/10/11/12 commit `8170259` implements regional JIT invalidates (correctness fix; verified via NUANCE_LOG_DCACHE on Ballistic, 2618 valid calls) but does NOT unblock IS3 — the J-CORP / WEX TROOP / DANGER scenes are part of the intro cutscene, NOT post-LOADING gameplay (initial 2026-05-14 claim was a misread). Drop the old `NUANCE_IS3_STATE=0` / `NUANCE_BTN_QUEUE=...` knobs — they force a broken path. |
+| 7 | Iron Soldier 3 | 🟠 Stalls at asset-load entry 15 | `NUANCE_MPE_RATIO=1:20:20:1 NUANCE_FORCE_AUDIOCNT=1` | Reaches Demo Mode menu cleanly via natural state flow after commits `36ce8d5` + `d2150ce`. Auto-attract loads the demo level, hits the in-game mech-silhouette LOADING screen at t≈5 min, then **deadlocks at exactly 15 textures loaded** (tex3b_bmp..tex10_bmp succeed, tex11_bmp lookup never completes). 20-min observation confirms zero progress past 15 entries between t=420s and t=1200s. The mode-1 asset list at `0x402F0000` IS properly populated (verified — contains tex1..tex12 + ground textures); the outer caller's hardcoded address for entry 15 is correct (0x80104768 = "tex11_bmp"); tex11's `+0x14` next-pointer is non-zero (0x9500). The per-asset verify wrapper at `0x8008C460` is identical for every entry. Remaining suspect: a JIT divergence specific to tex11's data values, OR a worker MPE corrupting the 100KB verify buffer at `0x400A0000` between MPE3's memcpy and re-read. Commit `8170259` (DCache slots 9-12 regional JIT flush) is a correctness fix that does NOT unblock the stall. Drop the old `NUANCE_IS3_STATE=0` / `NUANCE_BTN_QUEUE=...` knobs — they force a broken path. Full RE notes in memory file `nuance-is3-loading-stall-2026-05-14.md`. |
 | 8 | The Next Tetris | 🟡 Demo disc | `NUANCE_DEMO_LAUNCH=tnt` *or* `NUANCE_AUTO_DVD=1` | `nuon.run` launcher enumerates titles via `_FindName` for path "/" with prefix "app", counts items, then silently proceeds via asm-handler BIOS slots (invisible to LOG_BIOS). Framebuffer stays pure black, never calls MediaOpen / VidConfig. |
 | 9 | Interactive Sampler | 🟡 Demo disc | `NUANCE_DEMO_LAUNCH=tempest\|merlinracing` *or* `NUANCE_AUTO_DVD=1` | Same launcher as Tetris. `NUANCE_AUTO_DVD=1` plays the disc's MPEG-2 attract reel via libdvdnav. |
 
@@ -62,7 +62,11 @@ branch. Tested against the 64-bit asmjit JIT build (`build/nuance`).
 | `NUANCE_FORCE_LOAD_COFF` | Force-load a specific `.cof` from `programs.dat` |
 | `NUANCE_FORCE_LOAD_COFF_AFTER=<count>` | Configurable MPX-teardown threshold (default 2; `=1` for single-cutscene games) |
 | `NUANCE_SLOT30_RET=<v>` | Override BiosExit (slot 30) return value |
-| `NUANCE_AUTOSKIP_SEC=<sec>` | Seconds after MPX EOF before auto-tearing-down the decoder (default 5) |
+| `NUANCE_AUTOSKIP=<sec>` | Seconds after MPX EOF before auto-tearing-down the decoder (default 5; `=0` disables; `=1` minimises cutscene wait for fast test iteration) |
+| **Diagnostic tracing (2026-05-14)** ||
+| `NUANCE_LOG_DCACHE=1` | Log every call to D-cache BIOS slots 9/10/11/12 with (mpe, r0, r1, rz). Used to verify the regional-flush calling convention is `(addr, size)` |
+| `NUANCE_LOG_COMMBUS=1` | Trace every `DoCommBusController` event (deliver vs BUSY-recv-full vs BUSY-disabled) with all four MPEs' commctl values. Throttled: first 50 inline, every 1000th thereafter |
+| `NUANCE_DUMP_PERIOD=<sec>` | Repeat the `NUANCE_DUMP_DELAY` snapshot every N seconds instead of firing once. Useful for watching a memory region evolve over time |
 
 ## Known blockers
 
@@ -113,16 +117,71 @@ level-LOADING macro state — the remaining hot spot is the legitimate slow
 memcpy at `0x802397CE..0x802397E6` plus fmv.run audio-counter polling
 (which workers cannot write — needs `NUANCE_FORCE_AUDIOCNT=1`).
 
-Today's commits (`36ce8d5`, `d2150ce`, `5cba6c8`):
-- Inter-MPE comm BIOS slots 0/1 implemented in C++
-- `_MPEWait` slot 106 implemented with cycle-yield (no game in the 9-disc
-  set actually calls it, but the AssemblyBiosHandler stub is gone)
-- `NUANCE_AUTO_YIELD` adaptive worker-cycle boost knob
+**2026-05-14 deep RE pass**: spent ~5h tracing exactly what the LOADING
+loop does. Findings narrow the stall to a single failure mode:
 
-Real fix for in-game gameplay still requires either: trace `0x20300266` task
-dispatcher disasm + simulate one task end-to-end on real-hardware reference
-to find the divergence, or implement DCache-coherency tracking so the workers'
-writes become visible to MPE3 deterministically.
+- The "LOADING" loop is an **asset-load pipeline**. Input table at
+  `0x801046B4` is an ASCII manifest of filenames (`tex3b_bmp`,
+  `tex3c_bmp`, ..., `expl1_anim`, `crosshairs`, `wshape%02d_bmp`,
+  `radar%02d_bmp`, ...). For each entry, the outer caller at
+  `0x8008CE40..0x8008D200` (unrolled) calls a lookup function then
+  a per-asset wrapper.
+- The lookup at `0x8006EC80` walks a 32-byte-per-entry linked list
+  whose head is chosen by mode bits (`r1 & 3`): mode 0 →
+  `0x800A9F14` → list at `0x8023F700`, mode 1 → `0x800A9F18` →
+  `0x402F0000`, mode 3 → `0x800A9F1C` → `0x80140000`.
+- The IS3 outer caller passes `r1 = 1` (MODE 1) for every texture,
+  so all lookups go through the list at `0x402F0000`. This list is
+  populated from levels.dat around t=240 s with a "DATA-START"
+  header followed by 32-byte entries (`tex1_bmp`, `tex1b_bmp`,
+  `tex1c_bmp`, ..., `tex11_bmp`, `tex12_bmp`, `ground1_bmp`, ...).
+- The per-asset wrapper at `0x8008C460` allocates a target buffer
+  (sizes 16/128 bytes based on caller's mode), copies a 60-byte
+  asset header in, flushes D-cache, then enters the 100KB
+  memcpy + verify loop at `0x8008C9B0..0x8008CA20`. The verify
+  exits with `r6=1` on byte-identical buffers (memcpy works in
+  this emulator — we confirmed source and dest match for the
+  loaded entries).
+- A 20-minute observation with `NUANCE_DUMP_PERIOD=60` watching
+  the result table at `0x800A596C` shows IS3 successfully bind
+  **exactly 15 textures** (input entries 0..14, tex3b_bmp through
+  tex10_bmp) by t=420 s, then **zero progress for the next 12
+  minutes**. The next requested asset is `tex11_bmp`.
+- `tex11_bmp` is in the mode-1 list at `0x402F02E0` with
+  `+0x14 = 0x9500` (non-zero, so list-walk doesn't exit there),
+  and the outer caller's hardcoded address for entry 15 is
+  `0x80104768` (correct — that's `"tex11_bmp"` in the input table).
+  So neither the list nor the call site explains the failure.
+- Comm bus is healthy throughout (`NUANCE_LOG_COMMBUS=1` shows
+  62 000+ deliveries and zero BUSY events per 6 min) — this
+  conclusively rules out the comm-bus / `COMM_RECV_BUFFER_FULL_BIT`
+  hypothesis.
+
+Remaining suspects for the stall at the 16th asset:
+
+1. **JIT divergence specific to tex11's data values**. The verify
+   loop at 0x8008C9D2..F2 does `ld_b` + `asr #24` + `cmp` byte
+   compares; a JIT mistranslation could miscompare for the bytes
+   in tex11's data but not tex10's. Earlier asmjit fixes (commit
+   `nuance-asmjit-debug-2026-05-06.md`) addressed 4 pointer-trunc
+   classes; a 5th instruction-specific class is plausible.
+2. **Worker MPE0/1/2 corrupting `0x400A0000`** — the verify buffer
+   sits in MAIN BUS DRAM. If any worker writes to that address
+   range between MPE3's memcpy and re-read, the verify fails. Would
+   need MAIN BUS write-tracking per-MPE to confirm.
+3. **`MemAlloc` at `0x80091D3E` returning a different buffer on the
+   16th call** that overlaps another MPE's working memory. Off-by-one
+   in our alloc bookkeeping could land an allocation on a poisoned
+   slot starting at the 16th texture.
+
+Full RE notes and diagnostic env-knob recipes for the next session
+are in memory file `nuance-is3-loading-stall-2026-05-14.md` (path:
+`~/.claude/projects/-home-wizzard-share-GitHub/memory/`). Today's
+commits (`8170259`, `d31ff09`, `83f46f2`, `ca868a9`, `031f5b6`) add
+diagnostic tooling (DCache implementation, MPE3 rz/stack dump,
+COMMBUS tracer, AUTOSKIP integer parsing, periodic DUMP) so the
+next investigation step (likely worker-write tracing on
+`0x400A0000`) can run with one-line env-var config.
 
 ### Demo discs (Tetris / Sampler)
 - `nuon.run` launcher calls `_FindName` at path "/" with filter prefix "app"
