@@ -980,13 +980,20 @@ int main(int argc, char* argv[])
     if (s_dump_ref_us != 0) {
         static bool s_dumped = false;
         static uint64 s_dump_at_us = 0;
+        static uint64 s_dump_period_us = 0;
         static int s_delay_inited = 0;
         if (!s_delay_inited) {
           s_delay_inited = 1;
           if (const char* d = getenv("NUANCE_DUMP_DELAY"))
             s_dump_at_us = (uint64)strtoull(d, nullptr, 0) * 1000000ull;
+          // NUANCE_DUMP_PERIOD=<sec>: repeat dump every N seconds
+          // instead of firing once. Useful for watching how a memory
+          // region evolves over time (e.g. "is 0x402F0000 ever
+          // populated past the uninit fill?").
+          if (const char* p = getenv("NUANCE_DUMP_PERIOD"))
+            s_dump_period_us = (uint64)strtoull(p, nullptr, 0) * 1000000ull;
         }
-        const bool dump_now = !s_dumped &&
+        bool dump_now = !s_dumped &&
             (useconds_since_start() - s_dump_ref_us) >= s_dump_at_us;
         if (dump_now) {
           // Dump MPE3 register state at the moment of the disasm — useful
@@ -1078,6 +1085,13 @@ int main(int argc, char* argv[])
             }
           }
           s_dumped = true;
+          // If a repeat period is configured, schedule the NEXT dump and
+          // clear s_dumped so the trigger fires again. We bump
+          // s_dump_at_us instead of using `now` so the cadence is exact.
+          if (s_dump_period_us > 0) {
+            s_dump_at_us += s_dump_period_us;
+            s_dumped = false;
+          }
         }
     }
 
