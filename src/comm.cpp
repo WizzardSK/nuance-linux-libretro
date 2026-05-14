@@ -12,6 +12,37 @@ extern uint32 vdgCLUT[];
 FILE *commLogFile;
 #endif
 
+// NUANCE_LOG_COMMBUS=1 — runtime trace of every DoCommBusController event:
+// who sent to whom, whether delivered or failed, and a 4-MPE commctl
+// snapshot every N events. Throttled to avoid log spam: first 50 events
+// inline, every 1000th thereafter; full snapshot every 5000 events.
+// Goal (per nuance-is3-loading-stall-2026-05-14): find which target MPE
+// has COMM_RECV_BUFFER_FULL_BIT stuck set during the IS3 LOADING stall.
+static inline bool LogCommBusEnabled()
+{
+  static int s = -1;
+  if (s == -1) s = getenv("NUANCE_LOG_COMMBUS") ? 1 : 0;
+  return s != 0;
+}
+static void LogCommBusEvent(const char* what, uint32 src, uint32 dst)
+{
+  if (!LogCommBusEnabled()) return;
+  static uint64 s_n = 0;
+  s_n++;
+  const bool inline_log = (s_n <= 50) || ((s_n % 1000) == 0);
+  if (inline_log) {
+    fprintf(stderr, "[COMMBUS] #%lu %s src=%u dst=%u "
+            "ctl0=%08X ctl1=%08X ctl2=%08X ctl3=%08X\n",
+            (unsigned long)s_n, what, src, dst,
+            nuonEnv.mpe[0].commctl, nuonEnv.mpe[1].commctl,
+            nuonEnv.mpe[2].commctl, nuonEnv.mpe[3].commctl);
+  }
+  if ((s_n % 5000) == 0) {
+    fprintf(stderr, "[COMMBUS] === 5k-event snapshot pendingReqs=%u ===\n",
+            nuonEnv.pendingCommRequests);
+  }
+}
+
 void DoCommBusController(void)
 {
   static uint32 currentTransmitID = 0;
@@ -61,6 +92,7 @@ void DoCommBusController(void)
       nuonEnv.mpe[target].TriggerInterrupt(INT_COMMRECV);
       nuonEnv.pendingCommRequests--;
 
+      LogCommBusEvent("deliver", currentTransmitID, target);
 #ifdef LOG_COMM
       fprintf(commLogFile,"Comm packet sent: MPE%ld->MPE%ld, packet contents = {$%lx,$%lx,$%lx,$%lx, comminfo = $%lx\n",
         currentTransmitID,
@@ -76,6 +108,10 @@ void DoCommBusController(void)
     else
     {
       //xmit failed
+      LogCommBusEvent(
+          (nuonEnv.mpe[target].commctl & COMM_RECV_BUFFER_FULL_BIT) ?
+              "BUSY-recv-full" : "BUSY-disabled",
+          currentTransmitID, target);
       if(nuonEnv.mpe[currentTransmitID].commctl & COMM_XMIT_RETRY_BIT)
       {
 #ifdef LOG_COMM
