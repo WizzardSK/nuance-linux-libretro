@@ -200,6 +200,117 @@ void UnimplementedCacheHandler(MPE &mpe)
   //::MessageBox(NULL,"This BIOS Handler does nothing","Unimplemented Cache Routine",MB_OK);
 }
 
+// _DCacheFlush (slot 12), _DCacheSync (slot 10), _DCacheSyncRegion (slot 9),
+// _DCacheInvalidateRegion (slot 11) are NUON D-cache management calls.
+//
+// On real hardware they write-back-and-invalidate the MPE's data cache so
+// that (a) writes the MPE made are visible to the bus / other MPEs and
+// (b) subsequent reads pick up fresh values. In this emulator the bus is
+// implemented as direct host-memory access, so data coherency is automatic
+// — the routines look superfluous. They aren't: games (notably IS3) use
+// `_DCacheFlush` after a code-loader path writes new bytes into a region
+// that already has compiled JIT translations. Without invalidating those
+// translations the MPE keeps executing stale compiled blocks. The previous
+// no-op implementation matched what the comment in MemLoadCoff complained
+// about: "fmv.run and other late-loaded modules typically overwrite memory
+// that already had compiled JIT blocks".
+//
+// Observed real calling convention (Ballistic, IS3 traces with
+// NUANCE_LOG_DCACHE=1): r0 = start address, r1 = SIZE in bytes (not end
+// address). The Ballistic boot path calls slot 10 (`_DCacheSync`) ~hundreds
+// of times in a row stepping r0 by +0x10 (one 16-byte cache line) with
+// r1 = 0x14 (20 bytes). So the BIOS name "DCacheSync" (no Region suffix)
+// is misleading — in practice the game uses it regionally.
+//
+// Strategy: treat ALL four slots as (start, size) regional flushes. If r0
+// looks bogus (zero or out of any NUON-mapped range) or r1 looks like a
+// sentinel (zero or absurdly large), fall through to a global flush.
+
+static inline void DCacheFlushAllMPEs()
+{
+  for (int m = 0; m < 4; m++) {
+    nuonEnv.mpe[m].nativeCodeCache.Flush();
+    nuonEnv.mpe[m].InvalidateICache();
+  }
+}
+
+static inline bool DCacheAddrLooksValid(uint32 addr)
+{
+  // NUON mapped ranges: MPE IRAM (0x2030xxxx..0x20308xxx), main DRAM
+  // (0x80000000..0x80FFFFFF), system bus (0x40000000..0x407FFFFF).
+  if (addr >= 0x20300000u && addr < 0x20400000u) return true;
+  if (addr >= 0x40000000u && addr < 0x40800000u) return true;
+  if (addr >= 0x80000000u && addr < 0x81000000u) return true;
+  return false;
+}
+
+static inline void DCacheFlushRegionAllMPEs(uint32 startAddr, uint32 size)
+{
+  // Only flush when both args look like a legitimate (addr, size) regional
+  // request — otherwise no-op (matches the previous UnimplementedCacheHandler
+  // behavior). Aggressive global flushes destroy JIT performance: every
+  // discard forces all 4 MPEs to recompile their hot loops, and games like
+  // IS3 call slot 12 ~100x/minute during cutscene playback.
+  //
+  // Ballistic uses these slots correctly (start in main DRAM, size 0x14..
+  // 0x24 = one or two 16-byte cache lines). IS3's slot 12 args are often
+  // flags or wild values (r0=1, r1=0) — those callers don't intend a
+  // memory-coherency operation, they're using the slot for something else.
+  // No-op'ing them keeps IS3's prior behavior unchanged while still giving
+  // Ballistic the regional flushes its code-loader actually needs.
+  const uint32 kMaxRegion = 0x00100000u;  // 1 MB upper sanity bound
+  if (!DCacheAddrLooksValid(startAddr) || size == 0 || size > kMaxRegion)
+    return;
+  const uint32 endAddr = startAddr + size - 1;
+  for (int m = 0; m < 4; m++) {
+    nuonEnv.mpe[m].nativeCodeCache.FlushRegion(startAddr, endAddr);
+    nuonEnv.mpe[m].InvalidateICacheRegion(startAddr, endAddr);
+  }
+}
+
+static inline bool LogDCache()
+{
+  static int s = -1;
+  if (s == -1) s = getenv("NUANCE_LOG_DCACHE") ? 1 : 0;
+  return s != 0;
+}
+
+void DCacheFlush(MPE &mpe)
+{
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] flush mpe=%u r0=%08X r1=%08X rz=%08X\n",
+            mpe.mpeIndex, mpe.regs[0], mpe.regs[1], mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(mpe.regs[0], mpe.regs[1]);
+}
+
+void DCacheSync(MPE &mpe)
+{
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] sync mpe=%u r0=%08X r1=%08X rz=%08X\n",
+            mpe.mpeIndex, mpe.regs[0], mpe.regs[1], mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(mpe.regs[0], mpe.regs[1]);
+}
+
+void DCacheSyncRegion(MPE &mpe)
+{
+  const uint32 startAddr = mpe.regs[0];
+  const uint32 size      = mpe.regs[1];
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] syncRegion mpe=%u start=%08X size=%08X rz=%08X\n",
+            mpe.mpeIndex, startAddr, size, mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(startAddr, size);
+}
+
+void DCacheInvalidateRegion(MPE &mpe)
+{
+  const uint32 startAddr = mpe.regs[0];
+  const uint32 size      = mpe.regs[1];
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] invRegion mpe=%u start=%08X size=%08X rz=%08X\n",
+            mpe.mpeIndex, startAddr, size, mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(startAddr, size);
+}
+
 void UnimplementedCommHandler(MPE &mpe)
 {
 #ifdef ENABLE_EMULATION_MESSAGEBOXES
@@ -627,10 +738,10 @@ AssemblyBiosHandler, //_CommSendRecvInfo (5)
 ControllerInitialize, //_ControllerInitialize (6)
 NullBiosHandler, //_ControllerExtendedInfo (7)
 TimeOfDay, //_TimeOfDay (8)
-UnimplementedCacheHandler, //_DCacheSyncRegion (9)
-UnimplementedCacheHandler, //_DCacheSync (10)
-UnimplementedCacheHandler, //_DCacheInvalidateRegion (11)
-UnimplementedCacheHandler, //_DCacheFlush (12)
+DCacheSyncRegion, //_DCacheSyncRegion (9)
+DCacheSync, //_DCacheSync (10)
+DCacheInvalidateRegion, //_DCacheInvalidateRegion (11)
+DCacheFlush, //_DCacheFlush (12)
 TimerInit, //_TimerInit (13)
 TimeElapsed, //_TimeElapsed (14)
 AssemblyBiosHandler, //_TimeToSleep (15)
