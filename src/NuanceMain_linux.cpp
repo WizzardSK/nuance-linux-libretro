@@ -986,8 +986,9 @@ int main(int argc, char* argv[])
         if (dump_now) {
           // Dump MPE3 register state at the moment of the disasm — useful
           // for diagnosing what the stuck loop is comparing against.
-          fprintf(stderr, "[MPE3-REGS] pc=0x%08X go=%d\n",
+          fprintf(stderr, "[MPE3-REGS] pc=0x%08X rz=0x%08X go=%d\n",
                   nuonEnv.mpe[3].pcexec,
+                  nuonEnv.mpe[3].rz,
                   (nuonEnv.mpe[3].mpectl & 2) ? 1 : 0);
           for (int rb = 0; rb < 32; rb += 8) {
             fprintf(stderr, "  r%-2d-%-2d:", rb, rb+7);
@@ -995,6 +996,16 @@ int main(int argc, char* argv[])
               fprintf(stderr, " %08X", nuonEnv.mpe[3].regs[rb+j]);
             fprintf(stderr, "\n");
           }
+          // Dump the MPE3 stack frame so we can find the caller chain.
+          // r31 is the SP; stack grows down so frame links are at [SP], [SP+4], ...
+          const uint32 sp = nuonEnv.mpe[3].regs[31];
+          fprintf(stderr, "[MPE3-STACK] sp=0x%08X:", sp);
+          for (uint32 off = 0; off < 64; off += 4) {
+            uint32* mp = (uint32*)nuonEnv.GetPointerToMemory(3, sp + off, false);
+            if (mp) fprintf(stderr, " %08X", SwapBytes(*mp));
+            else    fprintf(stderr, " ?");
+          }
+          fprintf(stderr, "\n");
           // NUANCE_DUMP_MEM=addr1:size1,addr2:size2,... — print byte-swapped
           // 32-bit words at each region. Useful for inspecting state
           // pointers / sync slots at the disasm moment.
