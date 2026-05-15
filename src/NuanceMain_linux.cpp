@@ -454,6 +454,34 @@ int main(int argc, char* argv[])
           nuonEnv.mpe[i].FetchDecodeExecute();
       }
 
+      // NUANCE_LOG_MPESTATE=<sec>: every <sec> seconds, log go/pcexec
+      // for all 4 MPEs. Lets us see whether MPE0 minibios is actually
+      // ticking during IS3 attract → menu handoff.
+      {
+        static uint64 s_log_mpestate_us = 0;
+        static int s_log_mpestate_inited = 0;
+        if (!s_log_mpestate_inited) {
+          s_log_mpestate_inited = 1;
+          if (const char* s = getenv("NUANCE_LOG_MPESTATE"))
+            s_log_mpestate_us = (uint64)strtoull(s, nullptr, 0) * 1000000ull;
+        }
+        if (s_log_mpestate_us > 0) {
+          static uint64 next_us = 0;
+          const uint64 now = useconds_since_start();
+          if (now >= next_us) {
+            next_us = now + s_log_mpestate_us;
+            fprintf(stderr, "[MPESTATE] @%llus", (unsigned long long)(now/1000000));
+            for (int i = 0; i < 4; i++) {
+              const int go = (nuonEnv.mpe[i].mpectl & 2) ? 1 : 0;
+              fprintf(stderr, " mpe%d{go=%d pc=0x%08X intsrc=0x%X commctl=0x%X}",
+                      i, go, nuonEnv.mpe[i].pcexec,
+                      nuonEnv.mpe[i].intsrc, nuonEnv.mpe[i].commctl);
+            }
+            fprintf(stderr, "\n");
+          }
+        }
+      }
+
       if (nuonEnv.pendingCommRequests)
         DoCommBusController();
 
