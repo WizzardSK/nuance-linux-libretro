@@ -1870,6 +1870,19 @@ bool MPE::FetchDecodeExecute()
           //Test imaskSw2 mask
           if((intctl & (1U << 7)) == 0)
           {
+            // NUANCE_LOG_ISR=1: trace every interrupt dispatch. Throttled
+            // to first 50 + every 1000th (timer fires ~260Hz combined).
+            {
+              static int s_log_inited = 0; static int s_log = 0;
+              if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_ISR") ? 1 : 0; }
+              if (s_log) {
+                static uint64 s_n2 = 0; s_n2++;
+                if (s_n2 <= 50 || (s_n2 % 1000) == 0)
+                  fprintf(stderr, "[ISR2] #%llu mpe=%u src=0x%08X bit=%u vec=0x%08X rzi2=0x%08X\n",
+                          (unsigned long long)s_n2, mpeIndex, intsrc, inten2sel,
+                          intvec2, pcexec);
+              }
+            }
             //imaskSw2 not set so jump to the level 2 interrupt vector
             rzi2 = pcexec;
             pcexec = intvec2;
@@ -1884,6 +1897,21 @@ bool MPE::FetchDecodeExecute()
           //Test to see if an enabled level 1 interrupt has occurred
           if(intsrc & inten1)
           {
+            {
+              static int s_log_inited = 0; static int s_log = 0;
+              if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_ISR") ? 1 : 0; }
+              if (s_log) {
+                static uint64 s_n1 = 0; s_n1++;
+                if (s_n1 <= 50 || (s_n1 % 1000) == 0) {
+                  uint32 fired = intsrc & inten1;
+                  int bit = 0;
+                  while (bit < 32 && !(fired & (1U << bit))) bit++;
+                  fprintf(stderr, "[ISR1] #%llu mpe=%u src=0x%08X bit=%d vec=0x%08X rzi1=0x%08X\n",
+                          (unsigned long long)s_n1, mpeIndex, intsrc, bit,
+                          intvec1, pcexec);
+                }
+              }
+            }
             //Jump to the level 1 interrupt vector
             rzi1 = pcexec;
             pcexec = intvec1;
