@@ -967,8 +967,12 @@ bool NuonEnvironment::LoadConfigFile(const std::string& fileName)
 #endif
         }
 
-#ifdef _WIN64
-        compilerOptions.bAllowCompile = false; //!!
+#if defined(_WIN64) && !defined(USE_ASMJIT)
+        // Pre-asmjit safety net: 64-bit Windows builds without the asmjit
+        // emitter cannot generate native x64 code, so force the interpreter.
+        // With USE_ASMJIT defined the asmjit backend handles emission and
+        // this override would silently nullify the user's nuance.cfg setting.
+        compilerOptions.bAllowCompile = false;
 #endif
         break;
       default:
