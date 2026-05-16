@@ -547,6 +547,40 @@ int main(int argc, char* argv[])
         }
       }
 
+      // NUANCE_IS3_POKE_PREDICATE_AT_STATE=<state_hex>:<addr_hex>:<val_hex>:
+      // when *0x8002125C currently holds <state>, persistently overwrite
+      // *<addr> = <val> every cycle batch. The game may re-write the
+      // predicate each frame; persistent poking keeps it pinned at <val>
+      // so the state-machine handler reads our value.
+      {
+        static int s_inited = 0; static int s_state = -1; static uint32 s_addr = 0; static uint32 s_val = 0;
+        static uint32 s_fired = 0;
+        if (!s_inited) {
+          s_inited = 1;
+          if (const char* s = getenv("NUANCE_IS3_POKE_PREDICATE_AT_STATE")) {
+            int st = 0; uint32 ad = 0, vl = 0;
+            if (sscanf(s, "%x:%x:%x", &st, &ad, &vl) == 3) { s_state = st; s_addr = ad; s_val = vl; }
+          }
+        }
+        if (s_state >= 0 && (cycles & 0xFFF) == 0) {
+          if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(3, 0x8002125C)) {
+            const uint32 cur = SwapBytes(*p);
+            if (cur == (uint32)s_state) {
+              if (uint32* q = (uint32*)nuonEnv.GetPointerToMemory(3, s_addr)) {
+                const uint32 oldv = SwapBytes(*q);
+                if (oldv != s_val) {
+                  *q = SwapBytes(s_val);
+                  s_fired++;
+                  if (s_fired < 5 || (s_fired & 0xFF) == 0)
+                    fprintf(stderr, "[IS3-POKE-PRED #%u] state=0x%X: *0x%08X 0x%08X -> 0x%08X\n",
+                            s_fired, s_state, s_addr, oldv, s_val);
+                }
+              }
+            }
+          }
+        }
+      }
+
       // NUANCE_IS3_STATE_FROM=<from_hex>:<to_hex>: every cycle batch,
       // if *0x8002125C currently holds <from>, poke it to <to>. Used to
       // test whether a stuck state would advance if the BIOS handler
