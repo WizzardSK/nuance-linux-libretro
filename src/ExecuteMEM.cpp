@@ -5,6 +5,35 @@
 #include "mpe.h"
 #include "NuonMemoryMap.h"
 #include "NuonEnvironment.h"
+#include <cstdio>
+#include <cstdlib>
+
+// NUANCE_WATCH_WRITE=<addr_hex>[:<size_hex>] — log every write to a
+// NUON address range. Set NUANCE_NOJIT=1 so all stores route through
+// the interpreter (which this hook lives in).
+static uint32 s_watch_lo = 0;
+static uint32 s_watch_hi = 0;
+static int s_watch_inited = 0;
+static inline void watch_init() {
+    if (s_watch_inited) return;
+    s_watch_inited = 1;
+    const char* s = getenv("NUANCE_WATCH_WRITE");
+    if (!s) return;
+    uint32 a = 0, sz = 4;
+    int n = sscanf(s, "%x:%x", &a, &sz);
+    if (n < 1) return;
+    if (n < 2) sz = 4;
+    s_watch_lo = a;
+    s_watch_hi = a + sz;
+    fprintf(stderr, "[WATCH-WRITE] tracking 0x%08X..0x%08X\n", s_watch_lo, s_watch_hi);
+}
+static inline void watch_log(MPE& mpe, uint32 nuon_addr, uint32 val) {
+    if (!s_watch_inited) watch_init();
+    if (s_watch_lo == s_watch_hi) return;
+    if (nuon_addr < s_watch_lo || nuon_addr >= s_watch_hi) return;
+    fprintf(stderr, "[WATCH-WRITE] mpe=%u pc=0x%08X *0x%08X = 0x%08X (rz=0x%08X)\n",
+            mpe.mpeIndex, mpe.pcexec, nuon_addr, val, mpe.regs[14]);
+}
 
 #define MIP(mip_me) (((uint32)(mip_me)) >> BilinearInfo_XYMipmap(control))
 static constexpr uint32 tilemask[16] = { 0xFFFF,0x7FFF,0x3FFF,0x1FFF,0xFFF,0x7FF,0x3FF,0x1FF,0xFF,0x7F,0x3F,0x1F,0xF,0x7,0x3,0x1 }; // already shifted by 16
@@ -1163,7 +1192,9 @@ void Execute_StoreScalarImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance
 void Execute_StoreScalarAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 * const destPtr = (uint32 *)nuance.fields[FIELD_MEM_POINTER];
-  *destPtr = SwapBytes(pRegs[nuance.fields[FIELD_MEM_FROM]]);
+  const uint32 val = pRegs[nuance.fields[FIELD_MEM_FROM]];
+  *destPtr = SwapBytes(val);
+  watch_log(mpe, (uint32)nuance.fields[FIELD_MEM_TO], val);
 }
 
 void Execute_StoreScalarControlRegisterImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -1179,7 +1210,9 @@ void Execute_StoreScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &n
   if((address < MPE_ITAGS_BASE) || (address >= MPE_RESV_BASE))
   {
     uint32* const destPtr = (uint32 *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,address));
-    *destPtr = SwapBytes(pRegs[nuance.fields[FIELD_MEM_FROM]]);
+    const uint32 val = pRegs[nuance.fields[FIELD_MEM_FROM]];
+    *destPtr = SwapBytes(val);
+    watch_log(mpe, address, val);
   }
   else
   {
