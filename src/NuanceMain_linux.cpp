@@ -547,6 +547,32 @@ int main(int argc, char* argv[])
         }
       }
 
+      // NUANCE_IS3_STATE_FROM=<from_hex>:<to_hex>: every cycle batch,
+      // if *0x8002125C currently holds <from>, poke it to <to>. Used to
+      // test whether a stuck state would advance if the BIOS handler
+      // path that should write the selector actually fired. Once
+      // applied, the natural state machine should re-tick from <to>.
+      {
+        static int s_inited = 0; static int s_from = -1; static int s_to = -1;
+        if (!s_inited) {
+          s_inited = 1;
+          if (const char* s = getenv("NUANCE_IS3_STATE_FROM")) {
+            int f = 0, t = 0;
+            if (sscanf(s, "%x:%x", &f, &t) == 2) { s_from = f; s_to = t; }
+          }
+        }
+        if (s_from >= 0 && (cycles & 0xFFFF) == 0) {
+          if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(3, 0x8002125C)) {
+            const uint32 cur = SwapBytes(*p);
+            if (cur == (uint32)s_from) {
+              fprintf(stderr, "[IS3-STATE-FROM] poke *0x8002125C: 0x%X -> 0x%X (cycle=%llu)\n",
+                      s_from, s_to, (unsigned long long)cycles);
+              *p = SwapBytes((uint32)s_to);
+            }
+          }
+        }
+      }
+
       // Periodic MPE state dump for debugging stuck conditions.
       // Use a static counter so frame boundaries (which reset `cycles`)
       // don't break the cadence — past a single frame all MPESTATEs would
