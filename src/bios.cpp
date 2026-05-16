@@ -318,6 +318,23 @@ void UnimplementedCommHandler(MPE &mpe)
 #endif
 }
 
+// Stub returning success in r0 (= 0). Lots of "config" BIOS slots
+// (ControllerPollRate, ControllerExtendedInfo, LoadDefaultSystemSettings,
+// etc.) just need to NOT FAIL — real implementations are missing but
+// the games we have care only about a non-error return. Optional logging
+// via NUANCE_LOG_NULL_BIOS=1.
+void NullBiosHandlerOK(MPE &mpe)
+{
+  static int s_log_inited = 0; static int s_log = 0;
+  if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_NULL_BIOS") ? 1 : 0; }
+  if (s_log) {
+    fprintf(stderr, "[BIOS-NULL-OK] mpe=%u pc=0x%08X rz=0x%08X r0=0x%X r1=0x%X r2=0x%X\n",
+            mpe.mpeIndex, mpe.pcexec, mpe.regs[14],
+            mpe.regs[0], mpe.regs[1], mpe.regs[2]);
+  }
+  mpe.regs[0] = 0;
+}
+
 void NullBiosHandler(MPE &mpe)
 {
   //char msg[512];
@@ -736,7 +753,7 @@ AssemblyBiosHandler, //_CommRecvInfoQuery (3)
 AssemblyBiosHandler, //_CommSendRecv (4)
 AssemblyBiosHandler, //_CommSendRecvInfo (5)
 ControllerInitialize, //_ControllerInitialize (6)
-NullBiosHandler, //_ControllerExtendedInfo (7)
+NullBiosHandlerOK, //_ControllerExtendedInfo (7)
 TimeOfDay, //_TimeOfDay (8)
 DCacheSyncRegion, //_DCacheSyncRegion (9)
 DCacheSync, //_DCacheSync (10)
@@ -875,7 +892,7 @@ NullBiosHandler, //_StoreSystemSetting (142)
 NullBiosHandler, //_mount (143)
 MPEStatus, //_MPEStatus (144)
 KPrintf, //_kprintf (145)
-NullBiosHandler, //_ControllerPollRate (146)
+NullBiosHandlerOK, //_ControllerPollRate (146)
 WillNotImplement, //_VidSetOutputType (147)
 NullBiosHandler, //_LoadDefaultSystemSettings (148)
 SetISRExitHook, //_SetISRExitHook (149)
