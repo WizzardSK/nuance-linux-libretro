@@ -439,6 +439,26 @@ void FindName(MPE &mpe)
 
 void AssemblyBiosHandler(MPE &mpe)
 {
+  // NUANCE_LOG_ASM_BIOS=<slot_dec>: trace every call to a specific
+  // AssemblyBiosHandler slot. Reverse-engineer calling convention.
+  static int s_target = -2;
+  static uint64 s_count = 0;
+  if (s_target == -2) {
+    const char* s = getenv("NUANCE_LOG_ASM_BIOS");
+    s_target = s ? (int)strtol(s, nullptr, 0) : -1;
+  }
+  if (s_target >= 0) {
+    const int slot = (int)((mpe.pcexec - 0x80000000) >> 3);
+    if (slot == s_target) {
+      if (s_count < 30 || (s_count % 100) == 0)
+        fprintf(stderr, "[ASM-BIOS slot=%d #%llu] mpe=%u rz=0x%08X "
+                "r0=0x%08X r1=0x%08X r2=0x%08X r3=0x%08X r4=0x%08X r5=0x%08X\n",
+                slot, (unsigned long long)s_count, mpe.mpeIndex, mpe.regs[14],
+                mpe.regs[0], mpe.regs[1], mpe.regs[2],
+                mpe.regs[3], mpe.regs[4], mpe.regs[5]);
+      s_count++;
+    }
+  }
 }
 
 // Shared core for _CommSend (slot 0) and _CommSendInfo (slot 1). The
