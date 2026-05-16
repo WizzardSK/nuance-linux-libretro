@@ -451,22 +451,36 @@ void MediaOpen(MPE &mpe)
       // decoded frames on screen instead of a black window.
       // fileNameArray[handle] is now resolved (case-fixed if needed).
       if (mpxSkipArray[handle] && IsMpxFilename(fileNameArray[handle])) {
-        if (g_mpxDecoder[handle]) { delete g_mpxDecoder[handle]; g_mpxDecoder[handle] = nullptr; }
-        MpxDecoder* dec = new MpxDecoder();
-        if (dec->Open(fileNameArray[handle].c_str())) {
-          g_mpxDecoder[handle] = dec;
-          // Reset VLD-BDU stub state for this new MPEG sequence so its
-          // start-code stream restarts with sequence_header_code.
-          // Without this, multi-cutscene games (IS3 splash logos) get
-          // past the first cutscene but the second hits a B7 stream
-          // with no preceding B3 and stays in fmv.run forever.
+        // NUANCE_MPX_SKIP_ALL=1: don't bother decoding cutscenes for visual
+        // playback — go straight to "ended" so the game advances past them
+        // immediately. Saves ~4 minutes of boot time for IS3 (logo1+logo2+
+        // titel+intro+menu cutscene chain). Still resets the VLD-BDU stub
+        // state so multi-cutscene games' second/third cutscene "ends" too.
+        static int s_skip_all_inited = 0; static int s_skip_all = 0;
+        if (!s_skip_all_inited) { s_skip_all_inited = 1; s_skip_all = getenv("NUANCE_MPX_SKIP_ALL") ? 1 : 0; }
+        if (s_skip_all) {
+          fprintf(stderr, "[MPX-SKIP-ALL] skipping %s\n", fileNameArray[handle].c_str());
           for (int m = 0; m < 4; m++) nuonEnv.mpe[m].vldReadCount = 0;
-          g_mpxSkipPending = false;
-          fprintf(stderr, "[MPX] decoding %s\n", fileNameArray[handle].c_str());
+          g_mpxSkipPending = true;
+          if (g_mpxDecoder[handle]) { delete g_mpxDecoder[handle]; g_mpxDecoder[handle] = nullptr; }
         } else {
-          delete dec;
-          fprintf(stderr, "[MPX] failed to open %s — falling back to EOF skip\n",
-                  fileNameArray[handle].c_str());
+          if (g_mpxDecoder[handle]) { delete g_mpxDecoder[handle]; g_mpxDecoder[handle] = nullptr; }
+          MpxDecoder* dec = new MpxDecoder();
+          if (dec->Open(fileNameArray[handle].c_str())) {
+            g_mpxDecoder[handle] = dec;
+            // Reset VLD-BDU stub state for this new MPEG sequence so its
+            // start-code stream restarts with sequence_header_code.
+            // Without this, multi-cutscene games (IS3 splash logos) get
+            // past the first cutscene but the second hits a B7 stream
+            // with no preceding B3 and stays in fmv.run forever.
+            for (int m = 0; m < 4; m++) nuonEnv.mpe[m].vldReadCount = 0;
+            g_mpxSkipPending = false;
+            fprintf(stderr, "[MPX] decoding %s\n", fileNameArray[handle].c_str());
+          } else {
+            delete dec;
+            fprintf(stderr, "[MPX] failed to open %s — falling back to EOF skip\n",
+                    fileNameArray[handle].c_str());
+          }
         }
       }
     }

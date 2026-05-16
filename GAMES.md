@@ -63,6 +63,7 @@ branch. Tested against the 64-bit asmjit JIT build (`build/nuance`).
 | `NUANCE_FORCE_LOAD_COFF_AFTER=<count>` | Configurable MPX-teardown threshold (default 2; `=1` for single-cutscene games) |
 | `NUANCE_SLOT30_RET=<v>` | Override BiosExit (slot 30) return value |
 | `NUANCE_AUTOSKIP=<sec>` | Seconds after MPX EOF before auto-tearing-down the decoder (default 5; `=0` disables; `=1` minimises cutscene wait for fast test iteration) |
+| `NUANCE_MPX_SKIP_ALL=1` | Skip ALL MPX cutscenes immediately on open — no decoder spawn, no playback time. Saves ~4 min boot time for IS3 (logo1+logo2+titel+intro+menu). VLD-BDU stub reset preserved so multi-cutscene chains still advance |
 | **Diagnostic tracing (2026-05-14)** ||
 | `NUANCE_LOG_DCACHE=1` | Log every call to D-cache BIOS slots 9/10/11/12 with (mpe, r0, r1, rz). Used to verify the regional-flush calling convention is `(addr, size)` |
 | `NUANCE_LOG_COMMBUS=1` | Trace every `DoCommBusController` event (deliver vs BUSY-recv-full vs BUSY-disabled) with all four MPEs' commctl values. Throttled: first 50 inline, every 1000th thereafter |
