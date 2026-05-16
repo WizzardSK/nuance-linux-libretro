@@ -213,6 +213,13 @@ if(NOT BUILD_LIBRETRO AND NOT WIN32)
     target_link_libraries(${NUANCE_TARGET} PRIVATE ${X11_LIBRARIES} -lGLX)
 endif()
 
+# Windows standalone needs DirectInput8 (InputManager.cpp), DirectX GUIDs
+# (IID_IDirectInput8A / c_dfDIJoystick2) and the multimedia timer API
+# (timeBeginPeriod / timeEndPeriod / timeGetDevCaps in timer.cpp).
+if(WIN32 AND NOT BUILD_LIBRETRO)
+    target_link_libraries(${NUANCE_TARGET} PRIVATE dinput8 dxguid winmm)
+endif()
+
 # For 32-bit static SDL2, provide samplerate stub
 if(EXISTS "/tmp/libsamplerate.a" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
     target_link_libraries(${NUANCE_TARGET} PRIVATE /tmp/libsamplerate.a)
