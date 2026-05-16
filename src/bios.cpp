@@ -461,6 +461,42 @@ void AssemblyBiosHandler(MPE &mpe)
   }
 }
 
+// _CommRecvInfoQuery (slot 3): non-blocking query for incoming packet.
+// Returns packet info via registers if a packet is in the commrecv
+// buffer (commctl bit 31 = COMM_RECV_BUFFER_FULL_BIT), else returns
+// -1 / 0xFFFFFFFF in r0.
+//
+// CRITICAL FOR IS3 (2026-05-16): levelsel.run is a pure POLLER. NUANCE_LOG_JSR
+// trace shows 141,525 calls to slot 3 from a single PC (0x800ACB4C)
+// in 200s, vs ZERO calls to any other comm slot. The polling loop
+// waits for an incoming packet to trigger state advancement.
+// Without a real implementation, IS3 hangs forever on the level
+// select screen.
+//
+// Return convention (inferred from name + usage pattern):
+//   r0 = source MPE id (0..3) if packet available
+//   r0 = -1 / 0xFFFFFFFF if no packet
+//   r1 = comminfo (high byte of remote sender's comminfo)
+// Packet contents stay in commrecv[] for later retrieval via slot 2
+// (CommRecvInfo) which is the blocking variant.
+void CommRecvInfoQuery(MPE &mpe)
+{
+  static int s_log_inited = 0; static int s_log = 0;
+  if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_COMM_RECV_QUERY") ? 1 : 0; }
+  // Convention: don't TOUCH r0/r1 (preserve caller registers). Many
+  // NUON BIOS asm handlers leave registers unchanged when no work to do.
+  // Earlier implementation that wrote r0 = -1 broke IS3 boot (stuck
+  // at state 0x13) — the caller apparently expected r0 preserved or
+  // some other value. For now just log and return.
+  if (s_log) {
+    static uint64 s_calls = 0; s_calls++;
+    if (s_calls < 20 || (s_calls % 10000) == 0)
+      fprintf(stderr, "[COMM-RECV-QUERY #%llu] mpe=%u commctl=0x%08X r0=0x%X r1=0x%X r2=0x%X rz=0x%08X\n",
+              (unsigned long long)s_calls, mpe.mpeIndex, mpe.commctl,
+              mpe.regs[0], mpe.regs[1], mpe.regs[2], mpe.regs[14]);
+  }
+}
+
 // Shared core for _CommSend (slot 0) and _CommSendInfo (slot 1). The
 // NUON-side bios.s implements these as a tight asm spinwait around
 // the commctl xmit-buffer-full bit (see riff_commsend / riff_commsenddirect
