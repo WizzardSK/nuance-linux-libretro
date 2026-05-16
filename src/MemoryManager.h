@@ -2,8 +2,15 @@
 #define MEMORY_MANAGER_H
 
 #include <vector>
+#include <string>
 
-using namespace std;
+// NOTE: do not bring all of std:: into the global namespace here.
+// `using namespace std;` previously caused `std::byte` to collide with
+// the `byte` typedef in <rpcndr.h> on Windows (MinGW GCC 16, C++17).
+// Downstream files historically relied on bare `string` / `vector` etc.
+// being visible via this header, so import only those names explicitly.
+using std::vector;
+using std::string;
 
 struct FreeMemoryBlock
 {
