@@ -177,6 +177,36 @@ bool GLWindow::CreateWindowGL()
   fprintf(stderr, "GL Vendor: %s\nGL Renderer: %s\nGL Version: %s\n",
     glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
 
+  // Disable vsync so glXSwapBuffers doesn't block the main loop waiting
+  // for a hardware vblank. With vsync on, intel HD blocks each frame
+  // at 60Hz which throttles the NUON emulator's main loop to <2 Hz
+  // effective video-tick rate (since the loop is structured around
+  // SwapBuffers, not around its own timer). The emulator's own
+  // soft-timer at timer_rate[2] handles pacing. Software rendering
+  // (llvmpipe) doesn't vsync, which is why LIBGL_ALWAYS_SOFTWARE=1
+  // "fixes" the apparent IS3 boot regression.
+  typedef int (*PFN_glXSwapIntervalEXT)(Display*, GLXDrawable, int);
+  typedef int (*PFN_glXSwapIntervalMESA)(unsigned int);
+  typedef int (*PFN_glXSwapIntervalSGI)(int);
+  PFN_glXSwapIntervalEXT pglXSwapIntervalEXT =
+      (PFN_glXSwapIntervalEXT)glXGetProcAddressARB((const GLubyte*)"glXSwapIntervalEXT");
+  PFN_glXSwapIntervalMESA pglXSwapIntervalMESA =
+      (PFN_glXSwapIntervalMESA)glXGetProcAddressARB((const GLubyte*)"glXSwapIntervalMESA");
+  PFN_glXSwapIntervalSGI pglXSwapIntervalSGI =
+      (PFN_glXSwapIntervalSGI)glXGetProcAddressARB((const GLubyte*)"glXSwapIntervalSGI");
+  if (pglXSwapIntervalEXT) {
+    pglXSwapIntervalEXT(xDisplay, xWindow, 0);
+    fprintf(stderr, "GL: vsync disabled via glXSwapIntervalEXT\n");
+  } else if (pglXSwapIntervalMESA) {
+    pglXSwapIntervalMESA(0);
+    fprintf(stderr, "GL: vsync disabled via glXSwapIntervalMESA\n");
+  } else if (pglXSwapIntervalSGI) {
+    pglXSwapIntervalSGI(0);
+    fprintf(stderr, "GL: vsync disabled via glXSwapIntervalSGI\n");
+  } else {
+    fprintf(stderr, "GL: warning, no glXSwapInterval available — vsync may throttle main loop\n");
+  }
+
   glewExperimental = GL_TRUE;
   GLenum err = glewInit();
   if (err != GLEW_OK) {
