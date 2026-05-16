@@ -878,12 +878,25 @@ int main(int argc, char* argv[])
           fprintf(stderr, "[GAME-PC] @%llus %llu samples, %zu unique PCs:\n",
                   (unsigned long long)((useconds_since_start() - sample_start_us)/1000000),
                   (unsigned long long)sample_total, sorted.size());
-          int n = (int)sorted.size(); if (n > 15) n = 15;
-          for (int i = 0; i < n; i++)
+          // NUANCE_GAME_PC_TOP=<N> overrides the default top-15 cutoff
+          // for the histogram dump. Use e.g. =200 to see "rare" PCs
+          // (state-machine code that runs <1% of the time). NUANCE_GAME_PC_MIN_HITS=<H>
+          // restricts to PCs with at least H hits (filter noise).
+          static int s_top = -1; static int s_minhits = -1;
+          if (s_top < 0) {
+            const char* s = getenv("NUANCE_GAME_PC_TOP");
+            s_top = s ? (int)strtol(s, nullptr, 0) : 15;
+            const char* m = getenv("NUANCE_GAME_PC_MIN_HITS");
+            s_minhits = m ? (int)strtol(m, nullptr, 0) : 1;
+          }
+          int n = (int)sorted.size(); if (n > s_top) n = s_top;
+          for (int i = 0; i < n; i++) {
+            if ((int)sorted[i].second < s_minhits) break;
             fprintf(stderr, "[GAME-PC] #%2d pc=0x%08X hits=%llu (%.1f%%)\n",
                     i, sorted[i].first,
                     (unsigned long long)sorted[i].second,
                     100.0 * sorted[i].second / sample_total);
+          }
           // Clear for next window
           pc_hits.clear();
           sample_total = 0;
