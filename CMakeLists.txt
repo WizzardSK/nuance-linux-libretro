@@ -170,6 +170,16 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:USE_ASMJIT>
 )
 
+# NuanceMain.cpp on Windows provides its own WinMain entry point.
+# SDL2main.lib also defines WinMain, so linking both produces a duplicate
+# WinMain. Tell SDL2 not to remap our main() and strip SDL2main from the
+# link line (the user-supplied SDL2_LIBRARIES on a typical Windows SDL2
+# install includes it).
+if(WIN32 AND NOT BUILD_LIBRETRO)
+    target_compile_definitions(${NUANCE_TARGET} PRIVATE SDL_MAIN_HANDLED)
+    list(FILTER SDL2_LIBRARIES EXCLUDE REGEX "(SDL2main|sdl2main)")
+endif()
+
 target_link_libraries(${NUANCE_TARGET} PRIVATE
     glew_static
     miniaudio_impl
@@ -179,7 +189,8 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     OpenGL::GL
     ${SDL2_LIBRARIES}
     pthread
-    dl
+    # libdl is POSIX-only; MinGW resolves dlopen-style calls via the C runtime
+    $<$<NOT:$<PLATFORM_ID:Windows>>:dl>
     m
 )
 
