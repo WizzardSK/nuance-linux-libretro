@@ -25,11 +25,15 @@ add_library(miniaudio_impl STATIC external/miniaudio_impl.cpp)
 target_include_directories(miniaudio_impl PUBLIC external)
 set_property(TARGET miniaudio_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# miniz (single-file ZIP reader) - currently unused
-# on Linux we don't currently use it (FUSE tools handle ZIPs)
-#add_library(miniz_impl STATIC external/miniz.c)
-#target_include_directories(miniz_impl PUBLIC external)
-#set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
+# miniz (single-file ZIP reader). On Linux archive.cpp leans on external
+# FUSE tools to handle ZIPs, so miniz is only compiled in for the Windows
+# standalone build where archive.cpp's `#ifdef _WIN32` code path uses it
+# directly via mz_zip_reader_*.
+if(WIN32)
+    add_library(miniz_impl STATIC external/miniz.c)
+    target_include_directories(miniz_impl PUBLIC external)
+    set_property(TARGET miniz_impl PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -140,6 +144,13 @@ if(BUILD_LIBRETRO)
     target_compile_definitions(nuance_libretro PRIVATE LIBRETRO)
     set(NUANCE_TARGET nuance_libretro)
 else()
+    # Windows standalone keeps NuanceMain.cpp's legacy globals
+    # (nuonEnv/bQuit/g_ISOPath/g_ISOPrefix/StopEmulation). EmulatorCore.cpp
+    # defines the same names for the libretro and Linux-standalone frontends,
+    # so drop it on Windows to avoid duplicate-symbol link errors.
+    if(WIN32)
+        list(FILTER NUANCE_SOURCES EXCLUDE REGEX "EmulatorCore")
+    endif()
     add_executable(nuance ${NUANCE_SOURCES})
     set(NUANCE_TARGET nuance)
 endif()
@@ -183,7 +194,9 @@ endif()
 target_link_libraries(${NUANCE_TARGET} PRIVATE
     glew_static
     miniaudio_impl
-    #miniz_impl
+    # miniz is Windows-only (see add_library above) - archive.cpp uses it
+    # under #ifdef _WIN32 for inline ZIP archive extraction
+    $<$<PLATFORM_ID:Windows>:miniz_impl>
     #murmurhash # unused - see add_library above
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
     OpenGL::GL
