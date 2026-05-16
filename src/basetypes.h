@@ -2,6 +2,7 @@
 #define BASETYPES_H
 
 #include <xmmintrin.h>
+#include <immintrin.h>  // _addcarry_u32 / _subborrow_u32 (ADX) used in PropagateConstants_ALU
 
 #define ENABLE_ASSERTS
 #define ENABLE_EMULATION_MESSAGEBOXES // also enables "DumpCompiledBlocks" option
