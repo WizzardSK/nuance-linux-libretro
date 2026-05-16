@@ -146,13 +146,21 @@ endif()
 
 target_include_directories(${NUANCE_TARGET} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/compat
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glew-2.2.0/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/asmjit
     ${SDL2_INCLUDE_DIRS}
 )
+
+# compat/ holds Linux shims (linux_compat.h, lowercase windows.h that re-includes
+# linux_compat.h). On Windows the lowercase shim would shadow the real MinGW
+# <windows.h> via NTFS case-insensitivity, so only expose it on non-Windows.
+if(NOT WIN32)
+    target_include_directories(${NUANCE_TARGET} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/compat
+    )
+endif()
 
 target_compile_definitions(${NUANCE_TARGET} PRIVATE
     GLEW_STATIC

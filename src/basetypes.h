@@ -35,7 +35,7 @@ typedef unsigned char uchar;
 typedef signed char schar;
 
 #if 1 // initialize all nuon memory to a defined value (0xcd, like VS debugger)
-#include <memory.h>
+#include <cstring>
 inline void init_nuon_mem(uint8* const p, const size_t length)
 {
   memset(p,0xcd,length);
