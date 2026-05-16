@@ -43,6 +43,41 @@ static void LogCommBusEvent(const char* what, uint32 src, uint32 dst)
   }
 }
 
+// NUANCE_LOG_COMMBUS_PAYLOAD=1 — log every successful packet's 4 words
+// + comminfo at delivery time. Useful for finding what message codes
+// a module sends to trigger a state transition (e.g. IS3 levelsel.run
+// asking mcp.run to load ismerlin.run via a comm packet).
+// Optional NUANCE_LOG_COMMBUS_PAYLOAD_FILTER=<srcdst_hex> limits output:
+//   FILTER=23  → only src=2 dst=3
+//   FILTER=13  → only src=1 dst=3
+//   FILTER=*3  (any literal nibble = wildcard) → any source to dst=3
+// Without filter, logs every deliver event with payload. May be very
+// chatty (~170 packets/sec during IS3 LOADING stall).
+static void LogCommBusPayload(uint32 src, uint32 dst,
+                               uint32 w0, uint32 w1, uint32 w2, uint32 w3,
+                               uint32 info)
+{
+  static int s_inited = 0;
+  static int s_enabled = 0;
+  static int s_filter_src = -1; // -1 = any
+  static int s_filter_dst = -1;
+  if (!s_inited) {
+    s_inited = 1;
+    s_enabled = getenv("NUANCE_LOG_COMMBUS_PAYLOAD") ? 1 : 0;
+    const char* f = getenv("NUANCE_LOG_COMMBUS_PAYLOAD_FILTER");
+    if (f && f[0]) {
+      char a = f[0], b = f[1];
+      if (a >= '0' && a <= '9') s_filter_src = a - '0';
+      if (b >= '0' && b <= '9') s_filter_dst = b - '0';
+    }
+  }
+  if (!s_enabled) return;
+  if (s_filter_src >= 0 && (int)src != s_filter_src) return;
+  if (s_filter_dst >= 0 && (int)dst != s_filter_dst) return;
+  fprintf(stderr, "[COMM-PAYLOAD] mpe%u->mpe%u w0=%08X w1=%08X w2=%08X w3=%08X info=%08X\n",
+          src, dst, w0, w1, w2, w3, info);
+}
+
 void DoCommBusController(void)
 {
   static uint32 currentTransmitID = 0;
@@ -93,6 +128,12 @@ void DoCommBusController(void)
       nuonEnv.pendingCommRequests--;
 
       LogCommBusEvent("deliver", currentTransmitID, target);
+      LogCommBusPayload(currentTransmitID, target,
+                        nuonEnv.mpe[target].commrecv[0],
+                        nuonEnv.mpe[target].commrecv[1],
+                        nuonEnv.mpe[target].commrecv[2],
+                        nuonEnv.mpe[target].commrecv[3],
+                        nuonEnv.mpe[target].comminfo);
 #ifdef LOG_COMM
       fprintf(commLogFile,"Comm packet sent: MPE%ld->MPE%ld, packet contents = {$%lx,$%lx,$%lx,$%lx, comminfo = $%lx\n",
         currentTransmitID,
