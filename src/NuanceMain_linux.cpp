@@ -758,6 +758,50 @@ int main(int argc, char* argv[])
           }
         } else last_time2 = new_time;
 
+        // NUANCE_IS3_INJECT_PACKET=1: when IS3 state machine is at 0x66
+        // (levelsel.run active polling slot 3 for incoming packet) and
+        // controller[1].buttons differs from previous tick, synthesize a
+        // 'controller event' comm packet directly into MPE3's recv buffer.
+        // This bypasses the missing MPE0-minibios controller→comm bridge
+        // that real NUON HW has. Payload mimics the 0xAF-magic protocol
+        // observed in boot-phase mpe0→mpe3 packets.
+        {
+          static int s_inject_inited = 0; static int s_inject_enabled = 0;
+          static uint16 s_last_btns = 0;
+          static uint64 s_inject_count = 0;
+          if (!s_inject_inited) {
+            s_inject_inited = 1;
+            s_inject_enabled = getenv("NUANCE_IS3_INJECT_PACKET") ? 1 : 0;
+          }
+          if (s_inject_enabled && controller) {
+            const uint32 selector = (uint32*)nuonEnv.GetPointerToMemory(3, 0x8002125C)
+                ? SwapBytes(*(uint32*)nuonEnv.GetPointerToMemory(3, 0x8002125C)) : 0;
+            const uint16 cur_btns = SwapBytes(controller[1].buttons);
+            if (selector == 0x66 && cur_btns != s_last_btns) {
+              // Only inject if MPE3 recv buffer is free
+              if (!(nuonEnv.mpe[3].commctl & COMM_RECV_BUFFER_FULL_BIT)) {
+                nuonEnv.mpe[3].commrecv[0] = 0x00000001;          // packet word 0 — sync marker
+                nuonEnv.mpe[3].commrecv[1] = 0xAB120170;          // magic
+                nuonEnv.mpe[3].commrecv[2] = 0x12345678;          // magic
+                nuonEnv.mpe[3].commrecv[3] = (uint32)cur_btns;    // button state as payload
+                // comminfo: low 8 bits preserved, high 16 = source=0 + info=0xAF
+                nuonEnv.mpe[3].comminfo &= 0xFFU;
+                nuonEnv.mpe[3].comminfo |= ((uint32)0xAF << 16);
+                // commctl: clear source ID bits, set source=0, set RECV_FULL
+                nuonEnv.mpe[3].commctl &= ~COMM_SOURCE_ID_BITS;
+                nuonEnv.mpe[3].commctl |= COMM_RECV_BUFFER_FULL_BIT;  // source = 0 = MPE0
+                nuonEnv.mpe[3].TriggerInterrupt(INT_COMMRECV);
+                s_inject_count++;
+                fprintf(stderr, "[IS3-INJECT #%llu] btns=0x%04X (prev=0x%04X) -> mpe3 commrecv\n",
+                        (unsigned long long)s_inject_count, cur_btns, s_last_btns);
+                s_last_btns = cur_btns;
+              }
+            } else if (selector != 0x66) {
+              s_last_btns = cur_btns;  // reset baseline when not in levelsel
+            }
+          }
+        }
+
         // audTimer — push one Nuon audio period into the host audio ring (byte-swapped), advance the
         // DMA half pointer, fire INT_AUDIO. Ring full -> skip this iteration
         if (nuonEnv.timer_rate[2] > 0) {
