@@ -659,6 +659,16 @@ void IntSetVector(MPE &mpe)
       {
         mpe.regs[0] = newvec;
       }
+      // CRITICAL FIX (2026-05-16): the existing code added the handler to
+      // the recv-handler list but never enabled INT_COMMRECV in inten1.
+      // Without inten1 bit 4 set, `intsrc & inten1` for that bit stays 0
+      // and the ISR dispatcher never tail-calls the installed handler.
+      // Symptom on IS3: mpe0->mpe3 comm packets deliver fine, MPE3.intsrc
+      // bit 4 gets set briefly by TriggerInterrupt(INT_COMMRECV), but
+      // MPE3 never runs the user commrecv handler at 0x80239560 (mcp.run
+      // installs this for level-select → load-ismerlin transitions).
+      // The ELSE branch below already does this for non-commrecv ints.
+      mpe.inten1 |= (1U << 4);
     }
     else
     {
