@@ -544,17 +544,33 @@ static void CommSendCore(MPE &mpe, uint32 packetAddr, uint32 target, uint32 info
   nuonEnv.pendingCommRequests++;
 }
 
+// Runtime toggle: NUANCE_COMMSEND_ASM=1 forces slot 0/1 through the NUON-asm
+// path (AssemblyBiosHandler), matching upstream's behaviour. Default (env
+// unset) uses our C++ shortcut. Used to A/B-test whether Tempest 3000's
+// gameplay-entry crash is sensitive to the asm path's implicit
+// DoCommBusController scheduling.
+static inline bool CommSendUseAsm()
+{
+  static int s = -1;
+  if (s < 0) s = getenv("NUANCE_COMMSEND_ASM") ? 1 : 0;
+  return s != 0;
+}
+
+extern void AssemblyBiosHandler(MPE &mpe);
+
 // _CommSend (slot 0): r0 = target MPE, r1 = address of 16-byte packet.
 // info field is zero (the asm prelude does `sub r5, r5` before falling
 // into commsend_loadpacket).
 void CommSend(MPE &mpe)
 {
+  if (CommSendUseAsm()) { AssemblyBiosHandler(mpe); return; }
   CommSendCore(mpe, mpe.regs[1], mpe.regs[0], 0);
 }
 
 // _CommSendInfo (slot 1): r0 = target MPE, r1 = info, r2 = packet ptr.
 void CommSendInfo(MPE &mpe)
 {
+  if (CommSendUseAsm()) { AssemblyBiosHandler(mpe); return; }
   CommSendCore(mpe, mpe.regs[2], mpe.regs[0], mpe.regs[1]);
 }
 
