@@ -489,7 +489,14 @@ unsigned WINAPI GLWindow::GLWindowMain(void *param)
 // X11 swap buffers
 void SDL2_SwapWindow()
 {
-  if (xDisplay && xWindow) glXSwapBuffers(xDisplay, xWindow);
+  if (xDisplay && xWindow) {
+    // glFinish() ensures pending GL commands complete before we swap.
+    // With vsync disabled (so the main loop isn't throttled) some
+    // drivers will swap before the back buffer is ready, producing a
+    // black or flickering frame.
+    glFinish();
+    glXSwapBuffers(xDisplay, xWindow);
+  }
 }
 
 #endif // !_WIN32
