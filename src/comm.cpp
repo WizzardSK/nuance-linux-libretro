@@ -251,7 +251,17 @@ void DoCommBusController(void)
             //!! TODO modify SetChannelMode to recreate the sound buffer only if the new
             //channel mode buffer size differs from the previous value.
             assert((nuonEnv.mpe[currentTransmitID].commxmit[1] & ~(ENABLE_WRAP_INT | ENABLE_HALF_INT)) == (nuonEnv.nuonAudioChannelMode & ~(ENABLE_WRAP_INT | ENABLE_HALF_INT))); // for now we only support a change in these two flags
-            nuonEnv.nuonAudioChannelMode = nuonEnv.mpe[currentTransmitID].commxmit[1];
+            const uint32 newMode = nuonEnv.mpe[currentTransmitID].commxmit[1];
+            static int s_log_inited = 0; static int s_log = 0;
+            if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_AUDIO") ? 1 : 0; }
+            if (s_log) {
+              static uint64 s_n = 0; s_n++;
+              if (s_n <= 20 || (s_n % 50) == 0)
+                fprintf(stderr, "[AUDIO-CH-MODE #%llu] mpe%u: old=0x%08X new=0x%08X\n",
+                        (unsigned long long)s_n, currentTransmitID,
+                        nuonEnv.nuonAudioChannelMode, newMode);
+            }
+            nuonEnv.nuonAudioChannelMode = newMode;
           }
           break;
       }

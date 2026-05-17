@@ -196,6 +196,16 @@ void NuonEnvironment::SetAudioVolume(uint32 volume)
 
 bool NuonEnvironment::TryPushAudioPeriod()
 {
+  // NUANCE_LOG_AUDIO=1 — trace audio period pushes + INT_AUDIO triggers.
+  static int s_audio_log_inited = 0; static int s_audio_log = 0;
+  if (!s_audio_log_inited) { s_audio_log_inited = 1; s_audio_log = getenv("NUANCE_LOG_AUDIO") ? 1 : 0; }
+  if (s_audio_log) {
+    static uint64 s_n = 0; s_n++;
+    if (s_n <= 30 || (s_n % 60) == 0)
+      fprintf(stderr, "[AUDIO-PUSH #%llu] bufPtr=%p ring=%p mode=0x%08X oldMode=0x%08X\n",
+              (unsigned long long)s_n, (void*)pNuonAudioBuffer, (void*)audioRing,
+              nuonAudioChannelMode, oldNuonAudioChannelMode);
+  }
   if(!pNuonAudioBuffer || !audioRing)
     return false;
 
