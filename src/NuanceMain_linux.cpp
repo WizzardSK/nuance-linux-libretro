@@ -776,6 +776,21 @@ int main(int argc, char* argv[])
           }
         }
 
+        // NUANCE_T3K_FORCE_EVENT=1: continuously pin mem[0x8003DE50..0x8003DE5C]
+        // to 1 to test the hypothesis that T3K is waiting for these vars
+        // to be non-zero. If the spin breaks with this knob, we've found
+        // the missing trigger source.
+        {
+          static int s_t3k_inited = 0; static int s_t3k = 0;
+          if (!s_t3k_inited) { s_t3k_inited = 1; s_t3k = getenv("NUANCE_T3K_FORCE_EVENT") ? 1 : 0; }
+          if (s_t3k) {
+            for (uint32 a = 0x8003DE50; a <= 0x8003DE58; a += 4) {
+              if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(3, a))
+                *p = SwapBytes(1u);
+            }
+          }
+        }
+
         // NUANCE_IS3_INJECT_PACKET=1: when IS3 state machine is at 0x66
         // (levelsel.run active polling slot 3 for incoming packet) and
         // controller[1].buttons differs from previous tick, synthesize a
