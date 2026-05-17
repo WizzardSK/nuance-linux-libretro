@@ -65,6 +65,21 @@ bool NativeCodeCache::ReleaseBuffer(NativeCodeCacheEntryPoint entryPoint, uint32
   //newEntry.nextBranchDelayCount = nextDelayCount;
   //newEntry.accessCount = 0;
 
+  //Capture the first 8 bytes of NUON memory at virtualAddress to detect
+  //post-compile overwrites (module load/unload, DMA bypassing _DCacheFlush).
+  //emitVars.mpe is set by SetEmitVars in mpe.cpp before any compile runs.
+  newEntry.compileFingerprint0 = 0;
+  newEntry.compileFingerprint1 = 0;
+  if (emitVars.mpe)
+  {
+    const uint32* p = (const uint32*)emitVars.mpe->GetPointerToMemoryBank(virtualAddress);
+    if (p)
+    {
+      newEntry.compileFingerprint0 = p[0];
+      newEntry.compileFingerprint1 = p[1];
+    }
+  }
+
   pageMap.UpdateEntry(newEntry);
   pEmitLoc = ((uint8 *)entryPoint) + newUsedBytes;
   /*DWORD oldProtect;

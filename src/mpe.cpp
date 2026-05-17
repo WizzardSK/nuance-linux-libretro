@@ -2012,8 +2012,36 @@ bool MPE::FetchDecodeExecute()
       pNativeCodeCacheEntry = nativeCodeCache.pageMap.FindEntry(pcexecLookupValue);
       if(pNativeCodeCacheEntry && (pNativeCodeCacheEntry->virtualAddress == pcexecLookupValue))
       {
-        nativeCodeCacheEntryPoint = pNativeCodeCacheEntry->entryPoint;
-        skip_to_execute_block = true;
+        //Staleness check: compare first 8 bytes of NUON memory at the entry
+        //PC against the fingerprint captured at compile time. If they differ
+        //the NUON code has been overwritten since this block was compiled
+        //(module load/unload or DMA that bypassed _DCacheFlush) — invalidate
+        //and let the fall-through path recompile. Catches the IS3 verify-loop
+        //and T3K music-track JIT-staleness bugs.
+        bool fingerprint_ok = true;
+        const uint32* memPtr = (const uint32*)GetPointerToMemoryBank(pcexecLookupValue);
+        if(memPtr && (memPtr[0] != pNativeCodeCacheEntry->compileFingerprint0 ||
+                      memPtr[1] != pNativeCodeCacheEntry->compileFingerprint1))
+        {
+          static int s_log_inited = 0; static int s_log = 0;
+          if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_JIT_STALE") ? 1 : 0; }
+          if (s_log) {
+            static uint64 s_count = 0; s_count++;
+            if (s_count <= 20 || (s_count % 1000) == 0)
+              fprintf(stderr, "[JIT-STALE] #%llu mpe=%u pc=0x%08X fp0 %08X->%08X fp1 %08X->%08X\n",
+                      (unsigned long long)s_count, mpeIndex, pcexecLookupValue,
+                      pNativeCodeCacheEntry->compileFingerprint0, memPtr[0],
+                      pNativeCodeCacheEntry->compileFingerprint1, memPtr[1]);
+          }
+          nativeCodeCache.pageMap.InvalidateEntry(pcexecLookupValue);
+          fingerprint_ok = false;
+          pNativeCodeCacheEntry = 0;
+        }
+        if(fingerprint_ok)
+        {
+          nativeCodeCacheEntryPoint = pNativeCodeCacheEntry->entryPoint;
+          skip_to_execute_block = true;
+        }
       }
       else if(bInvalidateInterpreterCache)
       {

@@ -19,6 +19,14 @@ struct NativeCodeCacheEntry
   uint32 codeSize;  //Number of bytes used in code block, only used for print output so far
 #endif
   //uint32 accessCount;  //Number of times code block has been executed
+  //First 8 bytes of NUON memory at virtualAddress at compile time. Used at
+  //JIT lookup to detect that the underlying NUON code has been overwritten
+  //since compile (e.g. by a module load or DMA that bypassed _DCacheFlush).
+  //If the fingerprint no longer matches current memory, the cached entry is
+  //invalidated and recompiled. See nuance-is3-worker-halt-2026-05-17.md for
+  //the IS3 verify-loop staleness case this catches.
+  uint32 compileFingerprint0;
+  uint32 compileFingerprint1;
 };
 
 #define NUM_ROOT_PAGENODE_ENTRIES (512)
