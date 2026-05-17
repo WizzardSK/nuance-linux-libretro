@@ -69,6 +69,17 @@ void MediaInitMPE(const uint32 i)
 
     nuonEnv.mpe[i].intvec1 = MINIBIOS_INTVEC1_HANDLER_ADDRESS;
     nuonEnv.mpe[i].intvec2 = MINIBIOS_INTVEC2_HANDLER_ADDRESS;
+    // Wire MPE0 to wake on INT_COMMRECV (bit 4) and clear all interrupt
+    // masks so level-1/level-2 dispatch can fire. Real-HW n501_minibios
+    // does this lazily at 0x20301AC4 (st_s #4, inten2sel) +
+    // 0x20301AC8 (st_s #$55, intctl) — those run on the c4-RZI1 path
+    // after the first level-1 interrupt returns. Our short-circuited
+    // emulation never reaches that code, so MPE0 stays with intctl=0xAA
+    // (all masks set) and inten2sel=kIntrHost; comm packets from MPE3 can
+    // wake it via TriggerInterrupt-wake (mpe.h), but level-2 dispatch
+    // is then blocked by the masks. Pre-clear both here.
+    nuonEnv.mpe[i].inten2sel = kIntrCommRecv;
+    nuonEnv.mpe[i].intctl    = 0;  // no masks → ISR dispatch unblocked
   }
   else
   {
