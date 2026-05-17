@@ -776,17 +776,47 @@ int main(int argc, char* argv[])
           }
         }
 
-        // NUANCE_T3K_FORCE_EVENT=1: continuously pin mem[0x8003DE50..0x8003DE5C]
-        // to 1 to test the hypothesis that T3K is waiting for these vars
-        // to be non-zero. If the spin breaks with this knob, we've found
-        // the missing trigger source.
+        // NUANCE_IS3_FORCE_VERIFY=1: pin MPE3's r6 to 1 whenever pcexec is
+        // at the verify-result check (0x8008CA00 or 0x8008CA02), forcing the
+        // `bra ne, $8008CA20` branch to be taken so the asset-loader exits
+        // its retry loop. Diagnostic only — tests whether the verify-retry
+        // is the actual gate on IS3 progress (analogous to T3K_FORCE_EVENT).
         {
-          static int s_t3k_inited = 0; static int s_t3k = 0;
-          if (!s_t3k_inited) { s_t3k_inited = 1; s_t3k = getenv("NUANCE_T3K_FORCE_EVENT") ? 1 : 0; }
+          static int s_inited = 0; static int s_on = 0;
+          if (!s_inited) { s_inited = 1; s_on = getenv("NUANCE_IS3_FORCE_VERIFY") ? 1 : 0; }
+          if (s_on) {
+            const uint32 pc = nuonEnv.mpe[3].pcexec;
+            if (pc == 0x8008CA00 || pc == 0x8008CA02 || pc == 0x8008C9FE) {
+              nuonEnv.mpe[3].regs[6] = 1;
+            }
+          }
+        }
+
+        // NUANCE_T3K_FORCE_EVENT=<hex_value> or per-slot triplet
+        // <v0>:<v1>:<v2>: pin mem[0x8003DE50/54/58] to specific values.
+        // Plain "1" → all three slots = 1 (default in original
+        // NUANCE_T3K_FORCE_EVENT=1). Triplet → slot 0 = v0, slot 1 = v1,
+        // slot 2 = v2. Useful to test which specific event value T3K
+        // recognizes (button press, axis change, etc.).
+        {
+          static int s_t3k_inited = 0;
+          static uint32 s_v[3] = {0, 0, 0};
+          static int s_t3k = 0;
+          if (!s_t3k_inited) {
+            s_t3k_inited = 1;
+            if (const char* spec = getenv("NUANCE_T3K_FORCE_EVENT")) {
+              uint32 a = 0, b = 0, c = 0;
+              int n = sscanf(spec, "%x:%x:%x", &a, &b, &c);
+              if (n == 3) { s_v[0] = a; s_v[1] = b; s_v[2] = c; s_t3k = 1; }
+              else if (n == 1) { s_v[0] = s_v[1] = s_v[2] = a; s_t3k = 1; }
+              fprintf(stderr, "[T3K-FORCE] pinning 0x8003DE50/54/58 = %08X/%08X/%08X\n",
+                      s_v[0], s_v[1], s_v[2]);
+            }
+          }
           if (s_t3k) {
-            for (uint32 a = 0x8003DE50; a <= 0x8003DE58; a += 4) {
-              if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(3, a))
-                *p = SwapBytes(1u);
+            for (int i = 0; i < 3; i++) {
+              if (uint32* p = (uint32*)nuonEnv.GetPointerToMemory(3, 0x8003DE50 + i*4))
+                *p = SwapBytes(s_v[i]);
             }
           }
         }
