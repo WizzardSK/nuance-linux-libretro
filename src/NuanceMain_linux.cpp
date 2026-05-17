@@ -755,9 +755,18 @@ int main(int argc, char* argv[])
                     fprintf(stderr, "[BTN-QUEUE] entry %zu/%zu mask=0x%04X frames=%u\n",
                             s_qIdx, s_queue.size(), s_queue[s_qIdx].first, s_qRemaining);
                   }
+                  // Store mask in the shared override that InputManager's
+                  // UpdateState OR's into the keyboard state. Without this,
+                  // MessagePump's next UpdateState would write
+                  // controller[1].buttons = keyButtons (= 0) and clobber our
+                  // scripted press before the emulator could read it.
+                  extern uint16 g_btnQueueMask;
+                  g_btnQueueMask = s_queue[s_qIdx].first;
                   if (controller) {
-                    const uint16 mask = s_queue[s_qIdx].first;
-                    controller[1].buttons = SwapBytes((uint16)mask);
+                    controller[1].buttons = SwapBytes(g_btnQueueMask);
+                    // Some games (Tempest 3000?) poll player 1 input from
+                    // controller[0] instead of controller[1]. Write to both.
+                    controller[0].buttons = SwapBytes(g_btnQueueMask);
                   }
                   s_qRemaining--;
                   if (s_qRemaining == 0) s_qIdx++;

@@ -12,6 +12,11 @@ extern void DvdPlayerActive_SendNavInput(int code);
 
 InputManager::~InputManager() {}
 
+// External override from NUANCE_BTN_QUEUE: scripted button mask that's
+// OR'd into the keyboard state so MessagePump's UpdateState doesn't
+// overwrite scripted presses with the zero keyboard state.
+uint16 g_btnQueueMask = 0;
+
 class InputManagerImpl : public InputManager
 {
 private:
@@ -27,7 +32,7 @@ public:
   bool SetJoystick(size_t) override { return true; }
 
   void UpdateState(CONTROLLER_CALLBACK applyState, ANYPRESSED_CALLBACK, void*) override {
-    if (applyState) applyState(whichController, keyButtons);
+    if (applyState) applyState(whichController, keyButtons | g_btnQueueMask);
   }
 
   void keyDown(CONTROLLER_CALLBACK applyState, int16 vkey) override {
@@ -44,14 +49,14 @@ public:
       if (edge & (1 << CTRLR_BITNUM_BUTTON_A))   DvdPlayerActive_SendNavInput(4);
       if (edge & (1 << CTRLR_BITNUM_BUTTON_B))   DvdPlayerActive_SendNavInput(5);
     }
-    if (applyState) applyState(whichController, keyButtons);
+    if (applyState) applyState(whichController, keyButtons | g_btnQueueMask);
   }
 
   void keyUp(CONTROLLER_CALLBACK applyState, int16 vkey) override {
     const int bitNum = nuonEnv.GetCTRLRBitnumFromMapping(ControllerButtonMapping(KEY, vkey, 0));
     if (bitNum >= 0) keyButtons &= ~(1 << bitNum);
     if (vkey == 'Z') whichController = 1 - whichController;
-    if (applyState) applyState(whichController, keyButtons);
+    if (applyState) applyState(whichController, keyButtons | g_btnQueueMask);
   }
 
   bool GrabJoystick(HWND, size_t) override { return false; }
