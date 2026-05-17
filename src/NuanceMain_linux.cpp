@@ -1205,10 +1205,18 @@ int main(int argc, char* argv[])
             while (*p) {
               uint32 a = 0, sz = 0;
               int n = 0;
+              int mpe_view = 3;
+              // Optional "m<N>:" prefix to dump from MPE N's perspective.
+              // Needed because per-MPE local DRAM at 0x20100000+ resolves to
+              // a DIFFERENT host buffer for each MPE.
+              if (p[0] == 'm' && p[1] >= '0' && p[1] <= '3' && p[2] == ':') {
+                mpe_view = p[1] - '0';
+                p += 3;
+              }
               if (sscanf(p, "%x:%x%n", &a, &sz, &n) == 2 && sz > 0 && sz <= 0x1000) {
-                fprintf(stderr, "[MEM] @0x%08X (%u bytes):", a, sz);
+                fprintf(stderr, "[MEM-mpe%d] @0x%08X (%u bytes):", mpe_view, a, sz);
                 for (uint32 off = 0; off < sz; off += 4) {
-                  uint32* mp = (uint32*)nuonEnv.GetPointerToMemory(3, a + off);
+                  uint32* mp = (uint32*)nuonEnv.GetPointerToMemory(mpe_view, a + off);
                   if (mp) fprintf(stderr, " %08X", SwapBytes(*mp));
                   else    fprintf(stderr, " ?");
                 }
