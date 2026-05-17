@@ -534,6 +534,29 @@ public:
   inline void TriggerInterrupt(const uint32 which)
   {
     intsrc |= which;
+    // On real NUON, a pending unmasked interrupt wakes a halted MPE: the
+    // halt instruction puts the MPE into low-power state and any servicable
+    // interrupt resumes execution. The emulator's FetchDecodeExecute exits
+    // immediately when MPECTRL_MPEGO is clear, so without this wake the
+    // MPE stays asleep and the worker's INT_COMMRECV ISR never runs —
+    // observed in IS3, where all 3 workers halt at ~180s and MPE3 then
+    // spins in a verify loop waiting for DMA the workers should perform.
+    //
+    // IS3 workers halt with intctl bits 3+7 (imaskSw1+imaskSw2) still set,
+    // which the HW spec says masks dispatch. But on real hardware the
+    // halt + waking interrupt cycle implicitly proceeds; we treat the
+    // selector match alone as sufficient to wake (the post-wake dispatch
+    // check in FetchDecodeExecute will still respect the masks for
+    // actually entering the ISR vector).
+    if (!(mpectl & MPECTRL_MPEGO))
+    {
+      // Level 2 enabled iff inten2sel selects an intsrc bit that's now set.
+      const bool wake2 = (which & (1U << inten2sel)) != 0;
+      // Level 1 enabled iff inten1 mask & intsrc has any bit set.
+      const bool wake1 = (which & inten1) != 0;
+      if (wake2 || wake1)
+        mpectl |= MPECTRL_MPEGO;
+    }
     Syscall_InterruptTriggered(*this);
   }
 

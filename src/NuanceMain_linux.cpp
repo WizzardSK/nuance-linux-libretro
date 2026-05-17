@@ -473,9 +473,11 @@ int main(int argc, char* argv[])
             fprintf(stderr, "[MPESTATE] @%llus", (unsigned long long)(now/1000000));
             for (int i = 0; i < 4; i++) {
               const int go = (nuonEnv.mpe[i].mpectl & 2) ? 1 : 0;
-              fprintf(stderr, " mpe%d{go=%d pc=0x%08X intsrc=0x%X commctl=0x%X}",
+              fprintf(stderr, " mpe%d{go=%d pc=0x%08X intsrc=0x%X commctl=0x%X i1=0x%X i2s=%u ictl=0x%X}",
                       i, go, nuonEnv.mpe[i].pcexec,
-                      nuonEnv.mpe[i].intsrc, nuonEnv.mpe[i].commctl);
+                      nuonEnv.mpe[i].intsrc, nuonEnv.mpe[i].commctl,
+                      nuonEnv.mpe[i].inten1, nuonEnv.mpe[i].inten2sel,
+                      nuonEnv.mpe[i].intctl);
             }
             fprintf(stderr, "\n");
           }
@@ -863,6 +865,38 @@ int main(int argc, char* argv[])
           sample_start_us = useconds_since_start();
           fprintf(stderr, "[GAME-PC] sampling start (mpe3 pc=0x%08X go=%d)\n",
                   pc, (nuonEnv.mpe[3].mpectl & 2) ? 1 : 0);
+        }
+        // NUANCE_STALE_KICK=<pc>: when pcexec equals this addr for >5000
+        // consecutive samples, flush the JIT cache region around it to
+        // test whether the stall is stale-JIT vs real spinwait. Logs
+        // the actual bytes at PC so we can tell apart "real code spinning"
+        // from "JIT cached old code, memory is now uninit".
+        if (const char* sk = getenv("NUANCE_STALE_KICK")) {
+          static uint32 s_kick_pc = (uint32)strtoull(sk, nullptr, 0);
+          static uint32 s_consec = 0;
+          static uint32 s_last_pc = 0;
+          if (pc == s_kick_pc) s_consec++; else s_consec = 0;
+          if (pc == s_kick_pc && s_consec == 1000) {
+            uint32* mp = (uint32*)nuonEnv.GetPointerToMemory(3, s_kick_pc, false);
+            uint32* mp4 = (uint32*)nuonEnv.GetPointerToMemory(3, s_kick_pc+4, false);
+            uint32* mp8 = (uint32*)nuonEnv.GetPointerToMemory(3, s_kick_pc+8, false);
+            uint32* mpc = (uint32*)nuonEnv.GetPointerToMemory(3, s_kick_pc+12, false);
+            fprintf(stderr, "[STALE-CHECK] stuck at 0x%08X for 1000 samples; mem bytes: %08X %08X %08X %08X\n",
+                    s_kick_pc,
+                    mp ? SwapBytes(*mp) : 0,
+                    mp4 ? SwapBytes(*mp4) : 0,
+                    mp8 ? SwapBytes(*mp8) : 0,
+                    mpc ? SwapBytes(*mpc) : 0);
+            // Try a regional JIT flush for the suspected stale block.
+            uint32 lo = s_kick_pc & ~0xFFFu;
+            uint32 hi = lo + 0x2000u;
+            for (int m = 0; m < 4; m++) {
+              nuonEnv.mpe[m].nativeCodeCache.FlushRegion(lo, hi-1);
+              nuonEnv.mpe[m].InvalidateICacheRegion(lo, hi-1);
+            }
+            fprintf(stderr, "[STALE-CHECK] flushed JIT for 0x%08X..0x%08X on all MPEs\n", lo, hi);
+          }
+          s_last_pc = pc;
         }
         // Watch the suspected audio-buffer counters at 0x800BC468 +
         // 0x800BC46C — fmv.run's spin loop at 0x80031628 calls helper
