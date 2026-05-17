@@ -259,19 +259,22 @@ static inline void DCacheFlushRegionAllMPEs(uint32 startAddr, uint32 size)
   // No-op'ing them keeps IS3's prior behavior unchanged while still giving
   // Ballistic the regional flushes its code-loader actually needs.
   //
-  // Critical: we used to also call InvalidateICacheRegion here, but that
-  // does a linear scan of all 64K InstructionCache entries per MPE per
-  // call. T3K's attract polling spam (~760 calls/sec with small size)
-  // turned into ~194M iterations/sec of useless ICache scanning, dropping
-  // T3K from 60 fps to 2 fps. The native-code-cache regional flush is the
-  // only invalidation we actually need — Ballistic's code-loader and IS3's
-  // module loads both work without the ICache scan.
   const uint32 kMaxRegion = 0x00100000u;  // 1 MB upper sanity bound
   if (!DCacheAddrLooksValid(startAddr) || size == 0 || size > kMaxRegion)
+    return;
+  // Skip both flushes for small data-area writes (T3K hammers
+  // DCacheFlush(0x8003DE58, 2) 760×/sec on a polled event variable —
+  // the only writers it precedes are MPE3 → MPE3 data updates that our
+  // direct-memory model makes coherent without any flush). Address
+  // range 0x8003xxxx is mcp.run's BSS data; never instructions.
+  // For real code-loader scenarios (size >= 8 bytes, typical 16-byte
+  // cache-line granularity) we still do the regional invalidation.
+  if (size < 8 && startAddr >= 0x80030000u && startAddr < 0x80100000u)
     return;
   const uint32 endAddr = startAddr + size - 1;
   for (int m = 0; m < 4; m++) {
     nuonEnv.mpe[m].nativeCodeCache.FlushRegion(startAddr, endAddr);
+    nuonEnv.mpe[m].InvalidateICacheRegion(startAddr, endAddr);
   }
 }
 
@@ -284,11 +287,10 @@ static inline bool LogDCache()
 
 void DCacheFlush(MPE &mpe)
 {
-  // Fast-path: T3K's attract-mode polling spams this slot ~8700×/sec
-  // with r1 = 0x20300000 (huge, not a valid byte size). Skip all the
-  // logging+dispatch in that case so T3K doesn't drop from 60 fps to
-  // 3 fps. Legitimate small-region calls (Ballistic et al.) still go
-  // through the regional flush below.
+  // Fast-bail for T3K's attract-mode spam pattern (r1 = 0x20300000 isn't
+  // a valid byte size; the call wants a cache-line equivalent but our
+  // direct-memory model has nothing to flush). Saves the dispatch into
+  // DCacheFlushRegionAllMPEs for ~8700 calls/sec.
   if (mpe.regs[1] == 0 || mpe.regs[1] > 0x00100000u)
     return;
   if (LogDCache())
