@@ -8,7 +8,13 @@
 // rz (return). Optionally restrict to specific MPE id(s). Filter is
 // applied to the CALLER PC (jsr's source) so we only see calls FROM
 // a specific code region (e.g. levelsel.run at 0x80030000..0x80300000).
+//
+// NUANCE_LOG_JSR_TARGET=<lo>:<hi> additionally filters by TARGET (the
+// jsr destination), so you can find every caller of a specific helper
+// (e.g. the IS3 soft-divide leaf at 0x800948B4 — set caller range to
+// the whole code area and target range to that one function).
 static uint32 s_jsr_lo = 0, s_jsr_hi = 0;
+static uint32 s_jsr_tgt_lo = 0, s_jsr_tgt_hi = 0;
 static int s_jsr_mpe_min = 0, s_jsr_mpe_max = 3;
 static int s_jsr_inited = 0;
 static uint64 s_jsr_count = 0;
@@ -23,8 +29,14 @@ static inline void jsr_init() {
     s_jsr_lo = lo; s_jsr_hi = hi;
     if (n >= 4) { s_jsr_mpe_min = mm; s_jsr_mpe_max = mx; }
     else if (n == 3) { s_jsr_mpe_min = s_jsr_mpe_max = mm; }
-    fprintf(stderr, "[JSR-TRACE] watching pc=[0x%08X,0x%08X) mpe=[%d..%d]\n",
-            s_jsr_lo, s_jsr_hi, s_jsr_mpe_min, s_jsr_mpe_max);
+    if (const char* t = getenv("NUANCE_LOG_JSR_TARGET")) {
+      uint32 tlo = 0, thi = 0;
+      if (sscanf(t, "%x:%x", &tlo, &thi) == 2) {
+        s_jsr_tgt_lo = tlo; s_jsr_tgt_hi = thi;
+      }
+    }
+    fprintf(stderr, "[JSR-TRACE] watching caller=[0x%08X,0x%08X) target=[0x%08X,0x%08X) mpe=[%d..%d]\n",
+            s_jsr_lo, s_jsr_hi, s_jsr_tgt_lo, s_jsr_tgt_hi, s_jsr_mpe_min, s_jsr_mpe_max);
   }
 }
 static inline void jsr_log(MPE &mpe, uint32 target) {
@@ -33,6 +45,7 @@ static inline void jsr_log(MPE &mpe, uint32 target) {
   if ((int)mpe.mpeIndex < s_jsr_mpe_min || (int)mpe.mpeIndex > s_jsr_mpe_max) return;
   const uint32 pc = mpe.pcexec;
   if (pc < s_jsr_lo || pc >= s_jsr_hi) return;
+  if (s_jsr_tgt_lo != s_jsr_tgt_hi && (target < s_jsr_tgt_lo || target >= s_jsr_tgt_hi)) return;
   s_jsr_count++;
   if (s_jsr_count < 5000 || (s_jsr_count % 1000) == 0)
     fprintf(stderr, "[JSR #%llu] mpe=%u pc=0x%08X -> 0x%08X (rz=0x%08X)\n",
