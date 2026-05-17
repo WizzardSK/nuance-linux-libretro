@@ -1,12 +1,15 @@
 #include "basetypes.h"
 #include <cstdio>
+#include <cstdlib>
 #include "byteswap.h"
 #include "mpe.h"
 #include "comm.h"
 #include "NuonEnvironment.h"
+#include "joystick.h"
 
 extern NuonEnvironment nuonEnv;
 extern uint32 vdgCLUT[];
+extern ControllerData *controller;
 
 #ifdef LOG_COMM
 FILE *commLogFile;
@@ -126,6 +129,48 @@ void DoCommBusController(void)
       nuonEnv.mpe[currentTransmitID].TriggerInterrupt(INT_COMMXMIT);
       nuonEnv.mpe[target].TriggerInterrupt(INT_COMMRECV);
       nuonEnv.pendingCommRequests--;
+
+      // NUANCE_AF_BRIDGE=1 (default off): when MPE3 sends a CommSendInfo
+      // packet with info-byte 0xAF to MPE0, synthesize a response packet
+      // back to MPE3's commrecv carrying current controller state. This
+      // emulates the real-HW MPE0-minibios controller→comm bridge that's
+      // missing from our implementation. T3K's gameplay loop polls this
+      // every video field; without a response the game logic freezes
+      // waiting for input. See issue andkrau/NuanceResurrection#52.
+      //
+      // The info byte was already shifted into the target's comminfo
+      // high-16-bits during delivery above; we recover the low byte from
+      // the source's comminfo (set by CommSendCore prior to delivery).
+      if (target == 0 && currentTransmitID == 3)
+      {
+        const uint32 srcInfo = nuonEnv.mpe[3].comminfo & 0xFFu;
+        static int s_inited = 0; static int s_on = 0;
+        if (!s_inited) { s_inited = 1; s_on = getenv("NUANCE_AF_BRIDGE") ? 1 : 0; }
+        if (s_on && srcInfo == 0xAFu && controller != nullptr)
+        {
+          // Response shape: word 0 = AB120170 magic (per old IS3 protocol
+          // notes), word 1 = packed controller state (16 bits buttons,
+          // 8 bits xAxis, 8 bits yAxis), word 2/3 = filler magics that
+          // T3K hopefully tolerates.
+          MPE &mpe3 = nuonEnv.mpe[3];
+          const uint32 buttons = (uint32)SwapBytes(controller[1].buttons);
+          const uint8  xAxis   = (uint8)controller[1].d1.xAxis;
+          const uint8  yAxis   = (uint8)controller[1].d2.yAxis;
+          mpe3.commrecv[0] = 0xAB120170u;
+          mpe3.commrecv[1] = (buttons << 16) | ((uint32)xAxis << 8) | (uint32)yAxis;
+          mpe3.commrecv[2] = 0x12345678u;
+          mpe3.commrecv[3] = 0xDEADBEEFu;
+          mpe3.comminfo = (mpe3.comminfo & 0xFFFFu) | ((uint32)0xAF << 16);
+          mpe3.commctl &= ~(COMM_SOURCE_ID_BITS);
+          mpe3.commctl |= (COMM_RECV_BUFFER_FULL_BIT | (0u << 16));  // source = MPE0
+          mpe3.TriggerInterrupt(INT_COMMRECV);
+          static uint64 s_log = 0; s_log++;
+          if (s_log <= 5 || (s_log % 500) == 0)
+            fprintf(stderr, "[AF-BRIDGE #%llu] buttons=0x%04X xy=%d,%d\n",
+                    (unsigned long long)s_log, (uint32)SwapBytes(controller[1].buttons),
+                    (int8)xAxis, (int8)yAxis);
+        }
+      }
 
       LogCommBusEvent("deliver", currentTransmitID, target);
       LogCommBusPayload(currentTransmitID, target,
