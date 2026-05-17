@@ -258,13 +258,20 @@ static inline void DCacheFlushRegionAllMPEs(uint32 startAddr, uint32 size)
   // memory-coherency operation, they're using the slot for something else.
   // No-op'ing them keeps IS3's prior behavior unchanged while still giving
   // Ballistic the regional flushes its code-loader actually needs.
+  //
+  // Critical: we used to also call InvalidateICacheRegion here, but that
+  // does a linear scan of all 64K InstructionCache entries per MPE per
+  // call. T3K's attract polling spam (~760 calls/sec with small size)
+  // turned into ~194M iterations/sec of useless ICache scanning, dropping
+  // T3K from 60 fps to 2 fps. The native-code-cache regional flush is the
+  // only invalidation we actually need — Ballistic's code-loader and IS3's
+  // module loads both work without the ICache scan.
   const uint32 kMaxRegion = 0x00100000u;  // 1 MB upper sanity bound
   if (!DCacheAddrLooksValid(startAddr) || size == 0 || size > kMaxRegion)
     return;
   const uint32 endAddr = startAddr + size - 1;
   for (int m = 0; m < 4; m++) {
     nuonEnv.mpe[m].nativeCodeCache.FlushRegion(startAddr, endAddr);
-    nuonEnv.mpe[m].InvalidateICacheRegion(startAddr, endAddr);
   }
 }
 
@@ -277,6 +284,13 @@ static inline bool LogDCache()
 
 void DCacheFlush(MPE &mpe)
 {
+  // Fast-path: T3K's attract-mode polling spams this slot ~8700×/sec
+  // with r1 = 0x20300000 (huge, not a valid byte size). Skip all the
+  // logging+dispatch in that case so T3K doesn't drop from 60 fps to
+  // 3 fps. Legitimate small-region calls (Ballistic et al.) still go
+  // through the regional flush below.
+  if (mpe.regs[1] == 0 || mpe.regs[1] > 0x00100000u)
+    return;
   if (LogDCache())
     fprintf(stderr, "[DCACHE] flush mpe=%u r0=%08X r1=%08X rz=%08X\n",
             mpe.mpeIndex, mpe.regs[0], mpe.regs[1], mpe.regs[14]);
