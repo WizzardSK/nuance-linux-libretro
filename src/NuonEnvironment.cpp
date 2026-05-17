@@ -274,6 +274,25 @@ void *NuonEnvironment::GetPointerToMemory(const uint32 mpe_idx, const uint32 add
       MessageBox(NULL, textBuf, "GetPointerToMemory error", MB_OK);
     }
 #endif
+    // Cross-MPE bus routing (gated by NUANCE_XMPE=1 while we validate).
+    // The 0x20000000..0x21FFFFFF window splits into 8 MB MPE slices:
+    //   0x20000000..0x207FFFFF = MPE0
+    //   0x20800000..0x20FFFFFF = MPE1 (= MPE1_ADDR_BASE)
+    //   0x21000000..0x217FFFFF = MPE2
+    //   0x21800000..0x21FFFFFF = MPE3
+    // Bits 23..24 of the address pick the target MPE, not the caller —
+    // that's how minibios audio handler's writes into MPE0's DTRAM at
+    // 0x2010102C become visible to MPE3's poll. Without this every MPE
+    // just sees its own dtrom for any 0x2xxxxxxx access and cross-MPE
+    // state never flows. Gated for now because it materially changes
+    // the meaning of every "own" DTRAM access in existing games.
+    static int s_xmpe_inited = 0; static int s_xmpe = 0;
+    if (!s_xmpe_inited) { s_xmpe_inited = 1; s_xmpe = getenv("NUANCE_XMPE") ? 1 : 0; }
+    if (s_xmpe)
+    {
+      const uint32 target_mpe = (address >> 23) & 0x3u;
+      return &mpe[target_mpe].dtrom[address & MPE_VALID_MEMORY_MASK];
+    }
     return &mpe[mpe_idx].dtrom[address & MPE_VALID_MEMORY_MASK];
   }
   else if(address < SYSTEM_BUS_BASE)
