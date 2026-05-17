@@ -1205,7 +1205,7 @@ int main(int argc, char* argv[])
             while (*p) {
               uint32 a = 0, sz = 0;
               int n = 0;
-              if (sscanf(p, "%x:%x%n", &a, &sz, &n) == 2 && sz > 0 && sz <= 256) {
+              if (sscanf(p, "%x:%x%n", &a, &sz, &n) == 2 && sz > 0 && sz <= 0x1000) {
                 fprintf(stderr, "[MEM] @0x%08X (%u bytes):", a, sz);
                 for (uint32 off = 0; off < sz; off += 4) {
                   uint32* mp = (uint32*)nuonEnv.GetPointerToMemory(3, a + off);
