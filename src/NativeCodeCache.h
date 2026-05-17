@@ -488,6 +488,11 @@ public:
   void X86Emit_CMOVZMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_CMOVNZRR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVNZMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
+  // BSR: bit-scan reverse. dst = position of most significant set bit in src
+  // (0..31 for non-zero, undefined for zero — caller must guard with cmov on
+  // the source register's TEST). Used by Emit_MSB to replace ~25 instructions
+  // of fold+popcount with one hardware op.
+  void X86Emit_BSR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVBERR(const x86Reg regDest, const x86Reg regSrc);
   void X86Emit_CMOVBEMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index = x86IndexReg::x86IndexReg_none, const x86ScaleVal scale = x86ScaleVal::x86Scale_1, const int32 disp = 0);
   void X86Emit_CMOVNBERR(const x86Reg regDest, const x86Reg regSrc);

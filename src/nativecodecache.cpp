@@ -3367,6 +3367,22 @@ void NativeCodeCache::X86Emit_CMOVZRR(const x86Reg regDest, const x86Reg regSrc)
   X86Emit_ModRegRM(x86ModType::x86ModType_reg,(x86ModReg)((uint32)regDest & 0x07),((uint32)regSrc & 0x07));
 }
 
+void NativeCodeCache::X86Emit_BSR(const x86Reg regDest, const x86Reg regSrc)
+{
+  #ifdef USE_ASMJIT
+  if (asmjitAs) {
+    auto& a = *asmjitAs;
+    a.bsr(NuanceJit::toGp32(regDest), NuanceJit::toGp32(regSrc));
+    return;
+  }
+  #endif
+
+  // BSR r32, r32 → 0F BD /r
+  *pEmitLoc++ = 0x0F;
+  *pEmitLoc++ = 0xBD;
+  X86Emit_ModRegRM(x86ModType::x86ModType_reg, (x86ModReg)((uint32)regDest & 0x07), ((uint32)regSrc & 0x07));
+}
+
 void NativeCodeCache::X86Emit_CMOVZMR(const x86Reg regDest, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
   if(regDest < x86Reg::x86Reg_eax)

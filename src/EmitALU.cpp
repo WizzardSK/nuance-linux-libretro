@@ -399,71 +399,38 @@ void Emit_MSB(EmitterVariables * const vars, const Nuance &nuance)
 
   vars->mpe->nativeCodeCache.X86Emit_MOVMR(x86Reg::x86Reg_eax, src1RegReadBaseReg, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, src1RegDisp);
 
-  //n = (n ^ (n >> 31))
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 31);
-  vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-  
-  //fold n into itself to get a new value where all bits below the
-  //most significant one bit have also been set to one.
+  // NUON msb(x) semantics, derived from the previous fold+popcount impl:
+  //   val = x XOR (x >> 31)             // one's complement for negative
+  //   fold = val | (val >> 1..16)       // all bits below MSB get set
+  //   result = popcount(fold) & 0x1F    // = floor(log2(val))+1 for val>0, 0 for val=0
+  //
+  // That's equivalent to:
+  //   result = (val == 0) ? 0 : (bsr(val) + 1)
+  //
+  // Verified against original on edge cases: 0 → 0, 1 → 1, 0x80000000 → 31,
+  // -1 → 0 (XOR collapses to 0), -2 → 1.
+  // ~25 emitted instructions → 6 (huge win on the IS3 soft-divide leaf at
+  // 0x800948D2, which the asset layout pass calls thousands of times per asset).
 
-  //n = n | (n >> 1)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 1);
-  vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  //ecx = x >> 31 (sign-extended)
+  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ecx, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ecx, 31);
 
-  //n = n | (n >> 2)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 2);
-  vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  //eax = abs-ish (XOR sign mask). For positive: eax stays. For negative: eax = ~eax.
+  vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ecx);
 
-  //n = n | (n >> 4)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 4);
-  vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  //ebx = bsr(eax) — MSB position 0..31, undefined for eax=0
+  vars->mpe->nativeCodeCache.X86Emit_BSR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
 
-  //n = n | (n >> 8)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 8);
-  vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  //ebx += 1 (so 1..32 for non-zero, garbage for zero)
+  vars->mpe->nativeCodeCache.X86Emit_ADDIR(1, x86Reg::x86Reg_ebx);
 
-  //n = n | (n >> 16)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 16);
-  vars->mpe->nativeCodeCache.X86Emit_ORRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
+  //if eax == 0, ebx = 0 (via cmovz with edx=0)
+  vars->mpe->nativeCodeCache.X86Emit_XORRR(x86Reg::x86Reg_edx, x86Reg::x86Reg_edx);
+  vars->mpe->nativeCodeCache.X86Emit_TESTRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_eax);
+  vars->mpe->nativeCodeCache.X86Emit_CMOVZRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_edx);
 
-  //get the ones count
-
-  //n = n - ((n >> 1) & 0x55555555)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 1);
-  vars->mpe->nativeCodeCache.X86Emit_ANDIR(0x55555555, x86Reg::x86Reg_ebx);
-  vars->mpe->nativeCodeCache.X86Emit_SUBRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-  
-  //n = (((n >> 2) & 0x33333333) + (n & 0x33333333))
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 2);
-  vars->mpe->nativeCodeCache.X86Emit_ANDIR(0x33333333, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_ANDIR(0x33333333, x86Reg::x86Reg_ebx);
-  vars->mpe->nativeCodeCache.X86Emit_ADDRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-
-  //n = (((n >> 4) + n) & 0x0f0f0f0f)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 4);
-  vars->mpe->nativeCodeCache.X86Emit_ADDRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-  vars->mpe->nativeCodeCache.X86Emit_ANDIR(0x0F0F0F0F, x86Reg::x86Reg_eax);
-
-  //n = n + (n >> 8)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_ebx, 8);
-  vars->mpe->nativeCodeCache.X86Emit_ADDRR(x86Reg::x86Reg_eax, x86Reg::x86Reg_ebx);
-
-  //n = n + (n >> 16)
-  vars->mpe->nativeCodeCache.X86Emit_MOVRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-  vars->mpe->nativeCodeCache.X86Emit_SARIR(x86Reg::x86Reg_eax, 16);
-  vars->mpe->nativeCodeCache.X86Emit_ADDRR(x86Reg::x86Reg_ebx, x86Reg::x86Reg_eax);
-
-  //sigbits = n & 0x1F
+  //sigbits = ebx & 0x1F (mask just like the original did)
   vars->mpe->nativeCodeCache.X86Emit_ANDIR(0x1F, x86Reg::x86Reg_ebx);
 
   //dest = sigbits
