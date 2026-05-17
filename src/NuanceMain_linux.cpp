@@ -645,8 +645,15 @@ int main(int argc, char* argv[])
           }
         } else last_time1 = new_time;
 
-        if (nuonEnv.timer_rate[2] > 0) {
-          if (new_time >= last_time2 + (uint64)nuonEnv.timer_rate[2]) {
+        // Use timer_rate[2] if game called TimerInit(2,...); otherwise
+        // default to ~60Hz (16667us) so the video field counter still
+        // ticks. Games like Tempest 3000 never call TimerInit so without
+        // this fallback the video timer never fires, no
+        // TriggerVideoInterrupt, and NUANCE_BTN_QUEUE never gets applied.
+        // Matches libretro.cpp's fallback at line 487.
+        const uint64 vidRate = (nuonEnv.timer_rate[2] > 0) ? (uint64)nuonEnv.timer_rate[2] : 16667ULL;
+        {
+          if (new_time >= last_time2 + vidRate) {
             IncrementVideoFieldCounter();
             nuonEnv.TriggerVideoInterrupt();
             nuonEnv.trigger_render_video = true;
@@ -758,7 +765,7 @@ int main(int argc, char* argv[])
               }
             }
           }
-        } else last_time2 = new_time;
+        }
 
         // NUANCE_IS3_INJECT_PACKET=1: when IS3 state machine is at 0x66
         // (levelsel.run active polling slot 3 for incoming packet) and
