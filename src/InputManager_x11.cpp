@@ -8,8 +8,15 @@
 #include <cstring>
 
 extern NuonEnvironment nuonEnv;
+extern ControllerData *controller;
+extern void DvdPlayerActive_SendNavInput(int code);
 
 InputManager::~InputManager() {}
+
+// External override from NUANCE_BTN_QUEUE: scripted button mask that's
+// OR'd into the keyboard state so MessagePump's UpdateState doesn't
+// overwrite scripted presses with the zero keyboard state.
+uint16 g_btnQueueMask = 0;
 
 class InputManagerImpl : public InputManager
 {
@@ -25,21 +32,59 @@ public:
   void Activate() override {}
   bool SetJoystick(size_t) override { return true; }
 
+  // Apply state to BOTH controller slots. Games differ on which they read
+  // for player 1 — Tempest 3000's gameplay polls controller[0].buttons
+  // (0x807FFF74), other titles use controller[1]. Writing to both
+  // simultaneously is harmless (a single-player real-HW would only have
+  // one controller anyway, so both slots reading the same input is the
+  // expected behaviour). 'Z' key flip-flop preserved for advanced cases.
+  void ApplyBoth(CONTROLLER_CALLBACK applyState, uint16 mask) {
+    if (!applyState) return;
+    applyState(0, mask);
+    applyState(1, mask);
+    // Rotational games (Tempest 3000) poll d1.xAxis / d2.yAxis instead of
+    // D-pad button bits — buttons alone do nothing. Synthesise full-deflection
+    // axis values from D-pad state so keyboard arrows actually rotate the claw.
+    if (controller) {
+      const int8 x = (mask & (1 << CTRLR_BITNUM_DPAD_RIGHT)) ?  127
+                   : (mask & (1 << CTRLR_BITNUM_DPAD_LEFT))  ? -127
+                   :                                              0;
+      const int8 y = (mask & (1 << CTRLR_BITNUM_DPAD_DOWN))  ?  127
+                   : (mask & (1 << CTRLR_BITNUM_DPAD_UP))    ? -127
+                   :                                              0;
+      controller[0].d1.xAxis = x;
+      controller[0].d2.yAxis = y;
+      controller[1].d1.xAxis = x;
+      controller[1].d2.yAxis = y;
+    }
+  }
+
   void UpdateState(CONTROLLER_CALLBACK applyState, ANYPRESSED_CALLBACK, void*) override {
-    if (applyState) applyState(whichController, keyButtons);
+    ApplyBoth(applyState, keyButtons | g_btnQueueMask);
   }
 
   void keyDown(CONTROLLER_CALLBACK applyState, int16 vkey) override {
     const int bitNum = nuonEnv.GetCTRLRBitnumFromMapping(ControllerButtonMapping(KEY, vkey, 0));
-    if (bitNum >= 0) keyButtons |= 1 << bitNum;
-    if (applyState) applyState(whichController, keyButtons);
+    if (bitNum >= 0) {
+      const uint16 prev = keyButtons;
+      keyButtons |= 1 << bitNum;
+      // Edge-trigger DVD nav input (rising edges only — no auto-repeat).
+      const uint16 edge = keyButtons & ~prev;
+      if (edge & (1 << CTRLR_BITNUM_DPAD_UP))    DvdPlayerActive_SendNavInput(0);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_DOWN))  DvdPlayerActive_SendNavInput(1);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_LEFT))  DvdPlayerActive_SendNavInput(2);
+      if (edge & (1 << CTRLR_BITNUM_DPAD_RIGHT)) DvdPlayerActive_SendNavInput(3);
+      if (edge & (1 << CTRLR_BITNUM_BUTTON_A))   DvdPlayerActive_SendNavInput(4);
+      if (edge & (1 << CTRLR_BITNUM_BUTTON_B))   DvdPlayerActive_SendNavInput(5);
+    }
+    ApplyBoth(applyState, keyButtons | g_btnQueueMask);
   }
 
   void keyUp(CONTROLLER_CALLBACK applyState, int16 vkey) override {
     const int bitNum = nuonEnv.GetCTRLRBitnumFromMapping(ControllerButtonMapping(KEY, vkey, 0));
     if (bitNum >= 0) keyButtons &= ~(1 << bitNum);
     if (vkey == 'Z') whichController = 1 - whichController;
-    if (applyState) applyState(whichController, keyButtons);
+    ApplyBoth(applyState, keyButtons | g_btnQueueMask);
   }
 
   bool GrabJoystick(HWND, size_t) override { return false; }

@@ -6,6 +6,7 @@
 
 #include <string>
 #include "byteswap.h"
+#include "comm.h"
 #include "media.h"
 #include "mpe.h"
 #include "audio.h"
@@ -200,11 +201,182 @@ void UnimplementedCacheHandler(MPE &mpe)
   //::MessageBox(NULL,"This BIOS Handler does nothing","Unimplemented Cache Routine",MB_OK);
 }
 
+// _DCacheFlush (slot 12), _DCacheSync (slot 10), _DCacheSyncRegion (slot 9),
+// _DCacheInvalidateRegion (slot 11) are NUON D-cache management calls.
+//
+// On real hardware they write-back-and-invalidate the MPE's data cache so
+// that (a) writes the MPE made are visible to the bus / other MPEs and
+// (b) subsequent reads pick up fresh values. In this emulator the bus is
+// implemented as direct host-memory access, so data coherency is automatic
+// — the routines look superfluous. They aren't: games (notably IS3) use
+// `_DCacheFlush` after a code-loader path writes new bytes into a region
+// that already has compiled JIT translations. Without invalidating those
+// translations the MPE keeps executing stale compiled blocks. The previous
+// no-op implementation matched what the comment in MemLoadCoff complained
+// about: "fmv.run and other late-loaded modules typically overwrite memory
+// that already had compiled JIT blocks".
+//
+// Observed real calling convention (Ballistic, IS3 traces with
+// NUANCE_LOG_DCACHE=1): r0 = start address, r1 = SIZE in bytes (not end
+// address). The Ballistic boot path calls slot 10 (`_DCacheSync`) ~hundreds
+// of times in a row stepping r0 by +0x10 (one 16-byte cache line) with
+// r1 = 0x14 (20 bytes). So the BIOS name "DCacheSync" (no Region suffix)
+// is misleading — in practice the game uses it regionally.
+//
+// Strategy: treat ALL four slots as (start, size) regional flushes. If r0
+// looks bogus (zero or out of any NUON-mapped range) or r1 looks like a
+// sentinel (zero or absurdly large), fall through to a global flush.
+
+static inline void DCacheFlushAllMPEs()
+{
+  for (int m = 0; m < 4; m++) {
+    nuonEnv.mpe[m].nativeCodeCache.Flush();
+    nuonEnv.mpe[m].InvalidateICache();
+  }
+}
+
+static inline bool DCacheAddrLooksValid(uint32 addr)
+{
+  // NUON mapped ranges: MPE IRAM (0x2030xxxx..0x20308xxx), main DRAM
+  // (0x80000000..0x80FFFFFF), system bus (0x40000000..0x407FFFFF).
+  if (addr >= 0x20300000u && addr < 0x20400000u) return true;
+  if (addr >= 0x40000000u && addr < 0x40800000u) return true;
+  if (addr >= 0x80000000u && addr < 0x81000000u) return true;
+  return false;
+}
+
+static inline void DCacheFlushRegionAllMPEs(uint32 startAddr, uint32 size)
+{
+  // Only flush when both args look like a legitimate (addr, size) regional
+  // request — otherwise no-op (matches the previous UnimplementedCacheHandler
+  // behavior). Aggressive global flushes destroy JIT performance: every
+  // discard forces all 4 MPEs to recompile their hot loops, and games like
+  // IS3 call slot 12 ~100x/minute during cutscene playback.
+  //
+  // Ballistic uses these slots correctly (start in main DRAM, size 0x14..
+  // 0x24 = one or two 16-byte cache lines). IS3's slot 12 args are often
+  // flags or wild values (r0=1, r1=0) — those callers don't intend a
+  // memory-coherency operation, they're using the slot for something else.
+  // No-op'ing them keeps IS3's prior behavior unchanged while still giving
+  // Ballistic the regional flushes its code-loader actually needs.
+  //
+  const uint32 kMaxRegion = 0x00100000u;  // 1 MB upper sanity bound
+  if (!DCacheAddrLooksValid(startAddr) || size == 0 || size > kMaxRegion)
+    return;
+  // Skip both flushes for small data-area writes (T3K hammers
+  // DCacheFlush(0x8003DE58, 2) 760×/sec on a polled event variable —
+  // the only writers it precedes are MPE3 → MPE3 data updates that our
+  // direct-memory model makes coherent without any flush). Address
+  // range 0x8003xxxx is mcp.run's BSS data; never instructions.
+  // For real code-loader scenarios (size >= 8 bytes, typical 16-byte
+  // cache-line granularity) we still do the regional invalidation.
+  if (size < 8 && startAddr >= 0x80030000u && startAddr < 0x80100000u)
+    return;
+  const uint32 endAddr = startAddr + size - 1;
+  for (int m = 0; m < 4; m++) {
+    nuonEnv.mpe[m].nativeCodeCache.FlushRegion(startAddr, endAddr);
+    nuonEnv.mpe[m].InvalidateICacheRegion(startAddr, endAddr);
+  }
+}
+
+static inline bool LogDCache()
+{
+  static int s = -1;
+  if (s == -1) s = getenv("NUANCE_LOG_DCACHE") ? 1 : 0;
+  return s != 0;
+}
+
+void DCacheFlush(MPE &mpe)
+{
+  // NUANCE_VERIFY_BRIDGE=1 (default off): IS3's verify loop at
+  // 0x8008C9B0..0x8008C9F4 writes 4 bytes (r16 src word) to 0x400A0000,
+  // calls DCacheFlush (slot 12), then compares mem[r16..r16+r28] vs
+  // mem[0x400A0000..]. On real HW the worker DMA would have filled the
+  // rest of 0x400A0000..r28; in our emulation the worker doesn't, so
+  // verify never matches. Bridge: when MPE3 enters DCacheFlush from
+  // inside the verify-loop region with r0=0x400A0000, host-side memcpy
+  // r28 bytes from r16 → 0x400A0000 so the verify trivially passes.
+  if (mpe.mpeIndex == 3 && mpe.regs[0] == 0x400A0000u) {
+    static int s_vb_inited = 0; static int s_vb_on = 0;
+    if (!s_vb_inited) { s_vb_inited = 1; s_vb_on = getenv("NUANCE_VERIFY_BRIDGE") ? 1 : 0; }
+    if (s_vb_on && mpe.regs[14] >= 0x8008C9B0u && mpe.regs[14] <= 0x8008C9F8u) {
+      const uint32 srcAddr = mpe.regs[16];
+      const uint32 size    = mpe.regs[28];
+      if (size > 0 && size <= 0x1000u && srcAddr >= MAIN_BUS_BASE) {
+        void* srcPtr = nuonEnv.GetPointerToMemory(3, srcAddr, false);
+        void* dstPtr = nuonEnv.GetPointerToMemory(3, 0x400A0000u, false);
+        if (srcPtr && dstPtr && srcPtr != dstPtr) {
+          memcpy(dstPtr, srcPtr, size);
+          static uint64 s_vb_log = 0; s_vb_log++;
+          if (s_vb_log <= 20 || (s_vb_log % 100) == 0)
+            fprintf(stderr, "[VERIFY-BRIDGE #%llu] memcpy(0x400A0000, 0x%08X, 0x%X) rz=0x%08X\n",
+                    (unsigned long long)s_vb_log, srcAddr, size, mpe.regs[14]);
+        }
+      }
+    }
+  }
+  // Fast-bail for T3K's attract-mode spam pattern (r1 = 0x20300000 isn't
+  // a valid byte size; the call wants a cache-line equivalent but our
+  // direct-memory model has nothing to flush). Saves the dispatch into
+  // DCacheFlushRegionAllMPEs for ~8700 calls/sec.
+  if (mpe.regs[1] == 0 || mpe.regs[1] > 0x00100000u)
+    return;
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] flush mpe=%u r0=%08X r1=%08X rz=%08X\n",
+            mpe.mpeIndex, mpe.regs[0], mpe.regs[1], mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(mpe.regs[0], mpe.regs[1]);
+}
+
+void DCacheSync(MPE &mpe)
+{
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] sync mpe=%u r0=%08X r1=%08X rz=%08X\n",
+            mpe.mpeIndex, mpe.regs[0], mpe.regs[1], mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(mpe.regs[0], mpe.regs[1]);
+}
+
+void DCacheSyncRegion(MPE &mpe)
+{
+  const uint32 startAddr = mpe.regs[0];
+  const uint32 size      = mpe.regs[1];
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] syncRegion mpe=%u start=%08X size=%08X rz=%08X\n",
+            mpe.mpeIndex, startAddr, size, mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(startAddr, size);
+}
+
+void DCacheInvalidateRegion(MPE &mpe)
+{
+  const uint32 startAddr = mpe.regs[0];
+  const uint32 size      = mpe.regs[1];
+  if (LogDCache())
+    fprintf(stderr, "[DCACHE] invRegion mpe=%u start=%08X size=%08X rz=%08X\n",
+            mpe.mpeIndex, startAddr, size, mpe.regs[14]);
+  DCacheFlushRegionAllMPEs(startAddr, size);
+}
+
 void UnimplementedCommHandler(MPE &mpe)
 {
 #ifdef ENABLE_EMULATION_MESSAGEBOXES
   MessageBox(NULL,"This BIOS Handler does nothing","Unimplemented Comm Routine",MB_OK);
 #endif
+}
+
+// Stub returning success in r0 (= 0). Lots of "config" BIOS slots
+// (ControllerPollRate, ControllerExtendedInfo, LoadDefaultSystemSettings,
+// etc.) just need to NOT FAIL — real implementations are missing but
+// the games we have care only about a non-error return. Optional logging
+// via NUANCE_LOG_NULL_BIOS=1.
+void NullBiosHandlerOK(MPE &mpe)
+{
+  static int s_log_inited = 0; static int s_log = 0;
+  if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_NULL_BIOS") ? 1 : 0; }
+  if (s_log) {
+    fprintf(stderr, "[BIOS-NULL-OK] mpe=%u pc=0x%08X rz=0x%08X r0=0x%X r1=0x%X r2=0x%X\n",
+            mpe.mpeIndex, mpe.pcexec, mpe.regs[14],
+            mpe.regs[0], mpe.regs[1], mpe.regs[2]);
+  }
+  mpe.regs[0] = 0;
 }
 
 void NullBiosHandler(MPE &mpe)
@@ -214,8 +386,297 @@ void NullBiosHandler(MPE &mpe)
   //::MessageBox(NULL,msg,"Unimplemented BIOS Routine",MB_OK);
 }
 
+// _FindName (BIOS slot 121): enumerate named items under a path and
+// return their names one by one. Tetris / Sampler nuon.run spins on
+// this waiting for the loop sentinel (r0 = -1 = "no more items").
+//
+// Bare-bones implementation: report empty enumeration immediately so
+// the caller falls out of its scan loop. The menu logic on the disc
+// then either renders an empty list or falls back to a hard-coded
+// title (which is fine — DEMO_LAUNCH still gives a launcher).
+//
+// Real signature is undocumented; the calling convention seen on
+// Tetris's MPE3 is:
+//   r0 = path pointer (e.g. "/")
+//   r1 = index
+//   r2 = output name buffer
+//   r3 = output buffer size
+//   r4 = (?) extra slot
+// Return value in r0: -1 = end-of-enumeration, otherwise length / id.
+void FindName(MPE &mpe)
+{
+  // r0 = path (e.g. pointer to "/")
+  // r1 = index (0, 1, 2, ...)
+  // r2 = output name buffer (sysbus address)
+  // r3 = output buffer size
+  // r4 = (?) extra slot
+  // returns r0 = -1 at end-of-enumeration; otherwise a status code and
+  // fills the buffer at r2 with the next item's name.
+  const uint32 idx     = mpe.regs[1];
+  const uint32 outAddr = mpe.regs[2];
+  const uint32 outSize = mpe.regs[3];
+
+  // Fake enumeration: report the .cof / .run apps that ship on demo
+  // discs. End the list with -1 so the caller drops out of its scan.
+  // The Tetris/Sampler `nuon.run` launcher (function at 0x80013340)
+  // calls _FindName to count items at "/" then iterates further code
+  // paths that we cannot trace via LOG_BIOS (they go through asm-handler
+  // BIOS slots like _CommSendInfo). Tested name variants (`tnt`,
+  // `apptnt`, `app-tnt`) all produce the same outcome: launcher silently
+  // proceeds past enumeration, never renders anything (framebuffer
+  // stays black), never calls MediaOpen on any candidate. The actual
+  // blocker is one layer deeper — likely a missing VidConfig setup
+  // in nuon.run's init that depends on the disc layout. Workaround:
+  // `NUANCE_DEMO_LAUNCH=tnt|tempest|merlinracing` bypasses the launcher.
+  static const char* const kNames[] = {
+    "tnt", "tempest", "merlinracing",
+  };
+  const uint32 N = (uint32)(sizeof(kNames) / sizeof(kNames[0]));
+
+  extern NuonEnvironment nuonEnv;
+  // Also fill r4 buffer with plausible file metadata (size, attributes)
+  // — the launcher may use this to decide if the entry is loadable.
+  const uint32 r4Addr = mpe.regs[4];
+  if (r4Addr) {
+    uint32* m = (uint32*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, r4Addr, false);
+    if (m) *m = SwapBytes(0x00000001u); // generic "valid file" marker
+  }
+
+  static int s_logged = 0;
+  if (s_logged < 8) {
+    fprintf(stderr, "[BIOS] _FindName r0=%08X r1=%u r2=%08X r3=%u r4=%08X",
+            mpe.regs[0], idx, outAddr, outSize, mpe.regs[4]);
+    // Decode the path string at r0 for context
+    extern NuonEnvironment nuonEnv;
+    const char* path = (const char*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, mpe.regs[0], false);
+    if (path) {
+      char buf[64];
+      size_t i;
+      for (i = 0; i < sizeof(buf)-1 && path[i]; i++) buf[i] = path[i];
+      buf[i] = 0;
+      fprintf(stderr, " path=\"%s\"", buf);
+    }
+    s_logged++;
+  }
+
+  if (idx >= N) {
+    mpe.regs[0] = 0xFFFFFFFFu;
+    if (s_logged < 8) fprintf(stderr, " -> -1 (end)\n");
+    return;
+  }
+
+  // Copy name (NUON sysbus is big-endian byte order; bytes go through
+  // unchanged for char data).
+  extern NuonEnvironment nuonEnv;
+  uint8* dst = (uint8*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, outAddr, true);
+  if (dst && outSize > 0) {
+    const char* name = kNames[idx];
+    const size_t cap = outSize - 1;
+    size_t i = 0;
+    for (; i < cap && name[i]; i++) dst[i] = (uint8)name[i];
+    dst[i] = 0;
+  }
+
+  mpe.regs[0] = 0; // success
+  if (s_logged < 8) fprintf(stderr, " -> 0 (\"%s\")\n", kNames[idx]);
+}
+
 void AssemblyBiosHandler(MPE &mpe)
 {
+  // NUANCE_LOG_ASM_BIOS=<slot_dec>: trace every call to a specific
+  // AssemblyBiosHandler slot. Reverse-engineer calling convention.
+  static int s_target = -2;
+  static uint64 s_count = 0;
+  if (s_target == -2) {
+    const char* s = getenv("NUANCE_LOG_ASM_BIOS");
+    s_target = s ? (int)strtol(s, nullptr, 0) : -1;
+  }
+  if (s_target >= 0) {
+    const int slot = (int)((mpe.pcexec - 0x80000000) >> 3);
+    if (slot == s_target) {
+      if (s_count < 30 || (s_count % 100) == 0)
+        fprintf(stderr, "[ASM-BIOS slot=%d #%llu] mpe=%u rz=0x%08X "
+                "r0=0x%08X r1=0x%08X r2=0x%08X r3=0x%08X r4=0x%08X r5=0x%08X\n",
+                slot, (unsigned long long)s_count, mpe.mpeIndex, mpe.regs[14],
+                mpe.regs[0], mpe.regs[1], mpe.regs[2],
+                mpe.regs[3], mpe.regs[4], mpe.regs[5]);
+      s_count++;
+    }
+  }
+}
+
+// _CommRecvInfoQuery (slot 3): non-blocking query for incoming packet.
+// Returns packet info via registers if a packet is in the commrecv
+// buffer (commctl bit 31 = COMM_RECV_BUFFER_FULL_BIT), else returns
+// -1 / 0xFFFFFFFF in r0.
+//
+// CRITICAL FOR IS3 (2026-05-16): levelsel.run is a pure POLLER. NUANCE_LOG_JSR
+// trace shows 141,525 calls to slot 3 from a single PC (0x800ACB4C)
+// in 200s, vs ZERO calls to any other comm slot. The polling loop
+// waits for an incoming packet to trigger state advancement.
+// Without a real implementation, IS3 hangs forever on the level
+// select screen.
+//
+// Return convention (inferred from name + usage pattern):
+//   r0 = source MPE id (0..3) if packet available
+//   r0 = -1 / 0xFFFFFFFF if no packet
+//   r1 = comminfo (high byte of remote sender's comminfo)
+// Packet contents stay in commrecv[] for later retrieval via slot 2
+// (CommRecvInfo) which is the blocking variant.
+void CommRecvInfoQuery(MPE &mpe)
+{
+  static int s_log_inited = 0; static int s_log = 0;
+  if (!s_log_inited) { s_log_inited = 1; s_log = getenv("NUANCE_LOG_COMM_RECV_QUERY") ? 1 : 0; }
+  // Preserve r0/r1/r2 from the caller — do not overwrite. This matches
+  // the existing AssemblyBiosHandler stub semantics that IS3's boot
+  // path relies on. An earlier attempt to set r0 = 0 (or write packet
+  // info through r0/r1 pointer args) regressed IS3: cutscenes
+  // truncated at the NUON splash and the level-code menu was never
+  // reached. With registers preserved IS3 progresses through intro
+  // cutscenes (tanks/title) at ~60-120s and reaches the interactive
+  // "Enter the level code" menu by ~180s. Keep this as a documented
+  // logging/diagnostic hook until a real packet-query semantic is
+  // proven against a homebrew demo or a different caller.
+  if (s_log) {
+    static uint64 s_calls = 0; s_calls++;
+    if (s_calls < 20 || (s_calls % 10000) == 0)
+      fprintf(stderr, "[COMM-RECV-QUERY #%llu] mpe=%u commctl=0x%08X r0=0x%X r1=0x%X r2=0x%X rz=0x%08X\n",
+              (unsigned long long)s_calls, mpe.mpeIndex, mpe.commctl,
+              mpe.regs[0], mpe.regs[1], mpe.regs[2], mpe.regs[14]);
+  }
+}
+
+// Shared core for _CommSend (slot 0) and _CommSendInfo (slot 1). The
+// NUON-side bios.s implements these as a tight asm spinwait around
+// the commctl xmit-buffer-full bit (see riff_commsend / riff_commsenddirect
+// in bios.s). We can't spin from C++, so instead we just stage the packet
+// in commxmit[0..3], set the target ID + xmit-buffer-full bit, and bump
+// pendingCommRequests. The main emulation loop's DoCommBusController()
+// call (already gated on pendingCommRequests > 0) will then route the
+// packet to the target MPE's commrecv on the next pass, which is when
+// the caller's spinwait at commctl.bit15 will see the bit go clear and
+// fall through.
+//
+// IS3 hits this path almost immediately after the LOADING screen comes
+// up: its mcp.run module-comm code (around 0x80237FD8) calls
+// _CommSendInfo expecting an ack to come back, and previously froze
+// because AssemblyBiosHandler was an empty stub and the xmit-buffer-
+// full bit was never set.
+static void CommSendCore(MPE &mpe, uint32 packetAddr, uint32 target, uint32 info)
+{
+  const uint32* src = (const uint32*)nuonEnv.GetPointerToMemory(mpe.mpeIndex, packetAddr, false);
+  if (!src)
+  {
+    // Bad packet pointer — mirror the asm fallthrough (xmit_failed) by
+    // leaving COMM_XMIT_FAILED_BIT set without queuing anything. The
+    // NUON-side loop will then retry or bail per the COMM_XMIT_RETRY_BIT.
+    mpe.commctl |= COMM_XMIT_FAILED_BIT;
+    return;
+  }
+
+  // The packet sits in NUON-endian memory; commxmit/commrecv hold values
+  // in "MPE register native" form (host endian, since MPEControlRegisters
+  // never byte-swaps on the write side). SwapBytes() converts from BE to host.
+  for (uint32 i = 0; i < 4; i++)
+    mpe.commxmit[i] = SwapBytes(src[i]);
+
+  // comminfo low 8 bits = info word (matches `st_s r5, comminfo` in bios.s)
+  mpe.comminfo = (mpe.comminfo & ~0xFFu) | (info & 0xFFu);
+
+  // commctl target field is the low 8 bits; preserve other control bits.
+  mpe.commctl = (mpe.commctl & ~COMM_TARGET_ID_BITS) | (target & COMM_TARGET_ID_BITS);
+
+  // Mark xmit pending; clear any stale failed bit. Bump the global count so
+  // the main loop services us this iteration.
+  mpe.commctl &= ~COMM_XMIT_FAILED_BIT;
+  mpe.commctl |= COMM_XMIT_BUFFER_FULL_BIT;
+  nuonEnv.pendingCommRequests++;
+}
+
+// Runtime toggle: NUANCE_COMMSEND_ASM=1 forces slot 0/1 through the NUON-asm
+// path (AssemblyBiosHandler), matching upstream's behaviour. Default (env
+// unset) uses our C++ shortcut. Used to A/B-test whether Tempest 3000's
+// gameplay-entry crash is sensitive to the asm path's implicit
+// DoCommBusController scheduling.
+static inline bool CommSendUseAsm()
+{
+  static int s = -1;
+  if (s < 0) s = getenv("NUANCE_COMMSEND_ASM") ? 1 : 0;
+  return s != 0;
+}
+
+extern void AssemblyBiosHandler(MPE &mpe);
+
+// _CommSend (slot 0): r0 = target MPE, r1 = address of 16-byte packet.
+// info field is zero (the asm prelude does `sub r5, r5` before falling
+// into commsend_loadpacket).
+void CommSend(MPE &mpe)
+{
+  if (CommSendUseAsm()) { AssemblyBiosHandler(mpe); return; }
+  CommSendCore(mpe, mpe.regs[1], mpe.regs[0], 0);
+}
+
+// _CommSendInfo (slot 1): r0 = target MPE, r1 = info, r2 = packet ptr.
+void CommSendInfo(MPE &mpe)
+{
+  if (CommSendUseAsm()) { AssemblyBiosHandler(mpe); return; }
+  CommSendCore(mpe, mpe.regs[2], mpe.regs[0], mpe.regs[1]);
+}
+
+// _MPEWait (slot 106): wait for target MPE (r0) to halt, then return its r0.
+//
+// NUON-side asm (`riff_mpewait` in bios.s) is a tight spinwait on the target
+// MPE's mpectl.MPECTRL_MPEGO bit. Letting that asm run as-is in a cooperative
+// round-robin scheduler is pathological: the calling MPE3 owns the cycle, the
+// target sits idle, so the bit never clears and we burn cycles forever.
+//
+// Implement directly in C++ and YIELD on the spin: while the target is still
+// running, advance it one packet at a time (and pump the comm bus so any
+// packets it produces can reach further workers). Bounded by maxYield to
+// avoid hanging forever on real-emulator bugs — if the target genuinely
+// never halts in that budget we surface it like an exception (return -1).
+//
+// The original blocked-design comment in nuance-is3-comm-root-cause.md
+// "Refined root cause hypothesis" option 3.
+void MPEWait(MPE &mpe)
+{
+  const uint32 targetID = mpe.regs[0];
+
+  // Invalid target or self-wait: the asm would loop forever; we just bail.
+  if (targetID >= 4 || targetID == mpe.mpeIndex)
+  {
+    mpe.regs[0] = 0xFFFFFFFFu;
+    return;
+  }
+
+  MPE &target = nuonEnv.mpe[targetID];
+
+  // 100k packets is ~3-5x more than a worker task ever takes; keeps us
+  // bounded if a JIT/emulator bug holds MPECTRL_MPEGO set forever.
+  uint32 maxYield = 100000;
+  while ((target.mpectl & MPECTRL_MPEGO) && maxYield > 0)
+  {
+    target.FetchDecodeExecute();
+    if (nuonEnv.pendingCommRequests)
+      DoCommBusController();
+    maxYield--;
+  }
+
+  if (target.mpectl & MPECTRL_MPEGO)
+  {
+    // Timeout — escalate as exception so the caller's error path runs
+    // instead of looping back to call MPEWait again.
+    mpe.regs[0] = 0xFFFFFFFFu;
+    return;
+  }
+
+  // Match the asm postcondition: if (excepsrc & excephalten) != 0 the halt
+  // was caused by an exception and MPEWait returns -1; otherwise return
+  // the remote MPE's r0.
+  if (target.excepsrc & target.excephalten)
+    mpe.regs[0] = 0xFFFFFFFFu;
+  else
+    mpe.regs[0] = target.regs[0];
 }
 
 void WillNotImplement(MPE &mpe)
@@ -319,6 +780,16 @@ void IntSetVector(MPE &mpe)
       {
         mpe.regs[0] = newvec;
       }
+      // CRITICAL FIX (2026-05-16): the existing code added the handler to
+      // the recv-handler list but never enabled INT_COMMRECV in inten1.
+      // Without inten1 bit 4 set, `intsrc & inten1` for that bit stays 0
+      // and the ISR dispatcher never tail-calls the installed handler.
+      // Symptom on IS3: mpe0->mpe3 comm packets deliver fine, MPE3.intsrc
+      // bit 4 gets set briefly by TriggerInterrupt(INT_COMMRECV), but
+      // MPE3 never runs the user commrecv handler at 0x80239560 (mcp.run
+      // installs this for level-select → load-ismerlin transitions).
+      // The ELSE branch below already does this for non-commrecv ints.
+      mpe.inten1 |= (1U << 4);
     }
     else
     {
@@ -345,6 +816,20 @@ void IntSetVector(MPE &mpe)
 
 void BiosExit(MPE &mpe)
 {
+  static int s_logged = 0;
+  if (s_logged < 8) {
+    fprintf(stderr, "[BIOS] BiosExit (slot 30) called: mpe%u pc=0x%08X r0=0x%08X rz=0x%08X\n",
+            mpe.mpeIndex, mpe.pcexec, mpe.regs[0], mpe.rz);
+    s_logged++;
+  }
+  // NUANCE_SLOT30_RET=<value>: don't halt the MPE, instead return the
+  // given value in r0. Used to test whether IS3's mcp.run startup at
+  // 0x80018086 is actually using slot 30 as a "get module index"
+  // overload rather than the documented "BiosExit" semantic.
+  if (const char* s = getenv("NUANCE_SLOT30_RET")) {
+    mpe.regs[0] = (uint32)strtoul(s, nullptr, 0);
+    return;
+  }
   //const uint32 return_value = mpe.regs[0];
   mpe.Halt();
 }
@@ -392,19 +877,19 @@ void BiosGetInfo(MPE &mpe)
 }
 
 NuonBiosHandler BiosJumpTable[256] = {
-AssemblyBiosHandler, //_CommSend (0)
-AssemblyBiosHandler, //_CommSendInfo (1)
+CommSend, //_CommSend (0)
+CommSendInfo, //_CommSendInfo (1)
 AssemblyBiosHandler, //_CommRecvInfo (2)
 AssemblyBiosHandler, //_CommRecvInfoQuery (3)
 AssemblyBiosHandler, //_CommSendRecv (4)
 AssemblyBiosHandler, //_CommSendRecvInfo (5)
 ControllerInitialize, //_ControllerInitialize (6)
-NullBiosHandler, //_ControllerExtendedInfo (7)
+NullBiosHandlerOK, //_ControllerExtendedInfo (7)
 TimeOfDay, //_TimeOfDay (8)
-UnimplementedCacheHandler, //_DCacheSyncRegion (9)
-UnimplementedCacheHandler, //_DCacheSync (10)
-UnimplementedCacheHandler, //_DCacheInvalidateRegion (11)
-UnimplementedCacheHandler, //_DCacheFlush (12)
+DCacheSyncRegion, //_DCacheSyncRegion (9)
+DCacheSync, //_DCacheSync (10)
+DCacheInvalidateRegion, //_DCacheInvalidateRegion (11)
+DCacheFlush, //_DCacheFlush (12)
 TimerInit, //_TimerInit (13)
 TimeElapsed, //_TimeElapsed (14)
 AssemblyBiosHandler, //_TimeToSleep (15)
@@ -438,9 +923,9 @@ WillNotImplement, //_MemAdd (42)
 MemAlloc, //_MemAlloc (43)
 MemFree, //_MemFree (44)
 MemLocalScratch, //_MemLocalScratch (45)
-NullBiosHandler, //_MemLoadCoffX (46)
-NullBiosHandler, //_DownloadCoff (47)
-NullBiosHandler, //_StreamLoadCoff (48)
+MemLoadCoff,    //_MemLoadCoffX (46)
+DownloadCoff,   //_DownloadCoff (47)
+StreamLoadCoff, //_StreamLoadCoff (48)
 DMALinear, //_DMALinear (49)
 DMABiLinear, //_DMABiLinear (50)
 FileOpen, //_FileOpen (51)
@@ -498,7 +983,7 @@ PatchJumptable, //_PatchJumptable (102)
 NullBiosHandler, //_BiosResume (103)
 MPEStop, //_MPEStop (104)
 MPERun, //_MPERun (105)
-AssemblyBiosHandler, //_MPEWait (106)
+MPEWait, //_MPEWait (106)
 MPEReadRegister, //_MPEReadRegister (107)
 MPEWriteRegister, //_MPEWriteRegister (108)
 NullBiosHandler, //_SetParentalControl (109)
@@ -513,7 +998,7 @@ NullBiosHandler, //_SecureForPE (117)
 NullBiosHandler, //_StartImageValid (118)
 NullBiosHandler, //_SetStartImage (119)
 NullBiosHandler, //_GetStartImage (120)
-NullBiosHandler, //_FindName (121)
+FindName, //_FindName (121)
 DeviceDetect, //_DeviceDetect (122)
 MPERunThread, //_MPERunThread (123)
 NullBiosHandler, //_BiosIRMask (124)
@@ -538,7 +1023,7 @@ NullBiosHandler, //_StoreSystemSetting (142)
 NullBiosHandler, //_mount (143)
 MPEStatus, //_MPEStatus (144)
 KPrintf, //_kprintf (145)
-NullBiosHandler, //_ControllerPollRate (146)
+NullBiosHandlerOK, //_ControllerPollRate (146)
 WillNotImplement, //_VidSetOutputType (147)
 NullBiosHandler, //_LoadDefaultSystemSettings (148)
 SetISRExitHook, //_SetISRExitHook (149)

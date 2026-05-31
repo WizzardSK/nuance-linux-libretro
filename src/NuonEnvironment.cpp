@@ -260,6 +260,16 @@ void NuonEnvironment::SetAudioVolume(uint32 volume)
 
 bool NuonEnvironment::TryPushAudioPeriod()
 {
+  // NUANCE_LOG_AUDIO=1 — trace audio period pushes + INT_AUDIO triggers.
+  static int s_audio_log_inited = 0; static int s_audio_log = 0;
+  if (!s_audio_log_inited) { s_audio_log_inited = 1; s_audio_log = getenv("NUANCE_LOG_AUDIO") ? 1 : 0; }
+  if (s_audio_log) {
+    static uint64 s_n = 0; s_n++;
+    if (s_n <= 30 || (s_n % 60) == 0)
+      fprintf(stderr, "[AUDIO-PUSH #%llu] bufPtr=%p ring=%p mode=0x%08X oldMode=0x%08X\n",
+              (unsigned long long)s_n, (void*)pNuonAudioBuffer, (void*)audioRing,
+              nuonAudioChannelMode, oldNuonAudioChannelMode);
+  }
   if(!pNuonAudioBuffer || !audioRing)
     return false;
 
@@ -348,6 +358,25 @@ void *NuonEnvironment::GetPointerToMemory(const uint32 mpe_idx, const uint32 add
       MessageBox(NULL, textBuf, "GetPointerToMemory error", MB_OK);
     }
 #endif
+    // Cross-MPE bus routing (gated by NUANCE_XMPE=1 while we validate).
+    // The 0x20000000..0x21FFFFFF window splits into 8 MB MPE slices:
+    //   0x20000000..0x207FFFFF = MPE0
+    //   0x20800000..0x20FFFFFF = MPE1 (= MPE1_ADDR_BASE)
+    //   0x21000000..0x217FFFFF = MPE2
+    //   0x21800000..0x21FFFFFF = MPE3
+    // Bits 23..24 of the address pick the target MPE, not the caller —
+    // that's how minibios audio handler's writes into MPE0's DTRAM at
+    // 0x2010102C become visible to MPE3's poll. Without this every MPE
+    // just sees its own dtrom for any 0x2xxxxxxx access and cross-MPE
+    // state never flows. Gated for now because it materially changes
+    // the meaning of every "own" DTRAM access in existing games.
+    static int s_xmpe_inited = 0; static int s_xmpe = 0;
+    if (!s_xmpe_inited) { s_xmpe_inited = 1; s_xmpe = getenv("NUANCE_XMPE") ? 1 : 0; }
+    if (s_xmpe)
+    {
+      const uint32 target_mpe = (address >> 23) & 0x3u;
+      return &mpe[target_mpe].dtrom[address & MPE_VALID_MEMORY_MASK];
+    }
     assert(mpe_idx < 4);
     return &mpe[mpe_idx].dtrom[address & MPE_VALID_MEMORY_MASK];
   }
@@ -813,7 +842,7 @@ bool NuonEnvironment::SaveConfigFile(const char* const fileName)
   fprintf_s(configFile, "%s\n\n", compilerOptions.bConstantPropagation ? "Enabled" : "Disabled");
 
   fprintf_s(configFile, "[MPE3PacketHack]\n");
-  fprintf_s(configFile, "%s\n\n", compilerOptions.bMPE3PacketHack ? (compilerOptions.bMPE3PacketHack == 2 ? "T3K" : "Enabled") : "Disabled");
+  fprintf_s(configFile, "%s\n\n", compilerOptions.bMPE3PacketHack ? "Enabled" : "Disabled");
 
   fprintf_s(configFile, "[AutomaticLoadPopup]\n");
   fprintf_s(configFile, "%s\n\n", bAutomaticLoadPopup ? "Enabled" : "Disabled");
@@ -980,7 +1009,7 @@ bool NuonEnvironment::LoadConfigFile(const std::string& fileName)
         else if(_strnicmp(&line[1],"MPE3PacketHack]",sizeof("MPE3PacketHack]")) == 0)
         {
           tokenType = ReadConfigLine(configFile,line);
-          compilerOptions.bMPE3PacketHack = !_stricmp(line,"Enabled") ? 1 : (!_stricmp(line, "T3K") ? 2 : 0);
+          compilerOptions.bMPE3PacketHack = !_stricmp(line,"Enabled");
         }
         else if(_strnicmp(&line[1],"AutomaticLoadPopup]",sizeof("AutomaticLoadPopup]")) == 0)
         {

@@ -121,10 +121,9 @@ public:
   // try again on the next loop iteration
   bool TryPushAudioPeriod();
 
-  // Drain up to maxFrames stereo frames from the host audio ring into dst
-  // (already little-endian int16 interleaved L/R). Returns the number of frames
-  // written. Used by the libretro core's audio_batch_cb path; the standalone
-  // build consumes the same ring from its miniaudio callback.
+  // Pull up to maxFrames stereo 16-bit frames from the host audio ring into dst, byte-
+  // swapped to little-endian PCM. Returns frames actually written. Used by the libretro
+  // core which doesn't run miniaudio's pull callback.
   uint32 DrainAudioRing(int16_t* dst, uint32 maxFrames);
 
   bool IsAudioHalfInterruptEnabled() const

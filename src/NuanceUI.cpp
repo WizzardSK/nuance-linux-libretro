@@ -544,10 +544,7 @@ static void DrawSettingsPanel()
     ImGui::Checkbox("DumpCompiledBlocks", &nuonEnv.compilerOptions.bDumpBlocks);
     ImGui::SameLine();
     ImGui::TextDisabled("(verbose; for debugging)");
-    // bMPE3PacketHack is a char (0/1/2); bridge through a bool for the checkbox.
-    { bool mpe3hack = nuonEnv.compilerOptions.bMPE3PacketHack != 0;
-      if(ImGui::Checkbox("MPE3PacketHack", &mpe3hack))
-        nuonEnv.compilerOptions.bMPE3PacketHack = mpe3hack ? 1 : 0; }
+    ImGui::Checkbox("MPE3PacketHack", &nuonEnv.compilerOptions.bMPE3PacketHack);
     ImGui::SameLine();
     ImGui::TextDisabled("(most likely only relevant for Tempest 3000)");
 

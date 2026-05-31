@@ -4,6 +4,8 @@
 #include "mpe_alloc.h"
 #include "NuonEnvironment.h"
 #include "NuonMemoryMap.h"
+#include <cstdio>
+#include <cstdlib>
 
 extern NuonEnvironment nuonEnv;
 extern uint32 media_mpe_allocated;
@@ -161,6 +163,49 @@ void MPERun(MPE &mpe)
 {
   const uint32 which = mpe.regs[0];
   const uint32 entrypoint = mpe.regs[1];
+
+  // NUANCE_LOG_MPE_DISPATCH=1: log every MPERun call for worker MPEs (1,2)
+  // with target state captured BEFORE we halt+restart it. Lets us see what
+  // pcexec/commxmit the previous task ended on (i.e. whether the worker
+  // actually ran or returned immediately), and how many dispatches per
+  // unit time MPE3 fires. Caps at NUANCE_LOG_MPE_DISPATCH_CAP=N lines.
+  {
+    static const char* logEnv = getenv("NUANCE_LOG_MPE_DISPATCH");
+    static const uint32 cap = []() -> uint32 {
+      const char* c = getenv("NUANCE_LOG_MPE_DISPATCH_CAP");
+      return c ? (uint32)atoi(c) : 600;
+    }();
+    static uint32 callIdx[4] = {0,0,0,0};
+    static uint32 logged[4] = {0,0,0,0};
+    if (logEnv && which < 4 && (which == 1 || which == 2)) {
+      callIdx[which]++;
+      if (logged[which] < cap) {
+        MPE &t = nuonEnv.mpe[which];
+        // Dump first 16 bytes of target MPE's IRAM at the dispatch entry
+        // point to verify whether DMA actually wrote real code there.
+        const uint8* p = (const uint8*)nuonEnv.GetPointerToMemory(which, entrypoint);
+        char iram_hex[64] = "?";
+        if (p) {
+          snprintf(iram_hex, sizeof(iram_hex),
+                   "%02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x",
+                   p[0],p[1],p[2],p[3], p[4],p[5],p[6],p[7],
+                   p[8],p[9],p[10],p[11], p[12],p[13],p[14],p[15]);
+        }
+        fprintf(stderr,
+                "[MPE%u-DISP #%u] from=MPE%u entry=$%08X "
+                "prev_pcexec=$%08X mpego=%u "
+                "iram@entry=[%s] "
+                "commxmit=[$%08X $%08X $%08X $%08X] "
+                "commctl=$%08X intsrc=$%08X\n",
+                which, callIdx[which], mpe.mpeIndex, entrypoint,
+                t.pcexec, (t.mpectl & MPECTRL_MPEGO) ? 1u : 0u,
+                iram_hex,
+                t.commxmit[0], t.commxmit[1], t.commxmit[2], t.commxmit[3],
+                t.commctl, t.intsrc);
+        logged[which]++;
+      }
+    }
+  }
 
   /*
   The following behavior differs from the real BIOS particularly in that
@@ -341,6 +386,28 @@ void MPEWriteRegister(MPE&mpe)
   const uint32 which = mpe.regs[0];
   const uint32 mpeaddr = mpe.regs[1];
   const uint32 value = mpe.regs[2];
+
+  // NUANCE_LOG_MPE_DISPATCH=1 also logs MPEWriteRegister calls so we can see
+  // what task descriptor MPE3 is staging into the worker before MPERun.
+  // Note the bounds check below silently drops writes outside the control-
+  // register window — log all calls, accepted-or-dropped, so we see if T3K
+  // is passing an address we can't service.
+  {
+    static const char* logEnv = getenv("NUANCE_LOG_MPE_DISPATCH");
+    static const uint32 cap = []() -> uint32 {
+      const char* c = getenv("NUANCE_LOG_MPE_DISPATCH_CAP");
+      return c ? (uint32)atoi(c) : 600;
+    }();
+    static uint32 logged = 0;
+    if (logEnv && which < 4 && (which == 1 || which == 2) && logged < cap) {
+      const bool inRange = (mpeaddr >= MPE_CTRL_BASE) && (mpeaddr < MPE1_ADDR_BASE);
+      fprintf(stderr,
+              "[MPE%u-WREG] from=MPE%u mpeaddr=$%08X value=$%08X %s\n",
+              which, mpe.mpeIndex, mpeaddr, value,
+              inRange ? "OK" : "DROPPED(out-of-range)");
+      logged++;
+    }
+  }
 
   if((which < 4) && (mpeaddr >= MPE_CTRL_BASE) && (mpeaddr < MPE1_ADDR_BASE))
   {

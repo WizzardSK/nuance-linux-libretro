@@ -106,6 +106,7 @@ void VidSetCLUTRange(MPE &mpe);
 void InitializeColorSpaceTables();
 void RenderVideo(int width, int height);
 void VideoCleanup();
+void VideoInvalidateGLState();
 void IncrementVideoFieldCounter();
 
 // Invalidate the lazily-created GL resources (textures, shaders, viewport) so

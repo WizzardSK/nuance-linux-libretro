@@ -1,11 +1,11 @@
-# Nuance 0.6.8
+# Nuance 0.6.7
 
-A NUON (VM Labs) emulator for Windows and Linux.
+A NUON (VM Labs) emulator for Windows, Linux and libretro (RetroArch).
 
 Copyright 2002 - 2007 Mike Perry and 2020 - 2026 all the open source contributors (see separate license.txt)
 
 Continued using the released source/docs in honour of the original author by Carsten Waechter (toxie at ainc.de) in 2020.
-Linux/libretro port by WizzardSK in 2026.
+Linux port, libretro core and x86-64 JIT by WizzardSK in 2026.
 
 NUON is/was a trademark of Genesis Microchip, Inc.
 
@@ -52,13 +52,26 @@ make -j$(nproc)
 
 ### 64-bit build
 
-This one uses asmjit.
+The 64-bit build uses [asmjit](https://asmjit.com/) to dynamically recompile
+NUON code to x86-64 native instructions.  The asmjit library is bundled in the
+`external/asmjit` directory.
 
 ```bash
-sudo apt install build-essential cmake libgl1-mesa-dev libx11-dev libsdl2-dev
+sudo apt install build-essential cmake libgl1-mesa-dev libx11-dev
 mkdir build64 && cd build64
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
+```
+
+### Libretro core
+
+Both 32-bit and 64-bit libretro cores are supported:
+
+```bash
+mkdir build-libretro && cd build-libretro
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBRETRO=ON
+make -j$(nproc)
+# produces nuance_libretro.so
 ```
 
 The bios.cof, minibios.cof, minibiosX.cof, nuance.cfg and GLSL shader files are
@@ -69,7 +82,7 @@ automatically copied to the build directory by CMake.
 ```
 NuanceResurrection/
   src/           - All C/C++ source and header files
-  external/      - Bundled libraries (GLEW, miniaudio, MurmurHash3)
+  external/      - Bundled libraries (asmjit, GLEW, FMOD stub, miniaudio, MurmurHash3)
   compat/        - Windows API compatibility headers for Linux builds
 ..thirdparty/    - Everything needed for .CHD support
   CMakeLists.txt - Build system
@@ -246,24 +259,23 @@ For more information on the implementation details of the compiler, please read 
 
 The configuration entries applicable to dynamic compilation are:
 
-- **`[DynamicCompiler]`** `Enabled`/`Disabled`: forces (slower) interpretation when disabled, recommended: `Enabled`
+- **`[DynamicCompiler]`** Enabled/Disabled: forces (slower) interpretation when disabled, recommended: Enabled
 
-- **`[CompilerConstantPropagation]`** `Enabled`/`Disabled`: toggles constant propagation phase that is performed after fetching
-  the block instructions. NOTE: Might still be a bit buggy in corner cases, but recommended: `Enabled`
+- **`[CompilerConstantPropagation]`** Enabled/Disabled: toggles constant propagation phase that is performed after fetching
+  the block instructions. NOTE: Might still be a bit buggy in corner cases, but recommended: Enabled
 
-- **`[CompilerDeadCodeElimination]`** `Enabled`/`Disabled`: toggles a dead code elimination phase that is performed after constant
-  propagation. NOTE: Still buggy, recommended: `Disabled`
+- **`[CompilerDeadCodeElimination]`** Enabled/Disabled: toggles a dead code elimination phase that is performed after constant
+  propagation. NOTE: Still buggy, recommended: Disabled
 
-- **`[DumpCompiledBlocks]`** `Enabled`/`Disabled`: NOTE: This option is only available in custom builds, not released versions!
+- **`[DumpCompiledBlocks]`** NOTE: This option is only available in custom builds, not released versions!
   Enabled/Disabled: toggles file dump of blocks that are compiled during execution.  When
   enabled, the emulator will print the resulting optimized blocks in a readable format to
   the files SuperBlocks0.txt through SuperBlocks3.txt corresponding to MPE0 through MPE3.
   Note that these files can grow in size very quickly.  It is not uncommon for the files to
-  grow beyond 500 megabytes or even wrap around the maximum file size of 4 GB, recommended: `Disabled`
+  grow beyond 500 megabytes or even wrap around the maximum file size of 4 GB, recommended: Disabled
 
-- **`[MPE3PacketHack]`** `Enabled`/`Disabled`: toggles a dynamic compiler hack that avoids e.g. a hang in T3K, recommended: `Enabled`
+- **`[MPE3PacketHack]`** Enabled/Disabled: toggles a dynamic compiler hack that avoids e.g. a hang in T3K, recommended: Enabled
   (otherwise (Disabled), for T3K please use the recommendation in GameCompatibility.txt instead)
-  (one can also choose `T3K` for the minimal subset needed to make T3Ks level select hang go away)
 
 ## Flash ROM Support
 
@@ -321,6 +333,35 @@ Hello, world! 1 2 3
 in the kprintf Log status and the debug log file, if configured.
 
 ## Known Issues
+
+### 64-bit JIT (asmjit) status
+
+The 64-bit build includes an x86-64 JIT dynamic recompiler based on
+[asmjit](https://asmjit.com/).  The JIT compiles and executes NUON
+code without crashes, but at least one 64-bit-specific bug still
+prevents games from displaying video.
+
+**Status (2026-05-05):** First-known root cause **fixed** — gcc on
+LP64 Linux defines `_lrotr` / `_lrotl` as macros mapping to `__rorq`
+/ `__rolq` (i.e. **64-bit** rotates), so the previous Linux fallbacks
+in `linux_compat.h` were silently bypassed and `Execute_ROT` /
+`Decode_ALU` constant fold / `PropagateConstants_ALU` all rotated
+the wrong width.  After the fix, MPE3 in 64-bit standalone of Space
+Invaders XL converges with the 32-bit interpreter for 882 unique PCs
+(was 569 before the fix) and matches register-level state at every
+common PC.
+
+**Remaining bug:** at MPE3 PC `$80067C78` (an `RTS` packet) the 32-bit
+build returns to `$80062A60` and continues; the 64-bit build, with
+bit-identical regs[0..31] + cc + rz at that point, drifts back into
+the interrupt path and never reaches BIOS `_VidConfig`.  Since the
+register state is identical, the divergence is almost certainly an
+earlier wrong **memory store** (a `st_s` / `st_v` writing different
+bytes to NUON RAM that a later load reads), not a register-write
+bug.  Investigation continues.
+
+The 32-bit standalone build with the original x86 JIT is recommended
+for gameplay until this is resolved.
 
 ### Compiler issues
 
@@ -571,22 +612,21 @@ At the moment the emulator is hardwired to assume an Aries 2 generation chip.
 
 ## History
 
-**version 0.6.8:**
-
-**05/30/2026 version 0.6.7:**
+**version 0.6.7:**
 - FINALLY, T3K can be played with no hangs on music transitions, and with proper music looping!
   Also the level select hang (with DynamicCompiler enabled) is resolved (see GameCompatibility.txt/MPE3PacketHack-option though for the caveats)!
 - Merlin Racing's AI drivers now follow the course as intended (with DynamicCompiler enabled).
 - Add Linux port with CMake build system, X11/GLX backend and miniaudio audio output.
 - Add libretro port.
 - 32-bit build supports the x86 JIT dynamic recompiler on Linux via `__attribute__((fastcall))`.
-- 64-bit builds employ asmjit instead.
+- 64-bit build adds an x86-64 JIT dynamic recompiler based on [asmjit](https://asmjit.com/).
 - Static linking of glew (no more `glew32.dll` needed).
+- Add libretro core (32-bit and 64-bit) for RetroArch integration.
 - Replace FMOD 3.75 with miniaudio. No more outdated FMOD SDK / `fmod.dll` dependency.
 - Due to this, decouple host audio from Nuon DMA via a ring buffer (which was implicitly done by FMOD under the hood).
 - Audio interrupts are kept intact while muted (matches previous behavior, needs to be verified on real HW).
 - Drag and drop support for the UI.
-- Can load games directly from ZIP/ISO files on Windows.
+- Can load games directly from ZIP/ISO files on Windows and Linux. Case-insensitive file matching for DVD data files.
 - On Linux additionally supports RAR/7z via FUSE tools.
 - All "with carry" opcodes (=addwc/subwc/cmpwc variants) should now behave as written in the ISA spec.
 - MSB JIT bug fixed.

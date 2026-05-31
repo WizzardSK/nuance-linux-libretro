@@ -85,6 +85,7 @@ set(NUANCE_SOURCES
     src/audio.cpp
     src/bdma_type12.cpp
     src/bdma_type5.cpp
+    src/bdma_type6.cpp
     src/bdma_type8.cpp
     src/bdma_type9.cpp
     src/bios.cpp
@@ -153,11 +154,21 @@ set(NUANCE_SOURCES
     src/timer.cpp
     src/Utility.cpp
     src/video.cpp
+    src/mpx_decoder.cpp
+    src/dvd_player.cpp
     $<IF:$<PLATFORM_ID:Windows>,,src/NuanceUI.cpp>
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:src/asmjit_emit.cpp>
 )
 
 option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
+
+# FFmpeg (libavcodec / libavutil / libswscale) for .mpx (NUON-MOVIELIB)
+# cutscene playback. Required for the standalone Linux build.
+if(NOT WIN32)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale)
+    pkg_check_modules(DVDNAV IMPORTED_TARGET dvdnav dvdread)
+endif()
 
 if(BUILD_LIBRETRO)
     # Libretro core - shared library
@@ -214,6 +225,7 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     _CRT_SECURE_NO_WARNINGS
     _LARGEFILE64_SOURCE
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:USE_ASMJIT>
+    $<$<BOOL:${DVDNAV_FOUND}>:HAVE_DVDNAV>
 )
 
 # NuanceMain.cpp on Windows provides its own WinMain entry point.
@@ -237,6 +249,8 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     miniz
     #murmurhash # unused - see add_library above
     $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
+    $<$<NOT:$<PLATFORM_ID:Windows>>:PkgConfig::FFMPEG>
+    $<$<AND:$<NOT:$<PLATFORM_ID:Windows>>,$<BOOL:${DVDNAV_FOUND}>>:PkgConfig::DVDNAV>
     OpenGL::GL
     # SDL2 is a standalone-only dependency (windowing + audio); the libretro core
     # uses neither. Guarding it out also avoids a CMP0004 hard error when the

@@ -5,6 +5,35 @@
 #include "mpe.h"
 #include "NuonMemoryMap.h"
 #include "NuonEnvironment.h"
+#include <cstdio>
+#include <cstdlib>
+
+// NUANCE_WATCH_WRITE=<addr_hex>[:<size_hex>] — log every write to a
+// NUON address range. Set NUANCE_NOJIT=1 so all stores route through
+// the interpreter (which this hook lives in).
+static uint32 s_watch_lo = 0;
+static uint32 s_watch_hi = 0;
+static int s_watch_inited = 0;
+static inline void watch_init() {
+    if (s_watch_inited) return;
+    s_watch_inited = 1;
+    const char* s = getenv("NUANCE_WATCH_WRITE");
+    if (!s) return;
+    uint32 a = 0, sz = 4;
+    int n = sscanf(s, "%x:%x", &a, &sz);
+    if (n < 1) return;
+    if (n < 2) sz = 4;
+    s_watch_lo = a;
+    s_watch_hi = a + sz;
+    fprintf(stderr, "[WATCH-WRITE] tracking 0x%08X..0x%08X\n", s_watch_lo, s_watch_hi);
+}
+static inline void watch_log(MPE& mpe, uint32 nuon_addr, uint32 val) {
+    if (!s_watch_inited) watch_init();
+    if (s_watch_lo == s_watch_hi) return;
+    if (nuon_addr < s_watch_lo || nuon_addr >= s_watch_hi) return;
+    fprintf(stderr, "[WATCH-WRITE] mpe=%u pc=0x%08X *0x%08X = 0x%08X (rz=0x%08X)\n",
+            mpe.mpeIndex, mpe.pcexec, nuon_addr, val, mpe.regs[14]);
+}
 
 #define MIP(mip_me) (((uint32)(mip_me)) >> BilinearInfo_XYMipmap(control))
 static constexpr uint32 tilemask[16] = { 0xFFFF,0x7FFF,0x3FFF,0x1FFF,0xFFF,0x7FF,0x3FF,0x1FF,0xFF,0x7F,0x3F,0x1F,0xF,0x7,0x3,0x1 }; // already shifted by 16
@@ -444,9 +473,57 @@ void Execute_LoadWordAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nu
   mpe.regs[nuance.fields[FIELD_MEM_TO]] = data;
 }
 
+// NUANCE_WATCH_READ=<addr_hex>[:<size_hex>] — log every interpreter load
+// whose host pointer lands in this NUON address range. Used to find what
+// controller-state fields a game polls at boot. JIT-compiled loads bypass
+// this hook so it captures only cold-path reads.
+static uint32 s_rwatch_lo = 0, s_rwatch_hi = 0;
+static int s_rwatch_inited = 0;
+static uint8* s_rwatch_host_lo = nullptr;
+static uint8* s_rwatch_host_hi = nullptr;
+static inline void rwatch_init() {
+  if (s_rwatch_inited) return;
+  s_rwatch_inited = 1;
+  const char* s = getenv("NUANCE_WATCH_READ");
+  if (!s) return;
+  uint32 a = 0, sz = 4;
+  int n = sscanf(s, "%x:%x", &a, &sz);
+  if (n < 1) return;
+  if (n < 2) sz = 4;
+  s_rwatch_lo = a;
+  s_rwatch_hi = a + sz;
+  s_rwatch_host_lo = (uint8*)nuonEnv.GetPointerToMemory(3, s_rwatch_lo, false);
+  s_rwatch_host_hi = s_rwatch_host_lo + sz;
+  fprintf(stderr, "[WATCH-READ] tracking NUON 0x%08X..0x%08X (host %p..%p)\n",
+          s_rwatch_lo, s_rwatch_hi, s_rwatch_host_lo, s_rwatch_host_hi);
+}
+static inline void rwatch_log_ptr(MPE& mpe, uint8* hostPtr, uint32 val) {
+  if (!s_rwatch_inited) rwatch_init();
+  if (!s_rwatch_host_lo || hostPtr < s_rwatch_host_lo || hostPtr >= s_rwatch_host_hi) return;
+  const uint32 nuon_addr = s_rwatch_lo + (uint32)(hostPtr - s_rwatch_host_lo);
+  static uint64 s_n = 0; s_n++;
+  if (s_n <= 100 || (s_n % 1000) == 0)
+    fprintf(stderr, "[WATCH-READ #%llu] mpe=%u pc=0x%08X read *0x%08X = 0x%08X\n",
+            (unsigned long long)s_n, mpe.mpeIndex, mpe.pcexec, nuon_addr, val);
+}
+
 void Execute_LoadScalarAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
-  mpe.regs[nuance.fields[FIELD_MEM_TO]] = SwapBytes(*((uint32 *)nuance.fields[FIELD_MEM_POINTER]));
+  const uint32 raw = *((uint32 *)nuance.fields[FIELD_MEM_POINTER]);
+  const uint32 val = SwapBytes(raw);
+  mpe.regs[nuance.fields[FIELD_MEM_TO]] = val;
+  rwatch_log_ptr(mpe, (uint8*)nuance.fields[FIELD_MEM_POINTER], val);
+}
+
+// Watch helper for register-indirect loads (NUON address is in a register).
+static inline void rwatch_log_addr(MPE& mpe, uint32 nuon_addr, uint32 val) {
+  if (!s_rwatch_inited) rwatch_init();
+  if (s_rwatch_lo == s_rwatch_hi) return;
+  if (nuon_addr < s_rwatch_lo || nuon_addr >= s_rwatch_hi) return;
+  static uint64 s_n = 0; s_n++;
+  if (s_n <= 100 || (s_n % 1000) == 0)
+    fprintf(stderr, "[WATCH-READ #%llu] mpe=%u pc=0x%08X read *0x%08X = 0x%08X\n",
+            (unsigned long long)s_n, mpe.mpeIndex, mpe.pcexec, nuon_addr, val);
 }
 
 void Execute_LoadScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -456,7 +533,9 @@ void Execute_LoadScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &nu
 
   if((address < MPE_CTRL_BASE) || (address >= MPE_RESV_BASE))
   {
-    mpe.regs[dest] = SwapBytes(*((uint32 *)nuonEnv.GetPointerToMemory(mpe.mpeIndex, address & 0xFFFFFFFC)));
+    const uint32 val = SwapBytes(*((uint32 *)nuonEnv.GetPointerToMemory(mpe.mpeIndex, address & 0xFFFFFFFC)));
+    mpe.regs[dest] = val;
+    rwatch_log_addr(mpe, address & 0xFFFFFFFC, val);
   }
   else
   {
@@ -1197,7 +1276,9 @@ void Execute_StoreScalarImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance
 void Execute_StoreScalarAbsolute(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
 {
   uint32 * const destPtr = (uint32 *)nuance.fields[FIELD_MEM_POINTER];
-  *destPtr = SwapBytes(pRegs[nuance.fields[FIELD_MEM_FROM]]);
+  const uint32 val = pRegs[nuance.fields[FIELD_MEM_FROM]];
+  *destPtr = SwapBytes(val);
+  watch_log(mpe, (uint32)nuance.fields[FIELD_MEM_TO], val);
 }
 
 void Execute_StoreScalarControlRegisterImmediate(MPE &mpe, const uint32 pRegs[48], const Nuance &nuance)
@@ -1220,7 +1301,9 @@ void Execute_StoreScalarLinear(MPE &mpe, const uint32 pRegs[48], const Nuance &n
   if((raw_address < MPE_ITAGS_BASE) || (raw_address >= MPE_RESV_BASE))
   {
     uint32* const destPtr = (uint32 *)(nuonEnv.GetPointerToMemory(mpe.mpeIndex,address));
-    *destPtr = SwapBytes(pRegs[nuance.fields[FIELD_MEM_FROM]]);
+    const uint32 val = pRegs[nuance.fields[FIELD_MEM_FROM]];
+    *destPtr = SwapBytes(val);
+    watch_log(mpe, address, val);
   }
   else
   {
