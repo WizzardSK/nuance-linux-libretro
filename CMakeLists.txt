@@ -4,6 +4,23 @@ project(Nuance CXX C)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 11)
 
+# Target architecture family. The native-code JIT (asmjit emitter and the legacy
+# raw-byte x86 emitter) only exists for x86; other arches (e.g. aarch64) run the
+# IL interpreter and pull the _mm_* SSE API from the vendored sse2neon header.
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64|i[3-6]86|x86)$")
+    set(NUANCE_ARCH_X86 ON)
+else()
+    set(NUANCE_ARCH_X86 OFF)
+endif()
+# 64-bit x86 uses the asmjit JIT; everything else (32-bit x86 legacy emitter, or
+# non-x86 interpreter) does not.
+if(NUANCE_ARCH_X86 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(NUANCE_USE_ASMJIT ON)
+else()
+    set(NUANCE_USE_ASMJIT OFF)
+endif()
+message(STATUS "Target arch: ${CMAKE_SYSTEM_PROCESSOR} (x86=${NUANCE_ARCH_X86}, asmjit JIT=${NUANCE_USE_ASMJIT})")
+
 # Find SDL2 and OpenGL
 if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARIES)
     # Manual SDL2 configuration (for static 32-bit builds)
@@ -39,8 +56,9 @@ set_property(TARGET miniz        PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET chdr-lzma    PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET zstd         PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter)
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+# asmjit (only used by the 64-bit x86 JIT path; 32-bit keeps the legacy x86
+# emitter, non-x86 has no native emitter)
+if(NUANCE_USE_ASMJIT)
     file(GLOB_RECURSE ASMJIT_SRC
         external/asmjit/asmjit/core/*.cpp
         external/asmjit/asmjit/x86/*.cpp
@@ -150,7 +168,7 @@ set(NUANCE_SOURCES
     src/Utility.cpp
     src/video.cpp
     $<IF:$<PLATFORM_ID:Windows>,,src/NuanceUI.cpp>
-    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:src/asmjit_emit.cpp>
+    $<$<BOOL:${NUANCE_USE_ASMJIT}>:src/asmjit_emit.cpp>
 )
 
 option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
@@ -200,7 +218,7 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     GLEW_NO_GLU
     _CRT_SECURE_NO_WARNINGS
     _LARGEFILE64_SOURCE
-    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:USE_ASMJIT>
+    $<$<BOOL:${NUANCE_USE_ASMJIT}>:USE_ASMJIT>
 )
 
 # NuanceMain.cpp on Windows provides its own WinMain entry point.
@@ -223,7 +241,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     $<$<NOT:$<BOOL:${BUILD_LIBRETRO}>>:chdr-static>
     $<$<NOT:$<BOOL:${BUILD_LIBRETRO}>>:miniz>
     #murmurhash # unused - see add_library above
-    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:asmjit_static>
+    $<$<BOOL:${NUANCE_USE_ASMJIT}>:asmjit_static>
     OpenGL::GL
     ${SDL2_LIBRARIES}
     $<$<NOT:$<PLATFORM_ID:Windows>>:pthread>
@@ -296,7 +314,7 @@ else()
     target_compile_options(${NUANCE_TARGET} PRIVATE
         -O3
         -ffast-math
-        -mssse3
+        $<$<BOOL:${NUANCE_ARCH_X86}>:-mssse3>  # x86-only ISA flag; ARM uses baseline NEON
         -Wno-multichar
         -Wno-write-strings
         -Wno-narrowing
