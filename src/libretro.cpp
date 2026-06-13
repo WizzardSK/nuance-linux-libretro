@@ -443,22 +443,49 @@ void retro_unload_game(void)
 // compositing is not handled here yet).
 static inline uint32_t ycrcb_to_xrgb(int Y, int CR, int CB)
 {
-    // Expand CCIR-601 ranges to [0,1] (matches shader expansion/preBias), bias chroma by 0.5.
-    const float yf  = (float)(Y  - 16) * (1.0f / 219.0f);
-    const float crf = (float)(CR - 16) * (1.0f / 224.0f) - 0.5f;
-    const float cbf = (float)(CB - 16) * (1.0f / 224.0f) - 0.5f;
-    float r = yf + 1.402f   * crf;
+    // Expand CCIR-601 ranges to [0,1] and clamp BEFORE the matrix (matches the
+    // shader: clamp(color*expansion - preBias, 0, 1)), then bias chroma by 0.5.
+    float yf  = (float)(Y  - 16) * (1.0f / 219.0f);
+    float crn = (float)(CR - 16) * (1.0f / 224.0f);
+    float cbn = (float)(CB - 16) * (1.0f / 224.0f);
+    if (yf  < 0.0f) yf  = 0.0f; else if (yf  > 1.0f) yf  = 1.0f;
+    if (crn < 0.0f) crn = 0.0f; else if (crn > 1.0f) crn = 1.0f;
+    if (cbn < 0.0f) cbn = 0.0f; else if (cbn > 1.0f) cbn = 1.0f;
+    const float crf = crn - 0.5f;
+    const float cbf = cbn - 0.5f;
+    float r = yf + 1.402f    * crf;
     float g = yf - 0.344136f * cbf - 0.714136f * crf;
-    float b = yf + 1.772f   * cbf;
+    float b = yf + 1.772f    * cbf;
     int ri = (int)(r * 255.0f + 0.5f); if (ri < 0) ri = 0; else if (ri > 255) ri = 255;
     int gi = (int)(g * 255.0f + 0.5f); if (gi < 0) gi = 0; else if (gi > 255) gi = 255;
     int bi = (int)(b * 255.0f + 0.5f); if (bi < 0) bi = 0; else if (bi > 255) bi = 255;
     return 0xFF000000u | ((uint32_t)ri << 16) | ((uint32_t)gi << 8) | (uint32_t)bi;
 }
 
+// One-shot-per-N-frames diagnostic, enabled with NUANCE_SWVIDEO_LOG=1. Tells us
+// whether the NUON video channels actually contain pixel data (vs. all-zero, which
+// the YCrCb->RGB conversion renders as green), plus their format/geometry.
+static void swvideo_debug_log(const uint8* mainBase, uint32 mainBytes,
+                              uint32 mainPixType, int srcW, int srcH)
+{
+    static int enabled = -1;
+    if (enabled < 0) enabled = getenv("NUANCE_SWVIDEO_LOG") ? 1 : 0;
+    if (!enabled) return;
+    static uint32 frame = 0;
+    if ((frame++ % 120) != 0) return;
+
+    uint32 nonzero = 0; uint8 orAll = 0;
+    if (mainBase) for (uint32 i = 0; i < mainBytes; i++) { orAll |= mainBase[i]; if (mainBase[i]) nonzero++; }
+    log_printf("libretro: SWVID main act=%d pixType=%u base=%08X %dx%d bytes=%u nonzero=%u or=%02X | overlay act=%d pixType=%u base=%08X\n",
+        (int)bMainChannelActive, mainPixType, (uint32)structMainChannel.base, srcW, srcH,
+        mainBytes, nonzero, orAll,
+        (int)bOverlayChannelActive, (structOverlayChannel.dmaflags >> 4) & 0x0F, (uint32)structOverlayChannel.base);
+    fflush(stderr);
+}
+
 static void render_software_frame(void)
 {
-    if (!bMainChannelActive) { memset(framebuffer, 0, sizeof(framebuffer)); return; }
+    if (!bMainChannelActive) { memset(framebuffer, 0, sizeof(framebuffer)); swvideo_debug_log(nullptr,0,0,0,0); return; }
 
     const uint32 pixType   = (structMainChannel.dmaflags >> 4) & 0x0F;
     const int     srcW     = structMainChannel.src_width;
@@ -480,6 +507,7 @@ static void render_software_frame(void)
     if (!base) { memset(framebuffer, 0, sizeof(framebuffer)); return; }
 
     const uint32 srcRowBytes = (uint32)srcW * (uint32)pixWidth;
+    swvideo_debug_log(base, srcRowBytes * (uint32)srcH, pixType, srcW, srcH);
     for (int oy = 0; oy < FB_HEIGHT; oy++)
     {
         const int sy = (oy * srcH) / FB_HEIGHT;
@@ -490,10 +518,10 @@ static void render_software_frame(void)
             const int sx = (ox * srcW) / FB_WIDTH;
             const uint8* p = row + (uint32)sx * pixWidth;
             int Y, CR, CB;
-            if (pixWidth == 2) { // 16-bit YCrCb packed across two bytes
+            if (pixWidth == 2) { // 16-bit YCrCb packed across two bytes (mask to 8-bit like LUT16)
                 Y  = p[0] & 0xFC;
-                CR = (p[0] << 6) | ((p[1] >> 2) & 0x38);
-                CB = p[1] << 3;
+                CR = ((p[0] << 6) | ((p[1] >> 2) & 0x38)) & 0xFF;
+                CB = (p[1] << 3) & 0xFF;
             } else if (pixWidth == 1) { // 8-bit: treat as luma
                 Y = p[0]; CR = 0x80; CB = 0x80;
             } else { // 32-bit: Y,CR,CB,A
