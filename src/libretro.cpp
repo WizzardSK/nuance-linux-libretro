@@ -462,14 +462,16 @@ static inline uint32_t ycrcb_to_xrgb(int Y, int CR, int CB)
     return 0xFF000000u | ((uint32_t)ri << 16) | ((uint32_t)gi << 8) | (uint32_t)bi;
 }
 
-// One-shot-per-N-frames diagnostic, enabled with NUANCE_SWVIDEO_LOG=1. Tells us
-// whether the NUON video channels actually contain pixel data (vs. all-zero, which
-// the YCrCb->RGB conversion renders as green), plus their format/geometry.
+// Diagnostic, logged once every 120 frames. Tells us whether the NUON video
+// channels actually contain pixel data (vs. all-zero, which the YCrCb->RGB
+// conversion renders as green), plus their format/geometry. Always on for this
+// alpha so it lands in the normal runcommand log without needing an env var;
+// set NUANCE_SWVIDEO_QUIET=1 to silence it.
 static void swvideo_debug_log(const uint8* mainBase, uint32 mainBytes,
                               uint32 mainPixType, int srcW, int srcH)
 {
     static int enabled = -1;
-    if (enabled < 0) enabled = getenv("NUANCE_SWVIDEO_LOG") ? 1 : 0;
+    if (enabled < 0) enabled = getenv("NUANCE_SWVIDEO_QUIET") ? 0 : 1;
     if (!enabled) return;
     static uint32 frame = 0;
     if ((frame++ % 120) != 0) return;
