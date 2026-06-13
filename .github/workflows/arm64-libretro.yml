@@ -8,24 +8,33 @@ on:
 jobs:
   build-aarch64:
     runs-on: ubuntu-24.04-arm
+    # Build inside an old-glibc container so the resulting core runs on the
+    # widest range of ARM distros. Debian bullseye ships glibc 2.31, which
+    # covers current RetroPie/Raspberry Pi OS (bookworm = 2.36) and older
+    # bullseye-based systems. Building on the ubuntu-24.04 host directly links
+    # against glibc 2.39 and the core fails to load on those devices.
+    container: arm64v8/debian:bullseye
     steps:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ libsdl2-dev libgl-dev
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            cmake g++ make git libsdl2-dev libgl-dev ca-certificates file binutils
 
       - name: Configure
         run: cmake -B build -DBUILD_LIBRETRO=ON -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build -j$(nproc)
+        run: cmake --build build -j"$(nproc)"
 
       - name: Verify output
         run: |
           file build/nuance_libretro.so
           ls -la build/nuance_libretro.so
+          echo "=== max GLIBC version referenced ==="
+          objdump -T build/nuance_libretro.so | grep -oE 'GLIBC_[0-9.]+' | sort -uV | tail -5
 
       - name: Upload core
         uses: actions/upload-artifact@v4
