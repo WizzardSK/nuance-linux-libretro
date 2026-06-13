@@ -1,0 +1,35 @@
+name: ARM64 libretro core
+
+on:
+  push:
+    branches: [arm-libretro-interp]
+  workflow_dispatch:
+
+jobs:
+  build-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libsdl2-dev libgl-dev
+
+      - name: Configure
+        run: cmake -B build -DBUILD_LIBRETRO=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Verify output
+        run: |
+          file build/nuance_libretro.so
+          ls -la build/nuance_libretro.so
+
+      - name: Upload core
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuance_libretro-aarch64
+          path: build/nuance_libretro.so
+          if-no-files-found: error
