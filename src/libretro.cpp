@@ -134,6 +134,23 @@ static uint16 GetInputButtons()
     return buttons;
 }
 
+// CPU feature detection + lookup tables (mirror, saturate-color) that the MPE
+// pixel/render ops depend on. MUST run before emulation regardless of whether a
+// GL HW-render context is available — when there is none (software path on a
+// GLES/Raspberry-Pi frontend) context_reset is never called, and without these
+// tables the saturate-color ops yield zeroed pixels, i.e. a blank/green frame.
+static void ensure_tables_initialized(void)
+{
+    static bool tables_initialized = false;
+    if (!tables_initialized) {
+        init_supported_CPU_extensions();
+        GenerateMirrorLookupTable();
+        GenerateSaturateColorTables();
+        tables_initialized = true;
+        log_printf("libretro: lookup tables initialized\n");
+    }
+}
+
 static void context_reset(void)
 {
     glewExperimental = GL_TRUE;
@@ -149,15 +166,7 @@ static void context_reset(void)
 
     gl_initialized = true;
 
-    // Init CPU extensions and lookup tables (deferred from retro_load_game)
-    static bool tables_initialized = false;
-    if (!tables_initialized) {
-        init_supported_CPU_extensions();
-        GenerateMirrorLookupTable();
-        GenerateSaturateColorTables();
-        tables_initialized = true;
-        log_printf("libretro: tables initialized in context_reset\n");
-    }
+    ensure_tables_initialized();
 
     // Setup GL state
     glViewport(0, 0, FB_WIDTH, FB_HEIGHT);
@@ -342,22 +351,28 @@ bool retro_load_game(const struct retro_game_info *game)
             log_printf("libretro: XRGB8888 not supported by frontend\n");
     }
 
-    // Request OpenGL context
-    hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
-    hw_render.context_reset = context_reset;
-    hw_render.context_destroy = context_destroy;
-    hw_render.depth = false;
-    hw_render.stencil = false;
-    hw_render.bottom_left_origin = true;
-    hw_render.version_major = 2;
-    hw_render.version_minor = 1;
-    hw_render.cache_context = true;
-
-    log_printf("libretro: requesting HW render...\n"); fflush(stderr);
-    if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render)) {
-        log_printf("libretro: HW render not available, using software\n"); fflush(stderr);
+    // Request OpenGL context (unless NUANCE_FORCE_SW is set, which forces the
+    // software render path even where desktop GL is available — handy for
+    // testing the SW path / channel diagnostic on a desktop).
+    if (getenv("NUANCE_FORCE_SW")) {
+        log_printf("libretro: NUANCE_FORCE_SW set, using software render\n"); fflush(stderr);
     } else {
-        log_printf("libretro: HW render OK\n"); fflush(stderr);
+        hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
+        hw_render.context_reset = context_reset;
+        hw_render.context_destroy = context_destroy;
+        hw_render.depth = false;
+        hw_render.stencil = false;
+        hw_render.bottom_left_origin = true;
+        hw_render.version_major = 2;
+        hw_render.version_minor = 1;
+        hw_render.cache_context = true;
+
+        log_printf("libretro: requesting HW render...\n"); fflush(stderr);
+        if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render)) {
+            log_printf("libretro: HW render not available, using software\n"); fflush(stderr);
+        } else {
+            log_printf("libretro: HW render OK\n"); fflush(stderr);
+        }
     }
 
     // Find game file
@@ -398,6 +413,10 @@ bool retro_load_game(const struct retro_game_info *game)
             }
         }
     }
+
+    // Ensure CPU-feature + lookup tables exist before emulation. context_reset
+    // also calls this, but it never runs on the software (no-GL) path.
+    ensure_tables_initialized();
 
     log_printf("libretro: nuonEnv.Init()...\n"); fflush(stderr);
     nuonEnv.Init();
@@ -462,16 +481,14 @@ static inline uint32_t ycrcb_to_xrgb(int Y, int CR, int CB)
     return 0xFF000000u | ((uint32_t)ri << 16) | ((uint32_t)gi << 8) | (uint32_t)bi;
 }
 
-// Diagnostic, logged once every 120 frames. Tells us whether the NUON video
-// channels actually contain pixel data (vs. all-zero, which the YCrCb->RGB
-// conversion renders as green), plus their format/geometry. Always on for this
-// alpha so it lands in the normal runcommand log without needing an env var;
-// set NUANCE_SWVIDEO_QUIET=1 to silence it.
+// Diagnostic (set NUANCE_SWVIDEO_LOG=1), logged once every 120 frames. Reports
+// whether the NUON video channels actually contain pixel data (vs. all-zero,
+// which the YCrCb->RGB conversion renders as green), plus their format/geometry.
 static void swvideo_debug_log(const uint8* mainBase, uint32 mainBytes,
                               uint32 mainPixType, int srcW, int srcH)
 {
     static int enabled = -1;
-    if (enabled < 0) enabled = getenv("NUANCE_SWVIDEO_QUIET") ? 0 : 1;
+    if (enabled < 0) enabled = getenv("NUANCE_SWVIDEO_LOG") ? 1 : 0;
     if (!enabled) return;
     static uint32 frame = 0;
     if ((frame++ % 120) != 0) return;
@@ -549,12 +566,14 @@ void retro_run(void)
     static uint64 last_time0 = useconds_since_start();
     static uint64 last_time1 = useconds_since_start();
     static uint64 last_time2 = useconds_since_start();
+    static uint64 last_time3 = useconds_since_start();
     const uint64 frame_budget_start = useconds_since_start();
-    // During BIOS init (before video is configured), allow longer execution time
-    // Use 100ms budget for first 100 frames to allow BIOS init to complete
-    static int init_frames = 0;
-    const uint64 frame_budget_us = (init_frames < 100) ? 50000 : 16000;
-    init_frames++;
+    // Safety hang-guard only: a frame normally ends when the video field timer
+    // fires trigger_render_video below. This large cap just prevents retro_run
+    // from blocking RetroArch forever if a game never configures its video timer
+    // (timer_rate[2] stays 0, e.g. very early boot). It must stay well above the
+    // ~16.6ms field period so it never preempts a real frame.
+    const uint64 frame_budget_us = 200000;
     while (bRun && !nuonEnv.trigger_render_video)
     {
         cycles++;
@@ -566,15 +585,9 @@ void retro_run(void)
         if (nuonEnv.pendingCommRequests)
             DoCommBusController();
 
-        if ((cycles % 5000) == 0)
+        if ((cycles % 500) == 0)
         {
             const uint64 new_time = useconds_since_start();
-            // Time-based frame budget: break after ~16ms to return control to retroarch
-            if ((new_time - frame_budget_start) >= frame_budget_us) {
-                static int flog = 0;
-                if (flog < 5) { fprintf(stderr, "FRAME[%d]: %u cycles in %lums budget=%lums\n", init_frames, cycles, (unsigned long)(new_time - frame_budget_start)/1000, (unsigned long)frame_budget_us/1000); flog++; }
-                break;
-            }
 
             if (nuonEnv.timer_rate[0] > 0 && new_time >= last_time0 + (uint64)nuonEnv.timer_rate[0]) {
                 nuonEnv.ScheduleInterrupt(INT_SYSTIMER0); last_time0 = new_time;
@@ -584,10 +597,12 @@ void retro_run(void)
                 nuonEnv.ScheduleInterrupt(INT_SYSTIMER1); last_time1 = new_time;
             } else if (nuonEnv.timer_rate[1] <= 0) last_time1 = new_time;
 
-            {
-                // Video field counter update: use timer_rate[2] if set, otherwise default ~60Hz (16667us)
-                const uint64 vidRate = (nuonEnv.timer_rate[2] > 0) ? (uint64)nuonEnv.timer_rate[2] : 16667;
-                if (new_time >= last_time2 + vidRate) {
+            // Video field timer: only fires once the game has configured the video
+            // timer (timer_rate[2] > 0), exactly like the standalone main loop.
+            // Firing it early (the old default-60Hz fallback) desynced games that
+            // drive their render off the real VBL — Space Invaders XL drew nothing.
+            if (nuonEnv.timer_rate[2] > 0) {
+                if (new_time >= last_time2 + (uint64)nuonEnv.timer_rate[2]) {
                     IncrementVideoFieldCounter();
                     nuonEnv.TriggerVideoInterrupt();
                     nuonEnv.trigger_render_video = true;
@@ -596,7 +611,25 @@ void retro_run(void)
                         nuonEnv.MPE3wait_fieldCounter = 0;
                     last_time2 = new_time;
                 }
-            }
+            } else last_time2 = new_time;
+
+            // Hang-guard (see above): return control to RetroArch if no field timer.
+            if ((new_time - frame_budget_start) >= frame_budget_us)
+                break;
+
+            // audTimer: push one Nuon audio period into the host audio ring and fire
+            // INT_AUDIO. The standalone main loop does this; without it the audio
+            // interrupt never fires, which stalls games that pace their render loop
+            // on it (e.g. Space Invaders XL renders nothing).
+            if (nuonEnv.timer_rate[2] > 0) {
+                if (nuonEnv.pNuonAudioBuffer &&
+                    (new_time >= last_time3 + (uint64)nuonEnv.timer_rate[2]) &&
+                    ((nuonEnv.nuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT)) != (nuonEnv.oldNuonAudioChannelMode & (ENABLE_WRAP_INT | ENABLE_HALF_INT))) &&
+                    ((((nuonEnv.mpe[0].intsrc & nuonEnv.mpe[0].inten1) | (nuonEnv.mpe[1].intsrc & nuonEnv.mpe[1].inten1) | (nuonEnv.mpe[2].intsrc & nuonEnv.mpe[2].inten1) | (nuonEnv.mpe[3].intsrc & nuonEnv.mpe[3].inten1)) & INT_AUDIO) == 0)) {
+                    if (nuonEnv.TryPushAudioPeriod())
+                        last_time3 = new_time;
+                }
+            } else last_time3 = new_time;
         }
 
         nuonEnv.TriggerScheduledInterrupts();
