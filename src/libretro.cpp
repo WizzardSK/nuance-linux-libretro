@@ -332,6 +332,16 @@ bool retro_load_game(const struct retro_game_info *game)
 
     // Defer CPU init to context_reset to avoid potential issues
 
+    // The software render fallback (used when no desktop-GL HW context is
+    // available, e.g. RetroArch built against GLES on a Raspberry Pi) writes
+    // XRGB8888 pixels into our framebuffer, so advertise that format. Harmless
+    // for the HW render path. Without this the frontend assumes 0RGB1555.
+    {
+        enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
+        if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+            log_printf("libretro: XRGB8888 not supported by frontend\n");
+    }
+
     // Request OpenGL context
     hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
     hw_render.context_reset = context_reset;
@@ -425,6 +435,75 @@ void retro_unload_game(void)
     VideoCleanup();
 }
 
+// Software video path: convert the NUON main video channel (YCrCbA) to XRGB8888
+// and blit it into the libretro framebuffer with nearest-neighbour scaling.
+// Used when no desktop-GL HW context is available (e.g. RetroArch/GLES on a Pi),
+// where RenderVideo()'s OpenGL path can't run. Mirrors the CCIR-601 YCrCb->RGB
+// conversion done by the video_m32_o32.fs shader (main channel only; overlay
+// compositing is not handled here yet).
+static inline uint32_t ycrcb_to_xrgb(int Y, int CR, int CB)
+{
+    // Expand CCIR-601 ranges to [0,1] (matches shader expansion/preBias), bias chroma by 0.5.
+    const float yf  = (float)(Y  - 16) * (1.0f / 219.0f);
+    const float crf = (float)(CR - 16) * (1.0f / 224.0f) - 0.5f;
+    const float cbf = (float)(CB - 16) * (1.0f / 224.0f) - 0.5f;
+    float r = yf + 1.402f   * crf;
+    float g = yf - 0.344136f * cbf - 0.714136f * crf;
+    float b = yf + 1.772f   * cbf;
+    int ri = (int)(r * 255.0f + 0.5f); if (ri < 0) ri = 0; else if (ri > 255) ri = 255;
+    int gi = (int)(g * 255.0f + 0.5f); if (gi < 0) gi = 0; else if (gi > 255) gi = 255;
+    int bi = (int)(b * 255.0f + 0.5f); if (bi < 0) bi = 0; else if (bi > 255) bi = 255;
+    return 0xFF000000u | ((uint32_t)ri << 16) | ((uint32_t)gi << 8) | (uint32_t)bi;
+}
+
+static void render_software_frame(void)
+{
+    if (!bMainChannelActive) { memset(framebuffer, 0, sizeof(framebuffer)); return; }
+
+    const uint32 pixType   = (structMainChannel.dmaflags >> 4) & 0x0F;
+    const int     srcW     = structMainChannel.src_width;
+    const int     srcH     = structMainChannel.src_height;
+    if (srcW <= 0 || srcH <= 0) { memset(framebuffer, 0, sizeof(framebuffer)); return; }
+
+    int pixWidth, pixShift;
+    switch (pixType)
+    {
+        case 2: case 5: pixWidth = 2; pixShift = 1; break; // 16-bit (+16Z)
+        case 3:         pixWidth = 1; pixShift = 0; break; // 8-bit
+        case 4: case 6: pixWidth = 4; pixShift = 2; break; // 32-bit (+32Z)
+        default:        memset(framebuffer, 0, sizeof(framebuffer)); return; // mpeg/4-bit: unsupported in SW path
+    }
+
+    const uint8* base = (const uint8*)nuonEnv.GetPointerToSystemMemory(
+        (uint32)structMainChannel.base +
+        (((structMainChannel.src_yoff * srcW) + structMainChannel.src_xoff) << pixShift));
+    if (!base) { memset(framebuffer, 0, sizeof(framebuffer)); return; }
+
+    const uint32 srcRowBytes = (uint32)srcW * (uint32)pixWidth;
+    for (int oy = 0; oy < FB_HEIGHT; oy++)
+    {
+        const int sy = (oy * srcH) / FB_HEIGHT;
+        const uint8* row = base + (uint32)sy * srcRowBytes;
+        uint32_t* out = &framebuffer[(uint32)oy * FB_WIDTH];
+        for (int ox = 0; ox < FB_WIDTH; ox++)
+        {
+            const int sx = (ox * srcW) / FB_WIDTH;
+            const uint8* p = row + (uint32)sx * pixWidth;
+            int Y, CR, CB;
+            if (pixWidth == 2) { // 16-bit YCrCb packed across two bytes
+                Y  = p[0] & 0xFC;
+                CR = (p[0] << 6) | ((p[1] >> 2) & 0x38);
+                CB = p[1] << 3;
+            } else if (pixWidth == 1) { // 8-bit: treat as luma
+                Y = p[0]; CR = 0x80; CB = 0x80;
+            } else { // 32-bit: Y,CR,CB,A
+                Y = p[0]; CR = p[1]; CB = p[2];
+            }
+            out[ox] = ycrcb_to_xrgb(Y, CR, CB);
+        }
+    }
+}
+
 void retro_run(void)
 {
     if (!game_loaded) return;
@@ -500,8 +579,9 @@ void retro_run(void)
         RenderVideo(FB_WIDTH, FB_HEIGHT);
         video_cb(RETRO_HW_FRAME_BUFFER_VALID, FB_WIDTH, FB_HEIGHT, 0);
     } else {
-        // Software fallback - black frame
-        memset(framebuffer, 0, sizeof(framebuffer));
+        // Software fallback: convert the NUON video channel to XRGB8888 on the CPU
+        // (no desktop GL available, e.g. RetroArch/GLES on a Raspberry Pi).
+        render_software_frame();
         video_cb(framebuffer, FB_WIDTH, FB_HEIGHT, FB_WIDTH * 4);
     }
 
