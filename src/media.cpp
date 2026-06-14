@@ -48,6 +48,12 @@ extern NuonBiosHandler BiosJumpTable[];
 
 bool bCallingMediaCallback = false; // globally used
 
+// Per-MPE "the async media callback FIFO has entries" flag. Lets the hot
+// FetchDecodeExecute loop skip the TickMediaCallbacks() call entirely in the
+// common case (no disc I/O in flight) instead of calling it ~once per emulated
+// step. Maintained alongside every s_cbFifo mutation below.
+bool g_mediaCbPending[4] = { false, false, false, false };
+
 uint32 media_mpe_allocated = 0;
 uint32 media_mpe = 0;
 
@@ -195,12 +201,14 @@ void TickMediaCallbacks(MPE &mpe)
       mpe.pcexec  = top.callback;
 
       q.pop_front();
+      g_mediaCbPending[mpe.mpeIndex] = !q.empty();
       return; // wait for the shim before processing the next entry
     }
 
     // Delivery-only entry (no callback to fire): pop and check the next one //!! unclear if this could/should be optimized (so far)
     q.pop_front();
   }
+  g_mediaCbPending[mpe.mpeIndex] = false;
 }
 
 #else // !MEDIA_ASYNC_CALLBACKS
@@ -232,6 +240,7 @@ void MediaShutdownMPE(MPE &mpe)
 #ifdef MEDIA_ASYNC_CALLBACKS
   // Discard any pending block deliveries / callbacks targeted for the now-shut-down media MPE - they would dispatch into a halted processor otherwise
   s_cbFifo[media_mpe].clear();
+  g_mediaCbPending[media_mpe] = false;
   s_asyncCbActive = false;
   s_cbReturnPending = false;
   s_tickCounter[media_mpe] = 0; // Reset monotonic clock so fresh MediaInitMPE starts from 0
@@ -596,6 +605,7 @@ void MediaRead(MPE &mpe)
       e.cbR0        = (uint32)eMedia::MCB_ERROR;
       e.cbR1        = 0u;
       s_cbFifo[mpe.mpeIndex].push_back(std::move(e));
+      g_mediaCbPending[mpe.mpeIndex] = true;
       mpe.regs[0]   = (uint32)-1; // visible to caller immediately
 #else
       InvokeMediaCallback(mpe, callback,
@@ -649,6 +659,7 @@ void MediaRead(MPE &mpe)
           e.callback = 0; // delivery only
         }
         s_cbFifo[mpe.mpeIndex].push_back(std::move(e));
+      g_mediaCbPending[mpe.mpeIndex] = true;
       }
       if(wantsEnd)
       {
@@ -659,6 +670,7 @@ void MediaRead(MPE &mpe)
         e.cbR0        = (uint32)eMedia::MCB_END;
         e.cbR1        = blockcount;
         s_cbFifo[mpe.mpeIndex].push_back(std::move(e));
+      g_mediaCbPending[mpe.mpeIndex] = true;
       }
     }
     else
@@ -707,6 +719,7 @@ void MediaRead(MPE &mpe)
       e.cbR0        = (uint32)eMedia::MCB_ERROR;
       e.cbR1        = readCount;
       s_cbFifo[mpe.mpeIndex].push_back(std::move(e));
+      g_mediaCbPending[mpe.mpeIndex] = true;
       mpe.regs[0]   = (uint32)-1;
 #else
       InvokeMediaCallback(mpe, callback,

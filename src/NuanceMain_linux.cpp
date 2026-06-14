@@ -179,6 +179,7 @@ int main(int argc, char* argv[])
   GenerateSaturateColorTables();
 
   nuonEnv.Init();
+  if (getenv("NUANCE_NOJIT")) { nuonEnv.compilerOptions.bAllowCompile = false; fprintf(stderr, "NUANCE_NOJIT: interpreter only\n"); }
 
   display.applyControllerState = ApplyControllerState;
   display.resizeHandler = OnDisplayResize;
@@ -286,6 +287,13 @@ int main(int argc, char* argv[])
       NuanceUI_UpdateTitle(acc_kcs, fps);
       OnDisplayPaint(0, 0);
       nuonEnv.trigger_render_video = false;
+
+      // Clean exit after N rendered frames (NUANCE_EXIT_FRAMES) so -pg gmon.out
+      // / atexit handlers flush for profiling.
+      if (const char* ef = getenv("NUANCE_EXIT_FRAMES")) {
+        static int fcnt = 0; static int flim = atoi(ef);
+        if (++fcnt >= flim) { fprintf(stderr, "NUANCE_EXIT_FRAMES: exiting after %d frames\n", fcnt); exit(0); }
+      }
     }
     else if (!bRun)
     {

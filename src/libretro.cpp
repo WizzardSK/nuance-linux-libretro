@@ -422,6 +422,13 @@ bool retro_load_game(const struct retro_game_info *game)
     nuonEnv.Init();
     log_printf("libretro: nuonEnv.Init() done\n"); fflush(stderr);
 
+    // Force the IL interpreter (disable native JIT). Lets a desktop x86 build run
+    // the same code path the ARM core uses, for profiling/comparison.
+    if (getenv("NUANCE_NOJIT")) {
+        nuonEnv.compilerOptions.bAllowCompile = false;
+        log_printf("libretro: NUANCE_NOJIT set, interpreter only\n"); fflush(stderr);
+    }
+
     // Load game
     bool ok = nuonEnv.mpe[3].LoadNuonRomFile(gamePath.c_str());
     if (!ok) ok = nuonEnv.mpe[3].LoadCoffFile(gamePath.c_str());
