@@ -1982,13 +1982,19 @@ bool MPE::FetchDecodeExecute()
     const bool only_find_icache_entry = (ecuSkipCounter | interpretNextPacket) != 0;
     if(!only_find_icache_entry)
     {
-      pNativeCodeCacheEntry = nativeCodeCache.pageMap.FindEntry(pcexecLookupValue);
-      if(pNativeCodeCacheEntry && (pNativeCodeCacheEntry->virtualAddress == pcexecLookupValue))
+      // The native code cache is only ever populated when compilation is enabled.
+      // In interpreter-only mode (e.g. the ARM core) this hashmap lookup always
+      // misses, so skip it on the hottest path and go straight to the icache.
+      if(nuonEnv.compilerOptions.bAllowCompile)
       {
-        nativeCodeCacheEntryPoint = pNativeCodeCacheEntry->entryPoint;
-        skip_to_execute_block = true;
+        pNativeCodeCacheEntry = nativeCodeCache.pageMap.FindEntry(pcexecLookupValue);
+        if(pNativeCodeCacheEntry && (pNativeCodeCacheEntry->virtualAddress == pcexecLookupValue))
+        {
+          nativeCodeCacheEntryPoint = pNativeCodeCacheEntry->entryPoint;
+          skip_to_execute_block = true;
+        }
       }
-      else if(bInvalidateInterpreterCache)
+      if(!skip_to_execute_block && bInvalidateInterpreterCache)
       {
         numInterpreterCacheFlushes++;
         instructionCache->InvalidateRegion(interpreterInvalidateRegionStart, interpreterInvalidateRegionEnd);
