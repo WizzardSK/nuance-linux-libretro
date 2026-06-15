@@ -1,4 +1,6 @@
 #include "basetypes.h"
+#include <cstdio>
+#include <cstdlib>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <mutex>
@@ -418,6 +420,30 @@ void VideoInvalidateGLState()
 
 void RenderVideo(const int winwidth, const int winheight)
 {
+  // NUANCE_LOG_RENDER=1: periodic dump of the render gating state, to tell apart
+  // "NUON program never configured video" (canDisplay stays 0) from "we draw but
+  // nothing lands in the libretro FBO" (canDisplay 1, glErr 0) from a GL state /
+  // immediate-mode error (glErr != 0). glGetError here reports errors accumulated
+  // by the previous frame's draw.
+  {
+    static int s_renderLog = -1;
+    if(s_renderLog < 0) s_renderLog = getenv("NUANCE_LOG_RENDER") ? 1 : 0;
+    if(s_renderLog)
+    {
+      static unsigned s_rframe = 0;
+      if((s_rframe++ % 60u) == 0u)
+      {
+        GLint drawFbo = -1;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFbo);
+        GLenum err = glGetError();
+        fprintf(stderr, "RENDER[%u]: win=%dx%d canDisplay=%d channelState=%u mainActive=%d overlayActive=%d texInit=%d shaders=%d drawFBO=%d glErrPrevFrame=0x%04x\n",
+                s_rframe, winwidth, winheight, (int)bCanDisplayVideo, (unsigned)channelState,
+                (int)bMainChannelActive, (int)bOverlayChannelActive, (int)bTexturesInitialized,
+                (int)bShadersInstalled, (int)drawFbo, (unsigned)err);
+      }
+    }
+  }
+
   if(!bCanDisplayVideo)
   {
     // No rendered frame yet - so clear the back buffer to black and present so
