@@ -11,8 +11,17 @@
     #define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_BLOCK
     #define ALLOW_NATIVE_CODE_EMIT false
   #endif
-#elif defined(__aarch64__) || defined(_M_ARM64) || defined(__arm__)
-  // No native code emitter exists for ARM yet, so always run the IL interpreter.
+#elif defined(__aarch64__) || defined(_M_ARM64)
+  #ifdef USE_ASMJIT
+    // AArch64 asmjit a64 backend (src/nativecodecache_a64.cpp).
+    #define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_NATIVE_CODE_BLOCK
+    #define ALLOW_NATIVE_CODE_EMIT true
+  #else
+    #define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_BLOCK
+    #define ALLOW_NATIVE_CODE_EMIT false
+  #endif
+#elif defined(__arm__)
+  // 32-bit ARM has no native code emitter; always run the IL interpreter.
   #define COMPILE_TYPE SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_BLOCK
   #define ALLOW_NATIVE_CODE_EMIT false
 #else
@@ -38,6 +47,17 @@
 #include "SuperBlock.h"
 
 struct EmitterVariables;
+
+// --- JIT<->interpreter differential harness (env-gated; no-op unless enabled) ---
+// NUANCE_FORCE_IL set      -> compile every block as IL (interpreter) even when
+//                            native emission is available, so the same build can
+//                            be run as pure-JIT vs pure-interpreter for diffing.
+// NUANCE_TRACE=<file>      -> append "<pc> <hash>" per executed cached block for
+//                            one MPE (NUANCE_TRACE_MPE, default 0); hash is FNV-1a
+//                            over reg_union. Diffing two traces (JIT vs IL) finds
+//                            the first block whose result diverges.
+bool NuanceDiff_ForceIL();
+void NuanceDiff_TraceBlock(uint32 mpeIndex, uint32 pc, const uint32* regUnion, uint32 count);
 
 #define INDEX_REG 35
 

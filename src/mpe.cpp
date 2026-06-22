@@ -42,6 +42,39 @@
  #define LOG_STUFF
 #endif
 
+// --- JIT<->interpreter differential harness (env-gated; see mpe.h) ---
+#include <cstdlib>
+bool NuanceDiff_ForceIL()
+{
+  static const bool v = (getenv("NUANCE_FORCE_IL") != nullptr);
+  return v;
+}
+// NUANCE_COMPILE_THRESHOLD lowers the hot-block compile threshold so the JIT
+// (or IL block cache) is exercised aggressively by the diff harness.
+unsigned NuanceDiff_CompileThreshold()
+{
+  static const unsigned v = getenv("NUANCE_COMPILE_THRESHOLD") ?
+      (unsigned)atoi(getenv("NUANCE_COMPILE_THRESHOLD")) : COMPILE_THRESHOLD;
+  return v;
+}
+void NuanceDiff_TraceBlock(uint32 mpeIndex, uint32 pc, const uint32* regUnion, uint32 count)
+{
+  static const char* const path = getenv("NUANCE_TRACE");
+  if(!path) return;
+  // NUANCE_TRACE_MPE: specific index, or "all"/255 to trace every MPE.
+  static const int traceMpe = getenv("NUANCE_TRACE_MPE") ?
+      ((getenv("NUANCE_TRACE_MPE")[0] == 'a') ? -1 : atoi(getenv("NUANCE_TRACE_MPE"))) : 0;
+  if(traceMpe >= 0 && (int)mpeIndex != traceMpe) return;
+  static const long traceMax = (getenv("NUANCE_TRACE_MAX") ? atol(getenv("NUANCE_TRACE_MAX")) : 1000000L);
+  static FILE* f = fopen(path, "w");
+  static long n = 0;
+  if(!f || n >= traceMax) return;
+  uint64 h = 1469598103934665603ULL; // FNV-1a over the scalar register file (incl. cc/flags)
+  for(uint32 i = 0; i < count; i++) { h ^= regUnion[i]; h *= 1099511628211ULL; }
+  fprintf(f, "%u %08x %016llx\n", mpeIndex, pc, (unsigned long long)h);
+  if((++n & 0x3FF) == 0) fflush(f);
+}
+
 extern NuonEnvironment nuonEnv;
 extern NuonBiosHandler BiosJumpTable[];
 extern const char *BiosRoutineNames[];
@@ -2003,7 +2036,7 @@ bool MPE::FetchDecodeExecute()
     {
       if (!only_find_icache_entry)
       {
-        if(!(pInstructionCacheEntry->packetInfo & (PACKETINFO_COMPILED | PACKETINFO_NEVERCOMPILE)) && (pInstructionCacheEntry->frequencyCount >= COMPILE_THRESHOLD))
+        if(!(pInstructionCacheEntry->packetInfo & (PACKETINFO_COMPILED | PACKETINFO_NEVERCOMPILE)) && (pInstructionCacheEntry->frequencyCount >= NuanceDiff_CompileThreshold()))
         {
           if(nativeCodeCache.IsBeyondThreshold())
           {
@@ -2092,6 +2125,7 @@ bool MPE::FetchDecodeExecute()
     }
 #endif
 
+    const uint32 blockEntryPC = pcexec; // for the JIT<->IL differential trace
     bool skip_to_halt_block = false;
     if(nativeCodeCacheEntryPoint)
     {
@@ -2138,6 +2172,9 @@ bool MPE::FetchDecodeExecute()
         }
         //while((pcexec == prevPcexec) && (mpectl & MPECTRL_MPEGO) && !ecuSkipCounter && blockExecuteCount);
       }
+
+      // Differential harness: record this cached block's result (JIT or IL).
+      NuanceDiff_TraceBlock(mpeIndex, blockEntryPC, reg_union, 32+3+13);
     }
     else
     {
