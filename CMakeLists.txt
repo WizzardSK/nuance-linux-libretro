@@ -50,19 +50,45 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|
 else()
     set(NUANCE_X86_64 FALSE)
 endif()
-message(STATUS "NUANCE_X86_64 (asmjit JIT enabled) = ${NUANCE_X86_64} (processor: ${CMAKE_SYSTEM_PROCESSOR})")
+# AArch64 (ARM64): the JIT translates the x86 micro-ops the handlers emit onto
+# asmjit's a64 backend (src/nativecodecache_a64.cpp). 64-bit only.
+if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+    set(NUANCE_ARM64 TRUE)
+else()
+    set(NUANCE_ARM64 FALSE)
+endif()
+# Either 64-bit arch drives an asmjit-backed JIT; 32-bit keeps the legacy emitter.
+if(NUANCE_X86_64 OR NUANCE_ARM64)
+    set(NUANCE_ASMJIT TRUE)
+else()
+    set(NUANCE_ASMJIT FALSE)
+endif()
+message(STATUS "JIT: NUANCE_X86_64=${NUANCE_X86_64} NUANCE_ARM64=${NUANCE_ARM64} (processor: ${CMAKE_SYSTEM_PROCESSOR})")
 
-# asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter)
-if(NUANCE_X86_64)
-    file(GLOB_RECURSE ASMJIT_SRC
-        external/asmjit/asmjit/core/*.cpp
-        external/asmjit/asmjit/x86/*.cpp
-        external/asmjit/asmjit/support/*.cpp
-        external/asmjit/asmjit/ujit/*.cpp
-    )
+# asmjit (only used by the 64-bit JIT path; 32-bit keeps the legacy x86 emitter).
+# Compile only the backend for the host arch and disable the other to keep the
+# static lib small and avoid building unused instruction tables.
+if(NUANCE_ASMJIT)
+    if(NUANCE_ARM64)
+        file(GLOB_RECURSE ASMJIT_SRC
+            external/asmjit/asmjit/core/*.cpp
+            external/asmjit/asmjit/arm/*.cpp
+            external/asmjit/asmjit/support/*.cpp
+            external/asmjit/asmjit/ujit/*.cpp
+        )
+        set(ASMJIT_ARCH_DEF ASMJIT_NO_X86)
+    else()
+        file(GLOB_RECURSE ASMJIT_SRC
+            external/asmjit/asmjit/core/*.cpp
+            external/asmjit/asmjit/x86/*.cpp
+            external/asmjit/asmjit/support/*.cpp
+            external/asmjit/asmjit/ujit/*.cpp
+        )
+        set(ASMJIT_ARCH_DEF ASMJIT_NO_AARCH64)
+    endif()
     add_library(asmjit_static STATIC ${ASMJIT_SRC})
     target_include_directories(asmjit_static PUBLIC external/asmjit)
-    target_compile_definitions(asmjit_static PUBLIC ASMJIT_STATIC ASMJIT_NO_AARCH64)
+    target_compile_definitions(asmjit_static PUBLIC ASMJIT_STATIC ${ASMJIT_ARCH_DEF})
     set_property(TARGET asmjit_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -164,6 +190,8 @@ set(NUANCE_SOURCES
     src/video.cpp
     $<IF:$<PLATFORM_ID:Windows>,,src/NuanceUI.cpp>
     $<$<BOOL:${NUANCE_X86_64}>:src/asmjit_emit.cpp>
+    $<$<BOOL:${NUANCE_ARM64}>:src/asmjit_a64_emit.cpp>
+    $<$<BOOL:${NUANCE_ARM64}>:src/nativecodecache_a64.cpp>
 )
 
 option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
@@ -222,7 +250,8 @@ target_compile_definitions(${NUANCE_TARGET} PRIVATE
     GLEW_NO_GLU
     _CRT_SECURE_NO_WARNINGS
     _LARGEFILE64_SOURCE
-    $<$<BOOL:${NUANCE_X86_64}>:USE_ASMJIT>
+    $<$<BOOL:${NUANCE_ASMJIT}>:USE_ASMJIT>
+    $<$<BOOL:${NUANCE_ARM64}>:NUANCE_ARCH_ARM64>
 )
 
 # NuanceMain.cpp on Windows provides its own WinMain entry point.
@@ -245,7 +274,7 @@ target_link_libraries(${NUANCE_TARGET} PRIVATE
     chdr-static
     miniz
     #murmurhash # unused - see add_library above
-    $<$<BOOL:${NUANCE_X86_64}>:asmjit_static>
+    $<$<BOOL:${NUANCE_ASMJIT}>:asmjit_static>
     OpenGL::GL
     # SDL2 is a standalone-only dependency (windowing + audio); the libretro core
     # uses neither. Guarding it out also avoids a CMP0004 hard error when the

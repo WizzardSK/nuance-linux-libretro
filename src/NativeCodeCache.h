@@ -7,7 +7,11 @@
 #include "PatchManager.h"
 #include "X86EmitTypes.h"
 #ifdef USE_ASMJIT
+#ifdef NUANCE_ARCH_ARM64
+#include "asmjit_a64_emit.h"
+#else
 #include "asmjit_emit.h"
+#endif
 #endif
 
 #define DEFAULT_CODE_BUFFER_BYTES (8U*1024U*1024U)
@@ -90,10 +94,17 @@ public:
   void SetLabelPointer(const uint32 labelIndex)
   {
 #ifdef USE_ASMJIT
+#ifdef NUANCE_ARCH_ARM64
+    if (a64As) {
+      AsmJit_BindLabel(labelIndex);
+      return;
+    }
+#else
     if (asmjitAs) {
       AsmJit_BindLabel(labelIndex);
       return;
     }
+#endif
 #endif
     patchMgr.SetLabelPointer(labelIndex,GetEmitPointer());
   }
@@ -603,7 +614,11 @@ public:
   // asmjit state for 64-bit JIT code generation
   asmjit::JitRuntime asmjitRuntime;
   asmjit::CodeHolder* asmjitCode = nullptr;
+#ifdef NUANCE_ARCH_ARM64
+  asmjit::a64::Assembler* a64As = nullptr;
+#else
   asmjit::x86::Assembler* asmjitAs = nullptr;
+#endif
   asmjit::Label asmjitLabels[MAX_ASMJIT_LABELS];
   bool asmjitLabelBound[MAX_ASMJIT_LABELS] = {};
   bool asmjitBlockActive = false;

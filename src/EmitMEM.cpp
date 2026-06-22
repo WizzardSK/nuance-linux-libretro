@@ -21,6 +21,19 @@ static inline void Emit_LoadBankPtr(EmitterVariables * const vars)
 {
   NativeCodeCache& cc = vars->mpe->nativeCodeCache;
 #ifdef USE_ASMJIT
+#ifdef NUANCE_ARCH_ARM64
+  if (cc.a64As) {
+    auto& a = *cc.a64As;
+    // a64 counterpart of the x86-64 fast path below. ebx is mapped to w22 and
+    // holds bank_index*4; pointer entries are 8 bytes, so the byte offset into
+    // the table is ebx*2. x16/x17 are the JIT's address/temp scratch regs.
+    a.mov(asmjit::a64::x16, (uint64_t)(uintptr_t)vars->mpe->bankPtrTable);
+    a.mov(asmjit::a64::w17, asmjit::a64::w22);                              // zero-extend ebx
+    a.add(asmjit::a64::x16, asmjit::a64::x16, asmjit::a64::x17, asmjit::a64::lsl(1)); // + ebx*2
+    a.ldr(asmjit::a64::x22, asmjit::a64::ptr(asmjit::a64::x16));            // rbx = bankPtrTable[bank]
+    return;
+  }
+#else
   if (cc.asmjitAs) {
     auto& a = *cc.asmjitAs;
     // Load 64-bit table address into R15
@@ -29,6 +42,7 @@ static inline void Emit_LoadBankPtr(EmitterVariables * const vars)
     a.mov(asmjit::x86::rbx, asmjit::x86::qword_ptr(asmjit::x86::r15, asmjit::x86::rbx, 1)); // shift=1 -> scale=2
     return;
   }
+#endif
 #endif
   // 32-bit: entries are 4 bytes, ebx has index*4, scale=1 -> byte offset = index*4
   cc.X86Emit_MOVMR(x86Reg::x86Reg_ebx, x86BaseReg::x86BaseReg_ebx, x86IndexReg::x86IndexReg_none, x86ScaleVal::x86Scale_1, (int32)vars->mpe->bankPtrTable); //!! how does the latter part actually work?

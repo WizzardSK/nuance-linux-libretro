@@ -102,6 +102,14 @@ void NativeCodeCache::Flush()
   FlushInstructionCache(GetCurrentProcess(), pEmitLoc, numBytes); //!! should not be necessary, as each code block is flushed independently below in ReleaseBuffer(), but do it in case that ReleaseBuffer() is not the only thing called after emitting code
 }
 
+// ---------------------------------------------------------------------------
+// x86 / x86-64 emit primitives.
+// On AArch64 the X86Emit_* members are provided by nativecodecache_a64.cpp
+// instead (translating each x86 micro-op onto a64). The arch-independent class
+// methods (ctor/dtor/Init/ReleaseBuffer/Flush) above are compiled on all archs.
+// ---------------------------------------------------------------------------
+#ifndef NUANCE_ARCH_ARM64
+
 void NativeCodeCache::X86Emit_ModRegRM(const x86ModType modType, const x86ModReg regSpare, const uintptr_t base, const x86IndexReg index, const x86ScaleVal scale, const int32 disp)
 {
 #ifdef USE_ASMJIT
@@ -4977,3 +4985,5 @@ void NativeCodeCache::X86Emit_MOVIR_Ptr(const uintptr_t addr, const x86Reg regDe
   // On 32-bit, MOVIR with the 32-bit immediate is correct (host pointers fit).
   X86Emit_MOVIR((int32)addr, regDest);
 }
+
+#endif // !NUANCE_ARCH_ARM64
