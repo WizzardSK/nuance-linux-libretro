@@ -63,6 +63,35 @@ void t_rr(NativeCodeCache& cc, const char* name, uint32 a, uint32 b, uint32 exp,
   check(name, g_out[0], exp);
 }
 
+// ---- SIMD (SSE -> NEON) helpers ----
+// Two 128-bit inputs (xmm0<-g_sa, xmm1<-g_sb), run op on xmm0/xmm1, store xmm0.
+alignas(16) uint32 g_sa[4] = { 0x00000001u, 0x00000002u, 0x80000000u, 0xFFFFFFFFu };
+alignas(16) uint32 g_sb[4] = { 0x00000010u, 0x00000003u, 0x00000001u, 0x0000000Fu };
+alignas(16) uint32 g_so[4];
+
+void runSimd(NativeCodeCache& cc, const std::function<void(NativeCodeCache&)>& op)
+{
+  for (int i = 0; i < 4; i++) g_so[i] = 0xCCCCCCCCu;
+  uint8* ep = cc.GetEmitPointer();
+  cc.AsmJit_BeginBlock();
+  cc.X86Emit_PUSHAD();
+  cc.X86Emit_MOVDQUMR(R::x86Reg_xmm0, (uintptr_t)g_sa, NONE, S1, 0);
+  cc.X86Emit_MOVDQUMR(R::x86Reg_xmm1, (uintptr_t)g_sb, NONE, S1, 0);
+  op(cc);
+  cc.X86Emit_MOVDQURM(R::x86Reg_xmm0, (uintptr_t)g_so, NONE, S1, 0);
+  cc.X86Emit_POPAD();
+  cc.X86Emit_RETN(0);
+  cc.AsmJit_EndBlock();
+  ((BlockFn)ep)();
+}
+
+void checkv(const char* name, uint32 e0, uint32 e1, uint32 e2, uint32 e3)
+{
+  if (g_so[0] == e0 && g_so[1] == e1 && g_so[2] == e2 && g_so[3] == e3) { g_pass++; }
+  else { g_fail++; fprintf(stderr, "[jitmicro] FAIL %-14s got=%08x,%08x,%08x,%08x exp=%08x,%08x,%08x,%08x\n",
+                            name, g_so[0], g_so[1], g_so[2], g_so[3], e0, e1, e2, e3); }
+}
+
 } // namespace
 
 bool NuanceJit_RunMicroTests()
@@ -179,6 +208,72 @@ bool NuanceJit_RunMicroTests()
   });
   check("SUB/SBB lo", g_out[0], 0xFFFFFFFFu);
   check("SUB/SBB hi", g_out[1], 0x00000004u);
+
+  // ================= SIMD (SSE -> NEON) =================
+  const uint32* a = g_sa; const uint32* b = g_sb;
+
+  // MOVD r32 <-> xmm round trip
+  runBlock(cc, [](NativeCodeCache& c){ c.X86Emit_MOVIR((int32)0x89ABCDEF, R::x86Reg_eax); c.X86Emit_MOVDRR(R::x86Reg_xmm2, R::x86Reg_eax); c.X86Emit_MOVDRR2(R::x86Reg_edx, R::x86Reg_xmm2); store(c, R::x86Reg_edx, 0); });
+  check("MOVD roundtrip", g_out[0], 0x89ABCDEFu);
+
+  // MOVDQU 128-bit load/store round trip (identity)
+  runSimd(cc, [](NativeCodeCache&){});
+  checkv("MOVDQU r/t", a[0], a[1], a[2], a[3]);
+
+  // packed dword ALU
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PADDRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("PADDD", a[0]+b[0], a[1]+b[1], a[2]+b[2], a[3]+b[3]);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PSUBDRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("PSUBD", a[0]-b[0], a[1]-b[1], a[2]-b[2], a[3]-b[3]);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PANDRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("PAND", a[0]&b[0], a[1]&b[1], a[2]&b[2], a[3]&b[3]);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PMULLDRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("PMULLD", a[0]*b[0], a[1]*b[1], a[2]*b[2], a[3]*b[3]);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PHADDDRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("PHADDD", a[0]+a[1], a[2]+a[3], b[0]+b[1], b[2]+b[3]);
+
+  // packed dword shifts (immediate)
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PSLDIR(R::x86Reg_xmm0, 4); });
+  checkv("PSLLD imm", a[0]<<4, a[1]<<4, a[2]<<4, a[3]<<4);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_PSRADIR(R::x86Reg_xmm0, 4); });
+  checkv("PSRAD imm", (uint32)((int32)a[0]>>4), (uint32)((int32)a[1]>>4), (uint32)((int32)a[2]>>4), (uint32)((int32)a[3]>>4));
+
+  // shuffles / interleaves
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_UNPCKLRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("UNPCKLPS", a[0], b[0], a[1], b[1]);
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_MOVLHRR(R::x86Reg_xmm0, R::x86Reg_xmm1); });
+  checkv("MOVLHPS", a[0], a[1], b[0], b[1]);
+  // SHUFPS xmm0,xmm1,0x1B -> {d3,d2,s1,s0}
+  runSimd(cc, [](NativeCodeCache& c){ c.X86Emit_SHUFIR(R::x86Reg_xmm0, R::x86Reg_xmm1, 0x1B); });
+  checkv("SHUFPS", a[3], a[2], b[1], b[0]);
+
+  // MOVQ: load/store low 64 bits only (upper lanes stay sentinel)
+  {
+    for (int i = 0; i < 4; i++) g_so[i] = 0xCCCCCCCCu;
+    uint8* ep = cc.GetEmitPointer();
+    cc.AsmJit_BeginBlock(); cc.X86Emit_PUSHAD();
+    cc.X86Emit_MOVQMR(R::x86Reg_xmm0, (uintptr_t)g_sa, NONE, S1, 0);
+    cc.X86Emit_MOVQRM(R::x86Reg_xmm0, (uintptr_t)g_so, NONE, S1, 0);
+    cc.X86Emit_POPAD(); cc.X86Emit_RETN(0); cc.AsmJit_EndBlock();
+    ((BlockFn)ep)();
+    checkv("MOVQ lo64", a[0], a[1], 0xCCCCCCCCu, 0xCCCCCCCCu);
+  }
+
+  // PSHUFB: identity control with a high-bit byte (0x80) -> that byte zeroed.
+  {
+    alignas(16) static const uint32 ctrl[4] = { 0x03020100u, 0x07060504u, 0x0B0A0908u, 0x800E0D0Cu };
+    for (int i = 0; i < 4; i++) g_so[i] = 0xCCCCCCCCu;
+    uint8* ep = cc.GetEmitPointer();
+    cc.AsmJit_BeginBlock(); cc.X86Emit_PUSHAD();
+    cc.X86Emit_MOVDQUMR(R::x86Reg_xmm0, (uintptr_t)g_sa, NONE, S1, 0);
+    cc.X86Emit_MOVDQUMR(R::x86Reg_xmm1, (uintptr_t)ctrl, NONE, S1, 0);
+    cc.X86Emit_PSHUFBRR(R::x86Reg_xmm0, R::x86Reg_xmm1);
+    cc.X86Emit_MOVDQURM(R::x86Reg_xmm0, (uintptr_t)g_so, NONE, S1, 0);
+    cc.X86Emit_POPAD(); cc.X86Emit_RETN(0); cc.AsmJit_EndBlock();
+    ((BlockFn)ep)();
+    // identity for lanes 0..2; lane3 high byte (0x80 control) zeroed: FF FF FF 00
+    checkv("PSHUFB", a[0], a[1], a[2], 0x00FFFFFFu);
+  }
 
   fprintf(stderr, "[jitmicro] DONE: %d passed, %d failed\n", g_pass, g_fail);
   return g_fail == 0;
