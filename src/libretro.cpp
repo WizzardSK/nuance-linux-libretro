@@ -250,10 +250,23 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
     info->timing.sample_rate = 32000.0;
 }
 
+#if defined(USE_ASMJIT) && (defined(__aarch64__) || defined(_M_ARM64))
+extern bool NuanceJit_RunMicroTests(); // src/jit_microtest.cpp
+#endif
+
 void retro_init(void)
 {
     log_printf("libretro: retro_init start\n");
     fflush(stderr);
+#if defined(USE_ASMJIT) && (defined(__aarch64__) || defined(_M_ARM64))
+    // NUANCE_JITTEST: run the a64 JIT primitive micro-tests and stop, so the
+    // emitter can be validated without loading a NUON ROM.
+    if (getenv("NUANCE_JITTEST")) {
+        bool ok = NuanceJit_RunMicroTests();
+        fflush(stderr);
+        _exit(ok ? 0 : 1);
+    }
+#endif
     // Defer heavy init to retro_load_game
     log_printf("libretro: retro_init done\n");
     fflush(stderr);

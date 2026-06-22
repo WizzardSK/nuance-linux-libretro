@@ -192,6 +192,7 @@ set(NUANCE_SOURCES
     $<$<BOOL:${NUANCE_X86_64}>:src/asmjit_emit.cpp>
     $<$<BOOL:${NUANCE_ARM64}>:src/asmjit_a64_emit.cpp>
     $<$<BOOL:${NUANCE_ARM64}>:src/nativecodecache_a64.cpp>
+    $<$<BOOL:${NUANCE_ARM64}>:src/jit_microtest.cpp>
 )
 
 option(BUILD_LIBRETRO "Build libretro core instead of standalone" OFF)
