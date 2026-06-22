@@ -92,6 +92,12 @@ void checkv(const char* name, uint32 e0, uint32 e1, uint32 e2, uint32 e3)
                             name, g_so[0], g_so[1], g_so[2], g_so[3], e0, e1, e2, e3); }
 }
 
+// C helper for the CALLI test. X86Emit_CALLI passes ecx->x0, edx->x1 and puts
+// the return value into eax, mirroring the JIT's __fastcall->AAPCS64 bridge.
+uint32 jitmicroHelper(uint32 a, uint32 b) { return a * 100u + b; }
+// Memory operand source for the addressing-mode test ([base + index*scale]).
+uint32 g_mem[8] = { 0, 0, 0, 0xCAFEBABEu, 0, 0, 0, 0 };
+
 } // namespace
 
 bool NuanceJit_RunMicroTests()
@@ -208,6 +214,58 @@ bool NuanceJit_RunMicroTests()
   });
   check("SUB/SBB lo", g_out[0], 0xFFFFFFFFu);
   check("SUB/SBB hi", g_out[1], 0x00000004u);
+
+  // ================= block mechanisms (branches / call / addressing) =========
+  // JCC taken: ZF=1, branch over the 0xBBB store -> edx stays 0xAAA
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(7, R::x86Reg_eax); c.X86Emit_MOVIR(7, R::x86Reg_ecx); c.X86Emit_CMPRR(R::x86Reg_eax, R::x86Reg_ecx);
+    c.X86Emit_MOVIR(0xAAA, R::x86Reg_edx);
+    c.X86Emit_JCC_Label(X86_CC_Z, 0);
+    c.X86Emit_MOVIR(0xBBB, R::x86Reg_edx);
+    c.SetLabelPointer(0);
+    store(c, R::x86Reg_edx, 0);
+  });
+  check("JCC taken", g_out[0], 0xAAA);
+  // JCC not taken: ZF=0, fall through to 0xBBB
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(7, R::x86Reg_eax); c.X86Emit_MOVIR(8, R::x86Reg_ecx); c.X86Emit_CMPRR(R::x86Reg_eax, R::x86Reg_ecx);
+    c.X86Emit_MOVIR(0xAAA, R::x86Reg_edx);
+    c.X86Emit_JCC_Label(X86_CC_Z, 0);
+    c.X86Emit_MOVIR(0xBBB, R::x86Reg_edx);
+    c.SetLabelPointer(0);
+    store(c, R::x86Reg_edx, 0);
+  });
+  check("JCC not taken", g_out[0], 0xBBB);
+  // unconditional JMP over a store
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(0xAAA, R::x86Reg_edx);
+    c.X86Emit_JMPI_Label(0);
+    c.X86Emit_MOVIR(0xBBB, R::x86Reg_edx);
+    c.SetLabelPointer(0);
+    store(c, R::x86Reg_edx, 0);
+  });
+  check("JMPI_Label", g_out[0], 0xAAA);
+  // CALLI: __fastcall(ecx,edx) -> helper, result in eax
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(3, R::x86Reg_ecx); c.X86Emit_MOVIR(4, R::x86Reg_edx);
+    c.X86Emit_CALLI((uintptr_t)&jitmicroHelper, 0);
+    store(c, R::x86Reg_eax, 0);
+  });
+  check("CALLI", g_out[0], 3u * 100u + 4u);
+  // LEA edx, [eax + eax*2 + 0x10] with eax=0x100 -> 0x310
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(0x100, R::x86Reg_eax);
+    c.X86Emit_LEA(R::x86Reg_edx, (uintptr_t)x86BaseReg::x86BaseReg_eax, x86IndexReg::x86IndexReg_eax, x86ScaleVal::x86Scale_2, 0x10);
+    store(c, R::x86Reg_edx, 0);
+  });
+  check("LEA b+i*2+d", g_out[0], 0x100u + 0x100u * 2u + 0x10u);
+  // MOVMR with absolute base + index*scale: load g_mem[eax] (eax=3, dword scale)
+  runBlock(cc, [](NativeCodeCache& c){
+    c.X86Emit_MOVIR(3, R::x86Reg_eax);
+    c.X86Emit_MOVMR(R::x86Reg_edx, (uintptr_t)g_mem, x86IndexReg::x86IndexReg_eax, x86ScaleVal::x86Scale_4, 0);
+    store(c, R::x86Reg_edx, 0);
+  });
+  check("MOVMR base+i*4", g_out[0], 0xCAFEBABEu);
 
   // ================= SIMD (SSE -> NEON) =================
   const uint32* a = g_sa; const uint32* b = g_sb;
