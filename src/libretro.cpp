@@ -454,6 +454,7 @@ void retro_unload_game(void)
 // retro_run. Diagnostic only; ends the process.
 static void NuanceBench_Run()
 {
+    if (getenv("NUANCE_JIT")) g_nuanceEnableJIT = atoi(getenv("NUANCE_JIT")) != 0; // benchmark override
     const double warmup_s = getenv("NUANCE_BENCH_WARMUP") ? atof(getenv("NUANCE_BENCH_WARMUP")) : 3.0;
     const double measure_s = atof(getenv("NUANCE_BENCH")) > 0 ? atof(getenv("NUANCE_BENCH")) : 5.0;
     fprintf(stderr, "[bench] warmup %.1fs, measure %.1fs (JIT=%s)...\n",
