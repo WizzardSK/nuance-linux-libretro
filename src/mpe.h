@@ -58,6 +58,8 @@ struct EmitterVariables;
 //                            the first block whose result diverges.
 bool NuanceDiff_ForceIL();
 void NuanceDiff_TraceBlock(uint32 mpeIndex, uint32 pc, const uint32* regUnion, uint32 count);
+// Runtime JIT enable, driven by the libretro "nuance_jit" core option.
+extern bool g_nuanceEnableJIT;
 
 #define INDEX_REG 35
 

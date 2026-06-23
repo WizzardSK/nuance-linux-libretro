@@ -219,6 +219,42 @@ void retro_set_environment(retro_environment_t cb)
         { 0, 0, 0, 0, NULL },
     };
     cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
+
+    static const struct retro_variable vars[] = {
+#if defined(__aarch64__) || defined(_M_ARM64)
+        // The a64 dynarec is correct but currently slower than the interpreter,
+        // so default it off on ARM and let users opt in.
+        { "nuance_jit", "Dynamic recompiler (experimental on ARM); disabled|enabled" },
+#else
+        { "nuance_jit", "Dynamic recompiler; enabled|disabled" },
+#endif
+        { "nuance_crt_filter", "CRT filter; enabled|disabled" },
+        { NULL, NULL },
+    };
+    cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
+}
+
+// Read the core options and apply them. On a runtime change of the CRT filter,
+// invalidate the GL state so the shader is reinstalled on the next frame.
+static void update_variables(bool initial)
+{
+    struct retro_variable var;
+
+    var.key = "nuance_jit";
+    var.value = nullptr;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        g_nuanceEnableJIT = (strcmp(var.value, "enabled") == 0);
+
+    var.key = "nuance_crt_filter";
+    var.value = nullptr;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+        bool crt = (strcmp(var.value, "enabled") == 0);
+        if (crt != nuonEnv.bUseCRTshader) {
+            nuonEnv.bUseCRTshader = crt;
+            if (!initial && gl_initialized)
+                VideoInvalidateGLState();
+        }
+    }
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
@@ -369,6 +405,9 @@ bool retro_load_game(const struct retro_game_info *game)
     nuonEnv.Init();
     log_printf("libretro: nuonEnv.Init() done\n"); fflush(stderr);
 
+    // Apply core options before the MPEs start running (sets JIT enable + CRT).
+    update_variables(true);
+
     // Load game
     bool ok = nuonEnv.mpe[3].LoadNuonRomFile(gamePath.c_str());
     if (!ok) ok = nuonEnv.mpe[3].LoadCoffFile(gamePath.c_str());
@@ -404,6 +443,10 @@ void retro_unload_game(void)
 void retro_run(void)
 {
     if (!game_loaded) return;
+
+    bool options_updated = false;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &options_updated) && options_updated)
+        update_variables(false);
 
     // Input
     input_poll_cb();

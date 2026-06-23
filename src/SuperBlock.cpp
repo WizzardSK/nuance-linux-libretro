@@ -280,7 +280,7 @@ bool SuperBlock::EmitCodeBlock(NativeCodeCache &codeCache, const bool bContainsB
 
   // NUANCE_FORCE_IL makes a native-capable build compile blocks as IL instead,
   // so the same binary can be run as pure-JIT vs pure-interpreter for diffing.
-  const bool forceIL = NuanceDiff_ForceIL();
+  const bool forceIL = NuanceDiff_ForceIL() || !g_nuanceEnableJIT;
   const SuperBlockCompileType compileType = !bAllowBlockCompile ? SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_SINGLE :
     (((COMPILE_TYPE != SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_SINGLE) && (!bCanEmitNativeCode || forceIL)) ? SuperBlockCompileType::SUPERBLOCKCOMPILETYPE_IL_BLOCK :
     COMPILE_TYPE);

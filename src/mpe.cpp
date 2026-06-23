@@ -57,6 +57,23 @@ unsigned NuanceDiff_CompileThreshold()
       (unsigned)atoi(getenv("NUANCE_COMPILE_THRESHOLD")) : COMPILE_THRESHOLD;
   return v;
 }
+// NUANCE_FORCE_COMPILE makes hot blocks compile even when flagged
+// PACKETINFO_NEVERCOMPILE, to exercise the JIT on real game code that is
+// otherwise interpreter-only (control-register I/O). Test/diagnostic only.
+bool NuanceDiff_ForceCompile()
+{
+  static const bool v = (getenv("NUANCE_FORCE_COMPILE") != nullptr);
+  return v;
+}
+
+// Runtime JIT enable (libretro core option "nuance_jit"). Default per arch: the
+// x86-64 dynarec is a win, but the AArch64 a64 backend is currently slower than
+// the interpreter, so default it off there and let users opt in.
+#if defined(__aarch64__) || defined(_M_ARM64)
+bool g_nuanceEnableJIT = false;
+#else
+bool g_nuanceEnableJIT = true;
+#endif
 void NuanceDiff_TraceBlock(uint32 mpeIndex, uint32 pc, const uint32* regUnion, uint32 count)
 {
   static const char* const path = getenv("NUANCE_TRACE");
@@ -2036,7 +2053,8 @@ bool MPE::FetchDecodeExecute()
     {
       if (!only_find_icache_entry)
       {
-        if(!(pInstructionCacheEntry->packetInfo & (PACKETINFO_COMPILED | PACKETINFO_NEVERCOMPILE)) && (pInstructionCacheEntry->frequencyCount >= NuanceDiff_CompileThreshold()))
+        const uint32 noCompileMask = NuanceDiff_ForceCompile() ? PACKETINFO_COMPILED : (PACKETINFO_COMPILED | PACKETINFO_NEVERCOMPILE);
+        if(!(pInstructionCacheEntry->packetInfo & noCompileMask) && (pInstructionCacheEntry->frequencyCount >= NuanceDiff_CompileThreshold()))
         {
           if(nativeCodeCache.IsBeyondThreshold())
           {
