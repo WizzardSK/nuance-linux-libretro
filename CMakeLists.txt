@@ -379,3 +379,21 @@ endif()
 
 get_target_property(MY_COMPILE_OPTIONS ${NUANCE_TARGET} COMPILE_OPTIONS)
 message(STATUS "Compile options: ${MY_COMPILE_OPTIONS}")
+
+# Link-time optimization for non-Debug builds. The interpreter dispatches into
+# per-op handlers that live in separate translation units (ExecuteALU/MUL/...);
+# LTO lets the compiler optimize across that boundary. Opt-out with -DNUANCE_LTO=OFF.
+# Measured neutral-to-slightly-slower on the AArch64 interpreter (the hot
+# dispatch is an indirect call LTO can't devirtualise), so default off; the
+# option stays for experimentation on other targets.
+option(NUANCE_LTO "Enable link-time optimization" OFF)
+if(NUANCE_LTO AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT NUANCE_IPO_OK OUTPUT NUANCE_IPO_MSG)
+    if(NUANCE_IPO_OK)
+        set_property(TARGET ${NUANCE_TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+        message(STATUS "LTO enabled for ${NUANCE_TARGET}")
+    else()
+        message(STATUS "LTO requested but not supported: ${NUANCE_IPO_MSG}")
+    endif()
+endif()

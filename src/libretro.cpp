@@ -322,6 +322,8 @@ void retro_reset(void)
         nuonEnv.mpe[i].Reset();
 }
 
+static void NuanceBench_Run(); // defined below; self-driven interpreter benchmark
+
 bool retro_load_game(const struct retro_game_info *game)
 {
     if (!game || !game->path) return false;
@@ -428,6 +430,10 @@ bool retro_load_game(const struct retro_game_info *game)
     game_loaded = true;
 
     log_printf("libretro: game loaded successfully\n");
+
+    if (getenv("NUANCE_BENCH"))
+        NuanceBench_Run(); // self-driven interpreter benchmark; ends the process
+
     return true;
 }
 
@@ -438,6 +444,53 @@ void retro_unload_game(void)
     bRun = false;
     game_loaded = false;
     VideoCleanup();
+}
+
+// Self-driven interpreter throughput benchmark. Runs the emulation loop with no
+// video output: warms up for NUANCE_BENCH_WARMUP seconds (default 3) to get past
+// boot, then measures MPE cycles/s over NUANCE_BENCH seconds. Wall-clock-paced
+// timer/field-counter housekeeping mirrors retro_run so the MPEs progress.
+// Driven from retro_load_game so it does not depend on the frontend calling
+// retro_run. Diagnostic only; ends the process.
+static void NuanceBench_Run()
+{
+    const double warmup_s = getenv("NUANCE_BENCH_WARMUP") ? atof(getenv("NUANCE_BENCH_WARMUP")) : 3.0;
+    const double measure_s = atof(getenv("NUANCE_BENCH")) > 0 ? atof(getenv("NUANCE_BENCH")) : 5.0;
+    fprintf(stderr, "[bench] warmup %.1fs, measure %.1fs (JIT=%s)...\n",
+            warmup_s, measure_s, g_nuanceEnableJIT ? "on" : "off"); fflush(stderr);
+    const uint64 t0 = useconds_since_start();
+    uint64 cyc = 0, iters = 0, lt0 = t0, lt1 = t0, lt2 = t0, tm0 = t0;
+    bool measuring = false;
+    for (;;) {
+        iters++;
+        for (int i = 3; i >= 0; --i)
+            if (i != 3 || nuonEnv.MPE3wait_fieldCounter == 0) {
+                nuonEnv.mpe[i].FetchDecodeExecute();
+                if (measuring) cyc += nuonEnv.mpe[i].cycleCounter;
+            }
+        if (nuonEnv.pendingCommRequests)
+            DoCommBusController();
+        if ((iters % 5000) == 0) {
+            const uint64 nt = useconds_since_start();
+            if (nuonEnv.timer_rate[0] > 0 && nt >= lt0 + (uint64)nuonEnv.timer_rate[0]) { nuonEnv.ScheduleInterrupt(INT_SYSTIMER0); lt0 = nt; }
+            if (nuonEnv.timer_rate[1] > 0 && nt >= lt1 + (uint64)nuonEnv.timer_rate[1]) { nuonEnv.ScheduleInterrupt(INT_SYSTIMER1); lt1 = nt; }
+            const uint64 vr = (nuonEnv.timer_rate[2] > 0) ? (uint64)nuonEnv.timer_rate[2] : 16667;
+            if (nt >= lt2 + vr) {
+                IncrementVideoFieldCounter();
+                nuonEnv.TriggerVideoInterrupt();
+                const uint32 fc = SwapBytes(*((uint32*)&nuonEnv.systemBusDRAM[VIDEO_FIELD_COUNTER_ADDRESS & SYSTEM_BUS_VALID_MEMORY_MASK]));
+                if (fc >= nuonEnv.MPE3wait_fieldCounter) nuonEnv.MPE3wait_fieldCounter = 0;
+                lt2 = nt;
+            }
+            if (!measuring && (nt - t0) >= (uint64)(warmup_s * 1e6)) { measuring = true; tm0 = nt; cyc = 0; }
+            if (measuring && (nt - tm0) >= (uint64)(measure_s * 1e6)) break;
+        }
+    }
+    const double secs = (useconds_since_start() - tm0) / 1e6;
+    fprintf(stderr, "[bench] %.2f Mcycles/s | %llu cycles in %.2fs | JIT=%s\n",
+            cyc / secs / 1e6, (unsigned long long)cyc, secs, g_nuanceEnableJIT ? "on" : "off");
+    fflush(stderr);
+    _exit(0);
 }
 
 void retro_run(void)
