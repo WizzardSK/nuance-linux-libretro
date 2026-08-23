@@ -28,7 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: { submodules: recursive }
-      - run: sudo apt-get update -qy && sudo apt-get install -yq gcc-multilib g++-multilib libgl1-mesa-dev:i386 || sudo apt-get install -yq gcc-multilib g++-multilib
+      - run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qy
+          sudo apt-get install -yq gcc-multilib g++-multilib libgl1-mesa-dev:i386 libx11-dev:i386 libglx-dev:i386
       - run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBRETRO=ON -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 -DCMAKE_SYSTEM_PROCESSOR=i686 -B build
       - run: cmake --build build --parallel 3
       - run: file build/nuance_libretro.so
