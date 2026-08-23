@@ -11,14 +11,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: macos-13, name: "osx-x64" }
-          - { runner: macos-14, name: "osx-arm64" }
+          # Both slices on the Apple Silicon runner: the Intel ones queue for
+          # hours now, and the x86_64 slice cross-compiles the way the buildbot's
+          # osx-cmake template does anyway.
+          - { runner: macos-14, name: "osx-x64", arch: x86_64 }
+          - { runner: macos-14, name: "osx-arm64", arch: arm64 }
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
         with: { submodules: recursive }
-      - run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBRETRO=ON -B build
+      - run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBRETRO=ON -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -B build
       - run: cmake --build build --parallel 3
       - run: file build/nuance_libretro.* && ls -la build/nuance_libretro.*
 

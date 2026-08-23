@@ -33,6 +33,14 @@ libretro-build-linux-x64:
     - .libretro-linux-cmake-x86_64
     - .core-defs
 
+# Linux 32-bit (i686). The x86 emitter this build uses is the one the project
+# started on, and the SSSE3 flag it needs is now applied wherever the compiler
+# takes it, so this is the same code path as x86_64 minus asmjit.
+libretro-build-linux-i686:
+  extends:
+    - .libretro-linux-cmake-x86
+    - .core-defs
+
 # Linux ARM 64-bit (aarch64). The buildbot provides an aarch64 image/runner
 # via .libretro-linux-cmake-aarch64.
 libretro-build-linux-aarch64:
