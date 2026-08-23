@@ -174,7 +174,10 @@ if(BUILD_LIBRETRO)
     # the core uses its ResolveGameFile() to resolve ISO/ZIP/CHD inputs and to
     # read data files straight from the ISO at runtime (no whole-disc extraction),
     # so libchdr + miniz are linked in below for the libretro build too.
-    list(FILTER NUANCE_SOURCES EXCLUDE REGEX "NuanceMain|GLWindow|InputManager|NuanceUI")
+    # imgui_impl_x11 belongs with the other standalone-only files: the libretro
+    # build has no imgui (imgui_static is standalone-only) and pulling it in
+    # dragged X11 headers into a build that has none on macOS.
+    list(FILTER NUANCE_SOURCES EXCLUDE REGEX "NuanceMain|GLWindow|InputManager|NuanceUI|imgui_impl")
     add_library(nuance_libretro SHARED ${NUANCE_SOURCES} src/libretro.cpp)
     set_target_properties(nuance_libretro PROPERTIES PREFIX "" OUTPUT_NAME "nuance_libretro")
     target_compile_definitions(nuance_libretro PRIVATE LIBRETRO)
