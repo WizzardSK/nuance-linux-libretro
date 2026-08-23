@@ -15,6 +15,10 @@ include:
     file: '/linux-cmake.yml'
   - project: 'libretro-infrastructure/ci-templates'
     file: '/windows-cmake-mingw.yml'
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/osx-cmake-x86.yml'
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/osx-cmake-arm64.yml'
 
 stages:
   - build-prepare
@@ -39,4 +43,16 @@ libretro-build-linux-aarch64:
 libretro-build-windows-x64:
   extends:
     - .libretro-windows-cmake-x86_64
+    - .core-defs
+
+# macOS 64-bit
+libretro-build-osx-x64:
+  extends:
+    - .libretro-osx-cmake-x86
+    - .core-defs
+
+# macOS ARM 64-bit
+libretro-build-osx-arm64:
+  extends:
+    - .libretro-osx-cmake-arm64
     - .core-defs
